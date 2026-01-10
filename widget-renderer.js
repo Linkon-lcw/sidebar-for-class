@@ -47,7 +47,7 @@ async function createVolumeSlider(widget) {
     }
 
     container.innerHTML = `
-        <div class="volume-slider-title">系统音量</div>
+
         <div class="volume-slider-row">
             <div class="volume-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
