@@ -1,203 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
-    <title>Sidebar</title>
-    <style>
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: transparent;
-            font-family: "Microsoft YaHei", -apple-system, sans-serif;
-            user-select: none;
-        }
-
-        #app {
-            display: flex;
-            align-items: center;
-            height: 100%;
-            padding-left: 0;
-        }
-
-        #sidebar-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            height: 100%;
-            width: 16px;
-            cursor: default;
-        }
-
-        #sidebar {
-            width: 4px;
-            height: 64px;
-            background: linear-gradient(135deg, #9ca3af, #6b7280);
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-left: 6px;
-            /* 默认过渡 */
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .expanded #sidebar-wrapper {
-            width: 100%;
-        }
-
-        #content {
-            opacity: 0;
-            padding: 32px;
-            transition: opacity 0.3s ease 0.1s;
-            color: #1f2937;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            width: 400px;
-            box-sizing: border-box;
-            pointer-events: none;
-        }
-
-        .expanded #content {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        h2 {
-            margin: 0;
-            font-size: 24px;
-            color: #111827;
-        }
-
-        p {
-            margin: 0;
-            line-height: 1.6;
-            color: #4b5563;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边栏工具</title>
+    <!-- 引入外部样式表 -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div id="app">
+        <!-- 侧边栏包装器：用于处理边缘交互 -->
         <div id="sidebar-wrapper">
+            <!-- 侧边栏主体 -->
             <div id="sidebar">
+                <!-- 内容容器 -->
                 <div id="content">
-                    <h2>项目面板</h2>
-                    <p>这是一个 400x450 的可交互面板。</p>
-                    <p style="font-size: 13px; color: #9ca3af;">点击面板外部任何位置即可收起。</p>
+                    <!-- 小组件容器：动态注入按钮或工具 -->
+                    <div id="widget-container" class="widget-list">
+                        <!-- 组件将通过 JS 动态注入此处 -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const wrapper = document.getElementById('sidebar-wrapper');
-        const sidebar = document.getElementById('sidebar');
-        let isDragging = false;
-        let startX = 0;
-        const THRESHOLD = 100;
-
-        const START_W = 4, START_H = 64;
-        const TARGET_W = 400, TARGET_H = 450;
-
-        wrapper.addEventListener('mousedown', (e) => {
-            if (document.body.classList.contains('expanded')) return;
-            isDragging = true;
-            startX = e.clientX;
-            console.log(`[DragStart] x=${startX}`);
-
-            // 立即让容器变宽，防止裁剪正在扩张的线条
-            wrapper.style.width = '500px';
-
-            sidebar.style.transition = 'none';
-            window.electronAPI.resizeWindow(500, 600);
-        });
-
-        let lastLogTime = 0;
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const deltaX = e.clientX - startX;
-            if (deltaX > 0) {
-                const progress = Math.min(deltaX / 250, 1);
-
-                // 线条整体按比例扩展：宽高同步从初始值增大到目标值
-                const currentWidth = START_W + (TARGET_W - START_W) * progress;
-                const currentHeight = START_H + (TARGET_H - START_H) * progress;
-                const currentRadius = 4 + (12 * progress);
-                const currentMargin = 6 + (6 * progress);
-
-                sidebar.style.width = `${currentWidth}px`;
-                sidebar.style.height = `${currentHeight}px`;
-                sidebar.style.borderRadius = `${currentRadius}px`;
-                sidebar.style.marginLeft = `${currentMargin}px`;
-
-                // 颜色从线条灰平滑过渡到面板白
-                const gray = Math.floor(156 + (255 - 156) * progress);
-                sidebar.style.background = `rgba(${gray}, ${gray}, ${gray}, ${0.8 + 0.15 * progress})`;
-
-                if (Date.now() - lastLogTime > 100) {
-                    console.log(`[Dragging] progress=${progress.toFixed(2)}, size=${currentWidth.toFixed(0)}x${currentHeight.toFixed(0)}`);
-                    lastLogTime = Date.now();
-                }
-            }
-        });
-
-        window.addEventListener('mouseup', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            const deltaX = e.clientX - startX;
-            console.log(`[DragEnd] deltaX=${deltaX.toFixed(1)}`);
-
-            sidebar.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-            void sidebar.offsetWidth;
-
-            if (deltaX > THRESHOLD) {
-                console.log('[Action] Expanding');
-                expand();
-            } else {
-                console.log('[Action] Collapsing');
-                collapse();
-            }
-        });
-
-        function expand() {
-            document.body.classList.add('expanded');
-            sidebar.style.width = `${TARGET_W}px`;
-            sidebar.style.height = `${TARGET_H}px`;
-            sidebar.style.borderRadius = '16px';
-            sidebar.style.marginLeft = '12px';
-            sidebar.style.background = 'rgba(255, 255, 255, 0.95)';
-        }
-
-        function collapse() {
-            document.body.classList.remove('expanded');
-            sidebar.style.width = `${START_W}px`;
-            sidebar.style.height = `${START_H}px`;
-            sidebar.style.borderRadius = '4px';
-            sidebar.style.marginLeft = '6px';
-            sidebar.style.background = '';
-
-            setTimeout(() => {
-                if (!document.body.classList.contains('expanded')) {
-                    window.electronAPI.resizeWindow(60, 150);
-                }
-            }, 500);
-        }
-
-        window.addEventListener('mousedown', (e) => {
-            if (document.body.classList.contains('expanded') && !sidebar.contains(e.target)) {
-                console.log('[Action] Click outside, collapse');
-                collapse();
-            }
-        });
-    </script>
+    <!-- 引入渲染进程脚本 -->
+    <script src="renderer.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,25 @@
+{
+    "transforms": {
+        "display": 2,
+        "height": 64,
+        "posy": 350,
+        "animation_speed": 0.1
+    },
+    "widgets": [
+        {
+            "type": "launcher",
+            "targets": [
+                {
+                    "name": "文件资源管理器",
+                    "target": "explorer.exe",
+                    "args": []
+                },
+                {
+                    "name": "记事本",
+                    "target": "notepad.exe",
+                    "args": []
+                }
+            ]
+        }
+    ]
+}
