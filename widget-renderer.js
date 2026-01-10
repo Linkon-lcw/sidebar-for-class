@@ -69,6 +69,7 @@ async function createVolumeSlider(widget) {
 
     slider.oninput = (e) => {
         const val = e.target.value;
+        console.log('[Renderer] Slider input:', val);
         fill.style.width = `${val}%`;
         valueDisp.textContent = `${val}%`;
         window.electronAPI.setVolume(parseInt(val));

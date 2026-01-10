@@ -129,7 +129,10 @@ ipcMain.handle('get-file-icon', async (event, filePath) => {
 });
 
 ipcMain.handle('get-volume', () => getSystemVolume());
-ipcMain.on('set-volume', (e, val) => setSystemVolume(val));
+ipcMain.on('set-volume', (e, val) => {
+  console.log('[Main] Received set-volume request:', val);
+  setSystemVolume(val);
+});
 
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

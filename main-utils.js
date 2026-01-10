@@ -1,25 +1,33 @@
 const { app, shell, screen, ipcMain } = require('electron');
 const path = require('path');
-const { spawn, execSync } = require('child_process');
+const { spawn, execSync, execFile } = require('child_process');
 const fs = require('fs');
 
 /**
  * 从 URI 协议中解析出关联的可执行文件路径
+ * @param {string} protocol - URI 协议头 (例如: "ms-settings")
+ * @returns {string|null} - 返回可执行文件的路径，如果未找到则返回 null
  */
 function getExePathFromProtocol(protocol) {
     try {
+        // 构建注册表查询路径
         const regPath = `HKEY_CLASSES_ROOT\\${protocol}\\shell\\open\\command`;
+        // 执行注册表查询命令
         const output = execSync(`reg query "${regPath}" /ve`, { encoding: 'utf8' });
+        // 解析输出结果
         const match = output.match(/\s+REG_SZ\s+(.*)/);
         if (match) {
             let command = match[1].trim();
             let exePath = '';
+            // 处理带引号的路径
             if (command.startsWith('"')) {
                 const endQuoteIndex = command.indexOf('"', 1);
                 if (endQuoteIndex !== -1) exePath = command.substring(1, endQuoteIndex);
             } else {
+                // 处理不带引号的路径
                 exePath = command.split(' ')[0];
             }
+            // 验证文件是否存在
             if (exePath && fs.existsSync(exePath)) return exePath;
         }
     } catch (e) {
@@ -28,98 +36,65 @@ function getExePathFromProtocol(protocol) {
     return null;
 }
 
+const VOL_EXE = path.join(__dirname, 'volume-control.exe');
+
 /**
- * 获取系统音量 (PowerShell)
+ * 获取系统音量
+ * @returns {Promise<number>} - 返回当前音量值 (0-100)
  */
 async function getSystemVolume() {
     return new Promise((resolve) => {
-        const script = `
-      $code = @'
-      using System;
-      using System.Runtime.InteropServices;
-      [Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-      public interface IAudioEndpointVolume {
-          int SetMasterVolumeLevelScalar(float fLevel, ref Guid pguidEventContext);
-          int GetMasterVolumeLevelScalar(out float pfLevel);
-      }
-      [Guid("D6660639-824D-4AC8-B9CD-491F02F16260"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-      public interface IMMDevice {
-          int Activate(ref Guid iid, int dwClsCtx, IntPtr pActivationParams, [MarshalAs(UnmanagedType.IUnknown)] out object ppInterface);
-      }
-      [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-      public interface IMMDeviceEnumerator {
-          int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice ppDevice);
-      }
-      [Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] public class MMDeviceEnumerator { }
-      public class AudioHelper {
-          public static float GetVolume() {
-              IMMDeviceEnumerator enumerator = (IMMDeviceEnumerator)new MMDeviceEnumerator();
-              IMMDevice device;
-              enumerator.GetDefaultAudioEndpoint(0, 0, out device);
-              object interfaceObj;
-              Guid iid = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
-              device.Activate(ref iid, 7, IntPtr.Zero, out interfaceObj);
-              IAudioEndpointVolume vol = (IAudioEndpointVolume)interfaceObj;
-              float v;
-              vol.GetMasterVolumeLevelScalar(out v);
-              return v;
-          }
-      }
-'@
-      Add-Type -TypeDefinition $code
-      [Math]::Round([AudioHelper]::GetVolume() * 100)
-    `;
-        const ps = spawn('powershell.exe', ['-NoProfile', '-Command', script]);
-        let output = '';
-        ps.stdout.on('data', (data) => { output += data.toString(); });
-        ps.on('close', () => resolve(parseInt(output.trim()) || 0));
-        ps.on('error', () => resolve(0));
-        setTimeout(() => { if (!ps.killed) ps.kill(); resolve(0); }, 3000);
+        if (!fs.existsSync(VOL_EXE)) {
+            console.error('Volume executable not found:', VOL_EXE);
+            return resolve(0);
+        }
+        execFile(VOL_EXE, [], (error, stdout, stderr) => {
+            if (error) {
+                console.error('GetVolume Error:', error);
+                return resolve(0);
+            }
+            const val = parseInt(stdout.trim());
+            resolve(isNaN(val) ? 0 : val);
+        });
     });
 }
 
+let isSettingVolume = false;
+let pendingVolume = null;
+
 /**
- * 设置系统音量 (PowerShell)
+ * 设置系统音量
+ * @param {number} value - 音量值 (0-100)
  */
 function setSystemVolume(value) {
-    const volume = value / 100;
-    const script = `
-    $code = @'
-    using System;
-    using System.Runtime.InteropServices;
-    [Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IAudioEndpointVolume {
-        int SetMasterVolumeLevelScalar(float fLevel, ref Guid pguidEventContext);
-        int GetMasterVolumeLevelScalar(out float pfLevel);
+    // 防止过于频繁调用
+    if (isSettingVolume) {
+        pendingVolume = value;
+        return;
     }
-    [Guid("D6660639-824D-4AC8-B9CD-491F02F16260"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IMMDevice {
-        int Activate(ref Guid iid, int dwClsCtx, IntPtr pActivationParams, [MarshalAs(UnmanagedType.IUnknown)] out object ppInterface);
+
+    isSettingVolume = true;
+    const targetVol = value;
+
+    if (!fs.existsSync(VOL_EXE)) {
+        console.error('Volume executable not found:', VOL_EXE);
+        isSettingVolume = false;
+        return;
     }
-    [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IMMDeviceEnumerator {
-        int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice ppDevice);
-    }
-    [Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] public class MMDeviceEnumerator { }
-    public class AudioHelper {
-        public static void SetVolume(float level) {
-            IMMDeviceEnumerator enumerator = (IMMDeviceEnumerator)new MMDeviceEnumerator();
-            IMMDevice device;
-            enumerator.GetDefaultAudioEndpoint(0, 0, out device);
-            object interfaceObj;
-            Guid iid = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
-            device.Activate(ref iid, 7, IntPtr.Zero, out interfaceObj);
-            IAudioEndpointVolume vol = (IAudioEndpointVolume)interfaceObj;
-            Guid g = Guid.Empty;
-            vol.SetMasterVolumeLevelScalar(level, ref g);
+
+    execFile(VOL_EXE, [targetVol.toString()], (error, stdout, stderr) => {
+        if (error) {
+            console.error('SetVolume Error:', error);
         }
-    }
-'@
-    Add-Type -TypeDefinition $code
-    [AudioHelper]::SetVolume(${volume})
-  `;
-    spawn('powershell.exe', ['-NoProfile', '-Command', script]);
+        isSettingVolume = false;
+        if (pendingVolume !== null) {
+            const next = pendingVolume;
+            pendingVolume = null;
+            setSystemVolume(next);
+        }
+    });
 }
+
 
 module.exports = {
     getExePathFromProtocol,
