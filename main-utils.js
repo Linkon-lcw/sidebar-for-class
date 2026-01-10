@@ -2,6 +2,7 @@ const { app, shell, screen, ipcMain } = require('electron');
 const path = require('path');
 const { spawn, execSync, execFile } = require('child_process');
 const fs = require('fs');
+const loudness = require('loudness');
 
 /**
  * 从 URI 协议中解析出关联的可执行文件路径
@@ -36,27 +37,18 @@ function getExePathFromProtocol(protocol) {
     return null;
 }
 
-const VOL_EXE = path.join(__dirname, 'volume-control.exe');
-
 /**
  * 获取系统音量
  * @returns {Promise<number>} - 返回当前音量值 (0-100)
  */
 async function getSystemVolume() {
-    return new Promise((resolve) => {
-        if (!fs.existsSync(VOL_EXE)) {
-            console.error('Volume executable not found:', VOL_EXE);
-            return resolve(0);
-        }
-        execFile(VOL_EXE, [], (error, stdout, stderr) => {
-            if (error) {
-                console.error('GetVolume Error:', error);
-                return resolve(0);
-            }
-            const val = parseInt(stdout.trim());
-            resolve(isNaN(val) ? 0 : val);
-        });
-    });
+    try {
+        const volume = await loudness.getVolume();
+        return volume;
+    } catch (error) {
+        console.error('Failed to get system volume:', error);
+        return 0;
+    }
 }
 
 let isSettingVolume = false;
@@ -66,7 +58,7 @@ let pendingVolume = null;
  * 设置系统音量
  * @param {number} value - 音量值 (0-100)
  */
-function setSystemVolume(value) {
+async function setSystemVolume(value) {
     // 防止过于频繁调用
     if (isSettingVolume) {
         pendingVolume = value;
@@ -74,25 +66,18 @@ function setSystemVolume(value) {
     }
 
     isSettingVolume = true;
-    const targetVol = value;
-
-    if (!fs.existsSync(VOL_EXE)) {
-        console.error('Volume executable not found:', VOL_EXE);
-        isSettingVolume = false;
-        return;
-    }
-
-    execFile(VOL_EXE, [targetVol.toString()], (error, stdout, stderr) => {
-        if (error) {
-            console.error('SetVolume Error:', error);
-        }
+    try {
+        await loudness.setVolume(value);
+    } catch (error) {
+        console.error('Failed to set system volume:', error);
+    } finally {
         isSettingVolume = false;
         if (pendingVolume !== null) {
             const next = pendingVolume;
             pendingVolume = null;
             setSystemVolume(next);
         }
-    });
+    }
 }
 
 

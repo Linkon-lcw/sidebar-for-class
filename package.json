@@ -21,5 +21,8 @@
   "homepage": "https://github.com/PANDAJSR/sidebar-for-class#readme",
   "devDependencies": {
     "electron": "^39.2.7"
+  },
+  "dependencies": {
+    "loudness": "^0.4.2"
   }
 }
