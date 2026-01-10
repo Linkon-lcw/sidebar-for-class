@@ -209,6 +209,11 @@ const handleEnd = (clientX) => {
     isDragging = false;
     const deltaX = clientX ? (clientX - startX) : 0;
     const duration = performance.now() - startTimeStamp;
+    // 如果向左快速滑动，强制收起
+    if (currentVelocity < -VELOCITY_THRESHOLD) {
+        collapse();
+        return;
+    }
     // 判断是否满足展开条件（距离、速度或短时间内的快速滑动）
     if (deltaX > THRESHOLD || currentVelocity > VELOCITY_THRESHOLD || (duration < 200 && deltaX > 20)) expand();
     else collapse();

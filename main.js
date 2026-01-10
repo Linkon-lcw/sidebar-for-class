@@ -102,12 +102,24 @@ ipcMain.handle('get-config', async () => {
   return { ...config, displayBounds: targetDisplay.bounds };
 });
 
-ipcMain.on('launch-app', (event, target, args) => {
+ipcMain.on('launch-app', async (event, target, args) => {
   if (target.includes('://')) {
     shell.openExternal(target).catch(e => console.error('打开 URI 失败:', e));
     return;
   }
-  spawn(target, args, { detached: true, stdio: 'ignore' }).unref();
+
+  // 如果没有参数，优先尝试用默认关联程序打开（支持打开各种文档、图片、快捷方式等）
+  if (!args || args.length === 0) {
+    // openPath 返回 Promise<string>，如果为空字符串则成功
+    const error = await shell.openPath(target);
+    if (error) {
+      console.error('shell.openPath 失败, 尝试 spawn:', error);
+      // 如果 openPath 失败，回退到 spawn 尝试（虽然对于非可执行文件 spawn 也很可能失败）
+      spawn(target, args || [], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } else {
+    spawn(target, args, { detached: true, stdio: 'ignore' }).unref();
+  }
 });
 
 ipcMain.handle('get-file-icon', async (event, filePath) => {
@@ -132,6 +144,48 @@ ipcMain.handle('get-volume', () => getSystemVolume());
 ipcMain.on('set-volume', (e, val) => {
   console.log('[Main] Received set-volume request:', val);
   setSystemVolume(val);
+});
+
+function resolveWindowsEnv(pathStr) {
+  if (!pathStr) return '';
+  return pathStr.replace(/%([^%]+)%/g, (_, n) => process.env[n] || '');
+}
+
+ipcMain.handle('get-files-in-folder', async (event, folderPath, maxCount) => {
+  try {
+    const resolvedPath = resolveWindowsEnv(folderPath);
+    if (!fs.existsSync(resolvedPath)) {
+      console.warn('Folder does not exist:', resolvedPath);
+      return [];
+    }
+
+    // Read directory
+    const files = fs.readdirSync(resolvedPath);
+
+    // Sort by modification time (descending) to show recent items first if requested
+    // "Recent" folder is usually special, but `fs.readdir` just gives names. 
+    // We should get stats to sort.
+    const fileStats = files.map(file => {
+      const fullPath = path.join(resolvedPath, file);
+      try {
+        const stats = fs.statSync(fullPath);
+        return { name: file, path: fullPath, mtime: stats.mtime, isDirectory: stats.isDirectory() };
+      } catch (e) {
+        return null; // Skip files we can't stat
+      }
+    }).filter(f => f !== null && !f.isDirectory && !f.name.startsWith('desktop.ini')); // Filter out desktop.ini and directories if we only want files
+
+    // Sort by time desc
+    fileStats.sort((a, b) => b.mtime - a.mtime);
+
+    // Slice to maxCount
+    const result = fileStats.slice(0, maxCount || 100);
+
+    return result;
+  } catch (err) {
+    console.error('Error listing files:', err);
+    return [];
+  }
 });
 
 app.whenReady().then(createWindow);

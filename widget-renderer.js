@@ -79,12 +79,57 @@ async function createVolumeSlider(widget) {
 }
 
 /**
+ * 创建文件列表组件
+ * 专门用于显示文件夹内容（如"最近使用"）
+ * 采用紧凑的垂直列表布局，模仿 Windows 资源管理器详情视图
+ */
+async function createFilesWidget(widget) {
+    const container = document.createElement('div');
+    const layout = widget.layout || 'vertical';
+
+    // 添加 compact-files 类以应用紧凑样式
+    container.className = `launcher-group layout-${layout} compact-files`;
+
+    let files = [];
+    try {
+        // 调用主进程接口获取文件列表
+        files = await window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count);
+    } catch (err) {
+        console.error('获取文件列表失败:', err);
+        return container;
+    }
+
+    for (const file of files) {
+        // 去除 .lnk 后缀显示，使界面更整洁
+        let displayName = file.name;
+        if (displayName.toLowerCase().endsWith('.lnk')) {
+            displayName = displayName.slice(0, -4);
+        }
+
+        // 构造显示配置
+        const itemConfig = {
+            name: displayName,
+            target: file.path
+        };
+
+        // 复用通用的启动器项目创建逻辑
+        const item = await createLauncherItem(itemConfig);
+        container.appendChild(item);
+    }
+
+    return container;
+}
+
+/**
  * 核心渲染函数
+ * 负责遍历配置并渲染所有小组件
  */
 async function renderWidgets(widgets) {
     const container = document.getElementById('widget-container');
-    container.innerHTML = '';
+    container.innerHTML = ''; // 清空现有内容
+
     for (const widget of widgets) {
+        // 渲染普通启动器组 (快捷方式网格/列表)
         if (widget.type === 'launcher' && Array.isArray(widget.targets)) {
             const group = document.createElement('div');
             const layout = widget.layout || 'vertical';
@@ -95,9 +140,16 @@ async function renderWidgets(widgets) {
                 group.appendChild(item);
             }
             container.appendChild(group);
+
+            // 渲染音量调节滑块
         } else if (widget.type === 'volume_slider') {
             const slider = await createVolumeSlider(widget);
             container.appendChild(slider);
+
+            // 渲染文件列表 (最近文件等)
+        } else if (widget.type === 'files') {
+            const filesWidget = await createFilesWidget(widget);
+            container.appendChild(filesWidget);
         }
     }
 }

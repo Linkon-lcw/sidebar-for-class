@@ -41,6 +41,12 @@
         {
             "type": "volume_slider",
             "range": [0, 100]
+        },
+        {
+            "type": "files",
+            "folder_path": "%AppData%\\Microsoft\\Windows\\Recent\\",
+            "layout": "vertical",
+            "max_count": 4
         }
     ]
 }

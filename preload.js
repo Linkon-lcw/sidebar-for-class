@@ -25,5 +25,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // 音量控制
     getVolume: () => ipcRenderer.invoke('get-volume'),
-    setVolume: (value) => ipcRenderer.send('set-volume', value)
+    setVolume: (value) => ipcRenderer.send('set-volume', value),
+
+    // 获取文件夹下的文件
+    getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount)
 });

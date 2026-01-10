@@ -368,3 +368,39 @@ p {
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
+
+/* 紧凑文件列表样式 (类 Explorer 详细信息) */
+.launcher-group.compact-files {
+    gap: 1px;
+}
+
+.compact-files .launcher-item {
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    min-height: 28px;
+}
+
+.compact-files .launcher-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.compact-files .launcher-icon {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+/* 强制覆盖内联样式中的占位符尺寸 */
+.compact-files .launcher-icon-placeholder {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.compact-files .launcher-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: #333;
+}
