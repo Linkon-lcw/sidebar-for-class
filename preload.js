@@ -28,5 +28,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setVolume: (value) => ipcRenderer.send('set-volume', value),
 
     // 获取文件夹下的文件
-    getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount)
+    getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount),
+
+    // 执行任意命令
+    executeCommand: (command) => ipcRenderer.send('execute-command', command),
+
+    // 获取文件路径 (解决 Context Isolation 导致 file.path 为空的问题)
+    getFilePath: (file) => {
+        const { webUtils } = require('electron');
+        if (webUtils && webUtils.getPathForFile) {
+            return webUtils.getPathForFile(file);
+        }
+        return file.path;
+    }
 });

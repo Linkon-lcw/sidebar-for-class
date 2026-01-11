@@ -7,6 +7,12 @@
     },
     "widgets": [
         {
+            "type": "drag_to_launch",
+            "name": "发送到 LocalSend",
+            "targets": "C:\\Program Files\\LocalSend\\localsend_app.exe {{source}}",
+            "show_all_time": false
+        },
+        {
             "type": "launcher",
             "targets": [
                 {
@@ -46,10 +52,6 @@
         {
             "type": "volume_slider",
             "range": [0, 100]
-        },
-        {
-            "type": "drag_to_launch",
-            "targets": "C:\\Program Files\\LocalSend\\localsend_app.exe {{source}}"
         }
     ]
 }

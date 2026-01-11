@@ -121,6 +121,157 @@ async function createFilesWidget(widget) {
 }
 
 /**
+ * 创建拖拽启动组件
+ * 允许用户拖拽文件到此组件上，并使用配置的命令处理该文件
+ */
+async function createDragToLaunchWidget(widget) {
+    const div = document.createElement('div');
+    div.className = 'launcher-item drag-to-launch';
+    div.title = widget.name || "Drag files here to send";
+
+    // 尝试提取可执行文件路径以获取图标
+    let exePath = widget.targets;
+    if (typeof exePath === 'string') {
+        const placeholderIndex = exePath.indexOf('{{source}}');
+        let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+
+        // 去除首尾引号
+        if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+            potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+        } else if (potentialPath.startsWith('"')) {
+            // 只有前引号的情况？尝试找到下一个引号
+            const nextQuote = potentialPath.indexOf('"', 1);
+            if (nextQuote > -1) {
+                potentialPath = potentialPath.substring(1, nextQuote);
+            }
+        }
+        // 注意：我们移除在那段"如果是无引号路径则截取到第一个空格"的逻辑
+        // 因为 "C:\Program Files\..." 这种路径非常常见且可能没有引号包裹
+        // 假设用户配置正确，{{source}} 之前的部分就是路径
+
+        exePath = potentialPath;
+    }
+
+    let iconHtml = '<div class="launcher-icon-placeholder" style="width:32px; height:32px; background:#e5e7eb; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size: 20px;">📤</div>';
+
+    if (exePath) {
+        try {
+            const iconDataUrl = await window.electronAPI.getFileIcon(exePath);
+            if (iconDataUrl) {
+                iconHtml = `<img src="${iconDataUrl}" alt="${widget.name || 'Drop Target'}">`;
+            }
+        } catch (err) {
+            console.error('获取图标失败:', err);
+        }
+    }
+
+    div.innerHTML = `
+        <div class="launcher-icon">
+            ${iconHtml}
+        </div>
+        <div class="launcher-info">
+            <div class="launcher-name">${widget.name || 'Drop to Send'}</div>
+        </div>
+    `;
+
+    // 显隐控制逻辑
+    const showAllTime = widget.show_all_time !== false;
+
+    if (!showAllTime) {
+        div.style.display = 'none';
+        let dragCounter = 0;
+
+        document.addEventListener('dragenter', (e) => {
+            // 只对文件拖拽做出反应
+            if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                dragCounter++;
+                if (dragCounter === 1) {
+                    div.style.display = 'flex';
+                }
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                div.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            dragCounter = 0;
+            div.style.display = 'none';
+        });
+    }
+
+    // 拖拽事件处理
+    div.ondragover = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        div.classList.add('drag-over');
+    };
+
+    div.ondragleave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        div.classList.remove('drag-over');
+    };
+
+    div.ondrop = (e) => {
+        e.preventDefault();
+        // 移除 stopPropagation 以允许事件冒泡，触发文档重置和侧边栏收起
+        // e.stopPropagation();
+        div.classList.remove('drag-over');
+
+        if (!showAllTime) {
+            dragCounter = 0; // 确保计数器重置
+            div.style.display = 'none';
+        }
+
+        if (e.dataTransfer.files.length > 0) {
+            for (const file of e.dataTransfer.files) {
+                // 使用 preload 暴露的接口获取真实路径
+                const filePath = window.electronAPI.getFilePath(file);
+                if (!filePath) {
+                    console.error('无法获取文件路径', file);
+                    continue;
+                }
+
+                const safeFilePath = `"${filePath}"`;
+
+                // 处理命令模版
+                let rawCommandTemplate = widget.targets;
+                let finalCommand = rawCommandTemplate;
+
+                if (rawCommandTemplate.includes('{{source}}')) {
+                    // 智能处理前半部分的可执行程序路径
+                    const parts = rawCommandTemplate.split('{{source}}');
+                    let exePart = parts[0].trim();
+                    const suffixPart = parts[1];
+
+                    // 如果 exe 部分没有被引号包裹且包含空格，则添加引号
+                    // 简单的检查：如果包含空格，且不以 " 开头，且不以 " 结尾（排除已经包裹的情况）
+                    if (exePart.includes(' ') && !exePart.startsWith('"') && !exePart.endsWith('"')) {
+                        exePart = `"${exePart}"`;
+                    }
+
+                    finalCommand = `${exePart} ${safeFilePath} ${suffixPart}`;
+                } else {
+                    // 如果没有 placeholder，直接追加 (不太常见)
+                    finalCommand = `${rawCommandTemplate} ${safeFilePath}`;
+                }
+
+                console.log('Executing command:', finalCommand);
+                window.electronAPI.executeCommand(finalCommand);
+            }
+        }
+    };
+
+    return div;
+}
+
+/**
  * 核心渲染函数
  * 负责遍历配置并渲染所有小组件
  */
@@ -150,6 +301,22 @@ async function renderWidgets(widgets) {
         } else if (widget.type === 'files') {
             const filesWidget = await createFilesWidget(widget);
             container.appendChild(filesWidget);
+
+            // 渲染拖拽启动组件
+        } else if (widget.type === 'drag_to_launch') {
+            // 这类组件通常是单个存在的，或者我们可以把它放在一个特定的group里吗？
+            // 目前假设它也是像 widgets 一样直接放在 container 里
+            // 如果为了布局整齐，可能需要包裹一下，但先直接渲染看看
+            // 为了保持一致性，如果它不是 group 的一部分，我们直接渲染 item
+            const item = await createDragToLaunchWidget(widget);
+            // 为了让样式（特别是 sizing）正常工作，可能需要包裹在 launcher-group 里，
+            // 或者直接作为 widget-container 的子元素。
+            // 现有的 layout 似乎是基于 launcher-group 的。
+            // 让我们把它包裹在一个默认的 vertical group 里，或者单独处理
+            const wrapper = document.createElement('div');
+            wrapper.className = 'launcher-group layout-vertical'; // 使用默认布局 wrapper
+            wrapper.appendChild(item);
+            container.appendChild(wrapper);
         }
     }
 }

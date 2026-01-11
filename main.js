@@ -146,6 +146,15 @@ ipcMain.on('set-volume', (e, val) => {
   setSystemVolume(val);
 });
 
+ipcMain.on('execute-command', (event, command) => {
+  const { exec } = require('child_process');
+  exec(command, (error) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+    }
+  });
+});
+
 function resolveWindowsEnv(pathStr) {
   if (!pathStr) return '';
   return pathStr.replace(/%([^%]+)%/g, (_, n) => process.env[n] || '');

@@ -35,7 +35,8 @@ function setIgnoreMouse(ignore) {
 
 // 监听鼠标移动，判断是否要在非拖拽状态下忽略鼠标事件
 window.addEventListener('mousemove', (e) => {
-    if (isDragging) {
+    // 拖拽中或动画进行中，强制不忽略鼠标，防止闪烁和逻辑冲突
+    if (isDragging || animationId) {
         setIgnoreMouse(false);
         return;
     }
