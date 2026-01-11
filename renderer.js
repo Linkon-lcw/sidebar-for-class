@@ -7,6 +7,7 @@ const sidebar = document.getElementById('sidebar');
 
 // 拖拽相关状态变量
 let isDragging = false; // 是否正在拖拽
+let isSwipeActive = false; // 是否激活了拖拽跟手（用于展开状态下的快速左滑检测）
 let startX = 0; // 拖拽开始时的 X 坐标
 let lastLogTime = 0; // 上次记录日志的时间（未使用）
 const THRESHOLD = 60; // 触发展开的拖拽距离阈值
@@ -160,54 +161,89 @@ function throttledResize(w, h, y) {
 }
 
 /**
- * 处理拖拽开始
+ * 激活拖拽时的视觉状态（调整窗口大小等）
  */
-const handleStart = (clientX) => {
-    // 展开状态下且没有动画时，忽略拖拽开始（避免误触）
-    if (document.body.classList.contains('expanded') && !animationId) return;
-    isDragging = true;
-    if (animationId) {
-        // 如果正在动画中，计算当前的进度并接管拖拽
-        const currentW = parseFloat(sidebar.style.width) || START_W;
-        const currentProgress = Math.max(0, Math.min(1, (currentW - START_W) / (TARGET_W - START_W)));
-        startX = clientX - (currentProgress * 250);
-        stopAnimation();
-    } else startX = clientX;
-    lastX = clientX;
-    lastTime = performance.now();
-    startTimeStamp = lastTime;
-    currentVelocity = 0;
-    setIgnoreMouse(false);
-    // 调整窗口大小以容纳拖拽过程中的变化
-    const currentW = parseFloat(sidebar.style.width) || START_W;
-    window.electronAPI.resizeWindow(Math.max(Math.floor(currentW + 100), 200), START_H + 100);
+const activateDragVisuals = () => {
     wrapper.style.width = '500px';
     sidebar.style.transition = 'none';
 };
 
 /**
+ * 处理拖拽开始
+ */
+const handleStart = (currentX) => {
+    isDragging = true;
+    lastX = currentX;
+    lastTime = performance.now();
+    startTimeStamp = lastTime;
+    currentVelocity = 0;
+    setIgnoreMouse(false);
+
+    // 默认激活，除非是展开状态且没有正在进行的动画
+    isSwipeActive = true;
+
+    if (animationId) {
+        // 如果正在动画中，计算当前的进度并接管拖拽
+        const currentW = parseFloat(sidebar.style.width) || START_W;
+        const currentProgress = Math.max(0, Math.min(1, (currentW - START_W) / (TARGET_W - START_W)));
+        startX = currentX - (currentProgress * 250);
+        stopAnimation();
+    } else {
+        if (document.body.classList.contains('expanded')) {
+            // 展开状态下，进入等待模式，检测快速滑动
+            isSwipeActive = false;
+            // 展开状态下，假设当前处于最大拖拽距离 (250px)
+            startX = currentX - 250;
+        } else {
+            startX = currentX;
+        }
+    }
+
+    // 如果一开始就是激活状态（非展开，或者正在动画），则立即调整窗口
+    if (isSwipeActive) {
+        activateDragVisuals();
+    }
+};
+
+/**
  * 处理拖拽移动
  */
-const handleMove = (clientX) => {
+const handleMove = (currentX) => {
     if (!isDragging) return;
     const now = performance.now();
     const dt = now - lastTime;
     // 计算速度
-    if (dt > 0) currentVelocity = (clientX - lastX) / dt;
-    lastX = clientX;
+    if (dt > 0) currentVelocity = (currentX - lastX) / dt;
+    lastX = currentX;
     lastTime = now;
-    const deltaX = clientX - startX;
+
+    // 如果尚未激活跟手（展开状态等待快滑）
+    if (!isSwipeActive) {
+        // 只有向左快速滑动才激活 (速度阈值设为 0.5)
+        if (currentVelocity < -0.5) {
+            isSwipeActive = true;
+            activateDragVisuals();
+        } else {
+            return; // 未激活则不更新样式
+        }
+    }
+
+    const deltaX = currentX - startX;
     // 根据拖拽距离更新样式
-    if (deltaX > 0) updateSidebarStyles(Math.min(deltaX / 250, 1));
+    updateSidebarStyles(deltaX / 250);
 };
 
 /**
  * 处理拖拽结束
  */
-const handleEnd = (clientX) => {
+const handleEnd = (currentX) => {
     if (!isDragging) return;
     isDragging = false;
-    const deltaX = clientX ? (clientX - startX) : 0;
+
+    // 如果没有激活过跟手，说明用户操作未达标，保持原状
+    if (!isSwipeActive) return;
+
+    const deltaX = currentX ? (currentX - startX) : 0;
     const duration = performance.now() - startTimeStamp;
     // 如果向左快速滑动，强制收起
     if (currentVelocity < -VELOCITY_THRESHOLD) {
@@ -311,7 +347,7 @@ wrapper.addEventListener('mousedown', (e) => {
         return;
     }
     e.preventDefault();
-    handleStart(e.clientX);
+    handleStart(e.screenX);
 });
 
 wrapper.addEventListener('touchstart', (e) => {
@@ -322,23 +358,23 @@ wrapper.addEventListener('touchstart', (e) => {
             return;
         }
         e.preventDefault();
-        handleStart(e.touches[0].clientX);
+        handleStart(e.touches[0].screenX);
     }
 }, { passive: false });
 
-window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+window.addEventListener('mousemove', (e) => handleMove(e.screenX));
 window.addEventListener('touchmove', (e) => {
     if (e.touches.length > 0) {
         // 只有在拖拽侧边栏时才阻止默认行为
         if (isDragging) {
             e.preventDefault();
-            handleMove(e.touches[0].clientX);
+            handleMove(e.touches[0].screenX);
         }
     }
 }, { passive: false });
 
-window.addEventListener('mouseup', (e) => handleEnd(e.clientX));
-window.addEventListener('touchend', (e) => handleEnd(e.changedTouches.length > 0 ? e.changedTouches[0].clientX : null));
+window.addEventListener('mouseup', (e) => handleEnd(e.screenX));
+window.addEventListener('touchend', (e) => handleEnd(e.changedTouches.length > 0 ? e.changedTouches[0].screenX : null));
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 // 点击侧边栏外部区域收起
 window.addEventListener('mousedown', (e) => { if (document.body.classList.contains('expanded') && !sidebar.contains(e.target)) collapse(); });
