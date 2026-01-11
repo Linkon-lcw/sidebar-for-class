@@ -72,7 +72,7 @@ html {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    background: linear-gradient(135deg, rgb(154, 164, 180), rgb(136, 142, 152));
     opacity: 1;
     transition: opacity var(--sidebar-duration) ease;
     z-index: 0;

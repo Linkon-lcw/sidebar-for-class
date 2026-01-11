@@ -1,6 +1,6 @@
 {
     "transforms": {
-        "display": 2,
+        "display": 1,
         "height": 64,
         "posy": 350,
         "animation_speed": 1
@@ -41,12 +41,6 @@
         {
             "type": "volume_slider",
             "range": [0, 100]
-        },
-        {
-            "type": "files",
-            "folder_path": "%AppData%\\Microsoft\\Windows\\Recent\\",
-            "layout": "vertical",
-            "max_count": 4
         }
     ]
 }

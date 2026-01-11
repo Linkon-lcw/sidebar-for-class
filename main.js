@@ -133,7 +133,7 @@ ipcMain.handle('get-file-icon', async (event, filePath) => {
       try {
         const output = require('child_process').execSync(`where ${filePath}`, { encoding: 'utf8' });
         resolvedPath = output.split('\r\n')[0];
-      } catch (e) { /* fallback to path check... */ }
+      } catch (e) { /* 回退到路径检查... */ }
     }
     const icon = await app.getFileIcon(resolvedPath, { size: 'large' });
     return icon.toDataURL();
@@ -159,26 +159,26 @@ ipcMain.handle('get-files-in-folder', async (event, folderPath, maxCount) => {
       return [];
     }
 
-    // Read directory
+    // 读取目录
     const files = fs.readdirSync(resolvedPath);
 
-    // Sort by modification time (descending) to show recent items first if requested
-    // "Recent" folder is usually special, but `fs.readdir` just gives names. 
-    // We should get stats to sort.
+    // 按修改时间倒序排列，以便优先显示最近的项目
+    // "Recent" 文件夹通常比较特殊，但 fs.readdir 仅提供文件名
+    // 我们需要获取文件状态来进行排序
     const fileStats = files.map(file => {
       const fullPath = path.join(resolvedPath, file);
       try {
         const stats = fs.statSync(fullPath);
         return { name: file, path: fullPath, mtime: stats.mtime, isDirectory: stats.isDirectory() };
       } catch (e) {
-        return null; // Skip files we can't stat
+        return null; // 跳过我们无法获取状态的文件
       }
-    }).filter(f => f !== null && !f.isDirectory && !f.name.startsWith('desktop.ini')); // Filter out desktop.ini and directories if we only want files
+    }).filter(f => f !== null && !f.isDirectory && !f.name.startsWith('desktop.ini')); // 过滤掉 desktop.ini 和目录（如果我们只需要文件）
 
-    // Sort by time desc
+    // 按时间倒序排列
     fileStats.sort((a, b) => b.mtime - a.mtime);
 
-    // Slice to maxCount
+    // 截取到最大数量
     const result = fileStats.slice(0, maxCount || 100);
 
     return result;

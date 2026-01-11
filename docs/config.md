@@ -39,3 +39,14 @@
     "range": [0, 100]      // 音量范围 (通常为 0-100)
 }
 ```
+
+#### 3. 文件列表 (Files)
+
+```json
+{
+    "type": "files",
+    "folder_path": "C:\\Users\\YourUsername\\Documents",  // 文件夹路径
+    "layout": "vertical",                                  // 布局模式: "vertical" | "grid"
+    "max_count": 5                                         // 最大显示文件数量
+}
+```
