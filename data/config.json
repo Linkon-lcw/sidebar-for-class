@@ -3,7 +3,7 @@
         "display": 0,
         "height": 64,
         "posy": 350,
-        "animation_speed": 1
+        "animation_speed": 0.1
     },
     "widgets": [
         {

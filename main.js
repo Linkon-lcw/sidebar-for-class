@@ -58,16 +58,34 @@ function createWindow() {
   });
 
   mainWindow.setVisibleOnAllWorkspaces(true);
+
+  // 这里的 flag 控制是否强制置顶。
+  // 当拖拽文件时，我们暂时取消置顶，以便让操作系统的拖拽缩略图能显示在窗口之上
+  let shouldAlwaysOnTop = true;
+
   const topInterval = setInterval(() => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
-      mainWindow.moveTop();
+      if (shouldAlwaysOnTop) {
+        mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+        mainWindow.moveTop();
+      }
     } else clearInterval(topInterval);
   }, 200);
 
   mainWindow.loadFile('index.html');
   mainWindow.on('ready-to-show', () => mainWindow.show());
-  mainWindow.on('blur', () => mainWindow.setAlwaysOnTop(true, 'screen-saver'));
+  mainWindow.on('blur', () => {
+    if (shouldAlwaysOnTop) {
+      mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+  });
+
+  ipcMain.on('set-always-on-top', (event, flag) => {
+    shouldAlwaysOnTop = flag;
+    if (mainWindow) {
+      mainWindow.setAlwaysOnTop(flag, 'screen-saver');
+    }
+  });
 }
 
 ipcMain.on('resize-window', (event, width, height, y) => {

@@ -396,6 +396,8 @@ window.addEventListener('dragenter', (e) => {
     if (isDragging || document.body.classList.contains('expanded')) return;
     // 检查是否有拖拽数据
     if (e.dataTransfer && e.dataTransfer.types.length > 0) {
+        // 暂时取消置顶，防止遮挡系统拖拽缩略图
+        window.electronAPI.setAlwaysOnTop(false);
         expand();
     }
 });
@@ -421,6 +423,8 @@ window.addEventListener('dragleave', (e) => {
         // 注意：这里我们假设如果是外部拖拽离开，就应该收起
         if (document.body.classList.contains('expanded') && !isDragging) {
             collapse();
+            // 恢复置顶
+            window.electronAPI.setAlwaysOnTop(true);
         }
     }, 150); // 150ms 延迟足够处理子元素切换
 });
@@ -432,6 +436,8 @@ window.addEventListener('drop', (e) => {
     // 这里未来可以处理文件放置逻辑
     // 目前先统一收起，恢复初始状态
     collapse();
+    // 恢复置顶
+    window.electronAPI.setAlwaysOnTop(true);
 });
 
 loadConfig();

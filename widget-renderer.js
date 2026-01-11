@@ -179,42 +179,64 @@ async function createDragToLaunchWidget(widget) {
 
     if (!showAllTime) {
         div.style.display = 'none';
-        let dragCounter = 0;
 
-        document.addEventListener('dragenter', (e) => {
-            // 只对文件拖拽做出反应
-            if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
-                dragCounter++;
-                if (dragCounter === 1) {
-                    div.style.display = 'flex';
+        // 使用全局管理器来处理自动显隐
+        if (!window._dragToLaunchManager) {
+            window._dragToLaunchManager = {
+                elements: [],
+                dragCounter: 0,
+
+                show() {
+                    this.elements.forEach(el => {
+                        if (el && el.style) el.style.display = 'flex';
+                    });
+                },
+
+                hide() {
+                    this.elements.forEach(el => {
+                        if (el && el.style) el.style.display = 'none';
+                    });
                 }
-            }
-        });
+            };
 
-        document.addEventListener('dragleave', (e) => {
-            dragCounter--;
-            if (dragCounter <= 0) {
-                dragCounter = 0;
-                div.style.display = 'none';
-            }
-        });
+            // 全局事件监听器（只添加一次）
+            document.addEventListener('dragenter', (e) => {
+                if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                    window._dragToLaunchManager.dragCounter++;
+                    if (window._dragToLaunchManager.dragCounter === 1) {
+                        window._dragToLaunchManager.show();
+                    }
+                }
+            });
 
-        document.addEventListener('drop', (e) => {
-            dragCounter = 0;
-            div.style.display = 'none';
-        });
+            document.addEventListener('dragleave', (e) => {
+                window._dragToLaunchManager.dragCounter--;
+                if (window._dragToLaunchManager.dragCounter <= 0) {
+                    window._dragToLaunchManager.dragCounter = 0;
+                    window._dragToLaunchManager.hide();
+                }
+            });
+
+            document.addEventListener('drop', (e) => {
+                window._dragToLaunchManager.dragCounter = 0;
+                window._dragToLaunchManager.hide();
+            });
+        }
+
+        // 将当前元素添加到管理器
+        window._dragToLaunchManager.elements.push(div);
     }
 
     // 拖拽事件处理
     div.ondragover = (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        // 不阻止冒泡，让全局管理器能正确跟踪拖拽状态
         div.classList.add('drag-over');
     };
 
     div.ondragleave = (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        // 不阻止冒泡，让全局管理器能正确跟踪拖拽状态
         div.classList.remove('drag-over');
     };
 
@@ -224,10 +246,7 @@ async function createDragToLaunchWidget(widget) {
         // e.stopPropagation();
         div.classList.remove('drag-over');
 
-        if (!showAllTime) {
-            dragCounter = 0; // 确保计数器重置
-            div.style.display = 'none';
-        }
+        // 注意：显隐逻辑现在由全局管理器处理，这里不需要手动操作
 
         if (e.dataTransfer.files.length > 0) {
             for (const file of e.dataTransfer.files) {

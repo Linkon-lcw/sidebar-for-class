@@ -50,3 +50,14 @@
     "max_count": 5                                         // 最大显示文件数量
 }
 ```
+
+#### 4. 拖放拉起 (Drag To Launch)
+
+```json
+{
+    "type": "drag_to_launch",
+    "name": "LocalSend",                                  // 显示名称
+    "targets": "C:\\Program Files\\LocalSend\\localsend_app.exe {{source}}",  // 可执行文件路径或 URI
+    "show_all_time": false                                // 是否始终显示
+}
+```
