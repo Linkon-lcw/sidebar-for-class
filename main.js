@@ -236,6 +236,7 @@ function createSettingsWindow() {
     resizable: true,
     minimizable: true,
     maximizable: true,
+    autoHideMenuBar: true, // 自动隐藏菜单栏
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
