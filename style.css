@@ -2,6 +2,7 @@
 :root {
     --sidebar-duration: 0.5s;
     --content-duration: 0.3s;
+    --sidebar-scale: 1;
 }
 
 body,
@@ -62,6 +63,8 @@ html {
     position: relative;
     display: flex;
     flex-direction: column;
+    transform-origin: center left;
+    transform: scale(var(--sidebar-scale));
 }
 
 /* 使用伪元素处理渐变色，方便通过 opacity 做平滑动画 */

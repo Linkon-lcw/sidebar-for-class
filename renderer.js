@@ -62,8 +62,13 @@ window.addEventListener('mousemove', (e) => {
 window.addEventListener('mouseleave', () => setIgnoreMouse(true));
 
 // 侧边栏尺寸和目标尺寸常量
-let START_W = 4, START_H = 64;
-const TARGET_W = 400, TARGET_H = 450;
+const BASE_START_W = 4;
+const BASE_START_H = 64;
+const TARGET_W = 400;
+const TARGET_H = 450;
+let START_W = BASE_START_W;
+let START_H = BASE_START_H;
+let SCALE = 1;
 
 /**
  * 停止当前进行的动画
@@ -84,10 +89,18 @@ async function loadConfig() {
         currentConfig = config;
         // 应用配置中的变换参数
         if (config.transforms) {
+            if (typeof config.transforms.size === 'number' && config.transforms.size > 0) {
+                SCALE = config.transforms.size / 100;
+            } else {
+                SCALE = 1;
+            }
+            document.documentElement.style.setProperty('--sidebar-scale', String(SCALE));
             if (typeof config.transforms.height === 'number') {
                 START_H = config.transforms.height;
-                updateSidebarStyles(0); // 初始化样式
+            } else {
+                START_H = BASE_START_H;
             }
+            updateSidebarStyles(0); // 初始化样式
             if (typeof config.transforms.animation_speed === 'number') {
                 const speed = config.transforms.animation_speed;
                 // 根据速度配置调整 CSS 变量
@@ -109,13 +122,13 @@ async function loadConfig() {
 function updateSidebarStyles(progress) {
     progress = Math.max(0, Math.min(1, progress));
     // 计算当前的宽度、高度、圆角和边距
-    const currentWidth = START_W + (TARGET_W - START_W) * progress;
-    const currentHeight = START_H + (TARGET_H - START_H) * progress;
+    const baseWidth = START_W + (TARGET_W - START_W) * progress;
+    const baseHeight = START_H + (TARGET_H - START_H) * progress;
     const currentRadius = 4 + (12 * progress);
     const currentMargin = 6 + (6 * progress);
 
-    sidebar.style.width = `${currentWidth}px`;
-    sidebar.style.height = `${currentHeight}px`;
+    sidebar.style.width = `${baseWidth}px`;
+    sidebar.style.height = `${baseHeight}px`;
     sidebar.style.borderRadius = `${currentRadius}px`;
     sidebar.style.marginLeft = `${currentMargin}px`;
 
@@ -126,17 +139,23 @@ function updateSidebarStyles(progress) {
         let targetWinW, targetWinH;
 
         if (progress <= 0) {
-            targetWinW = 20;
-            targetWinH = START_H + 40;
+            targetWinW = 20 * SCALE;
+            targetWinH = (START_H + 40) * SCALE;
             setIgnoreMouse(false);
         } else {
-            targetWinW = Math.floor(currentWidth + 100);
-            targetWinH = Math.floor(currentHeight + 100);
+            const rect = sidebar.getBoundingClientRect();
+            // 使用 getBoundingClientRect 获取视觉尺寸，并增加按比例缩放的边距以确保高缩放不被截断
+            targetWinW = Math.floor(rect.width + 100 * SCALE);
+            targetWinH = Math.ceil(rect.height + 40 * SCALE);
         }
 
         // 计算窗口应该在的位置，保持侧边栏相对屏幕位置合理
         const startCenterY = screenY + posy;
-        const safeCenterY = Math.max(screenY + TARGET_H / 2 + 20, Math.min(screenY + screenH - TARGET_H / 2 - 20, startCenterY));
+        const expandedWinH = (TARGET_H + 120) * SCALE;
+        const safeCenterY = Math.max(
+            screenY + expandedWinH / 2 + 20,
+            Math.min(screenY + screenH - expandedWinH / 2 - 20, startCenterY)
+        );
         const currentCenterY = startCenterY + (safeCenterY - startCenterY) * progress;
         const newWindowY = currentCenterY - (targetWinH / 2);
 
@@ -185,8 +204,8 @@ const handleStart = (currentX) => {
 
     if (animationId) {
         // 如果正在动画中，计算当前的进度并接管拖拽
-        const currentW = parseFloat(sidebar.style.width) || START_W;
-        const currentProgress = Math.max(0, Math.min(1, (currentW - START_W) / (TARGET_W - START_W)));
+        const baseW = parseFloat(sidebar.style.width) || START_W;
+        const currentProgress = Math.max(0, Math.min(1, (baseW - START_W) / (TARGET_W - START_W)));
         startX = currentX - (currentProgress * 250);
         stopAnimation();
     } else {
@@ -260,9 +279,9 @@ const handleEnd = (currentX) => {
  * 展开侧边栏
  */
 function expand() {
-    const currentW = parseFloat(sidebar.style.width) || START_W;
+    const baseW = parseFloat(sidebar.style.width) || START_W;
     // 如果已经完全展开且未拖拽，直接返回
-    if (document.body.classList.contains('expanded') && !isDragging && !animationId && Math.abs(currentW - TARGET_W) < 1) return;
+    if (document.body.classList.contains('expanded') && !isDragging && !animationId && Math.abs(baseW - TARGET_W) < 1) return;
     stopAnimation();
     document.body.classList.add('expanded');
     wrapper.style.width = '100%';
@@ -270,7 +289,7 @@ function expand() {
     const speed = currentConfig?.transforms?.animation_speed || 1;
     const duration = 300 / speed, startTime = performance.now();
     const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4); // 缓动函数
-    const startProgress = Math.max(0, Math.min(1, (currentW - START_W) / (TARGET_W - START_W)));
+    const startProgress = Math.max(0, Math.min(1, (baseW - START_W) / (TARGET_W - START_W)));
 
     // 动画帧函数
     function animate(currentTime) {
@@ -304,8 +323,8 @@ function collapse() {
     const speed = currentConfig?.transforms?.animation_speed || 1;
     const duration = 300 / speed, startTime = performance.now();
     const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4);
-    const currentW = parseFloat(sidebar.style.width) || START_W;
-    const startProgress = Math.max(0, Math.min(1, (currentW - START_W) / (TARGET_W - START_W)));
+    const baseW = parseFloat(sidebar.style.width) || START_W;
+    const startProgress = Math.max(0, Math.min(1, (baseW - START_W) / (TARGET_W - START_W)));
 
     function animate(currentTime) {
         if (document.body.classList.contains('expanded')) { animationId = null; return; }
@@ -322,7 +341,7 @@ function collapse() {
  */
 function finishCollapse() {
     if (!document.body.classList.contains('expanded')) {
-        window.electronAPI.resizeWindow(20, START_H + 40);
+        window.electronAPI.resizeWindow(20 * SCALE, (START_H + 40) * SCALE);
         setIgnoreMouse(false);
         wrapper.style.width = '';
         sidebar.style.transition = '';
