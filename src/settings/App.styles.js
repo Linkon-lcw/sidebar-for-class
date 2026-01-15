@@ -39,7 +39,7 @@ export const useStyles = makeStyles({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
+        cursor: 'default',
         ...shorthands.borderRadius('4px'),
         fontSize: '18px',
         ':hover': {
@@ -48,6 +48,31 @@ export const useStyles = makeStyles({
     },
     tabList: {
         rowGap: '2px',
+        position: 'relative',
+        cursor: 'default',
+        '& .fui-TabList__indicator': {
+            display: 'none !important',
+        },
+        '& .fui-Tab__indicator': {
+            display: 'none !important',
+        },
+        '& .fui-TabList__indicatorSelected': {
+            display: 'none !important',
+        },
+    },
+    activeIndicator: {
+        position: 'absolute',
+        left: '8px',
+        width: '3px',
+        height: '20px',
+        backgroundColor: 'var(--colorBrandStroke1)',
+        ...shorthands.borderRadius('2px'),
+        zIndex: 10,
+        transitionProperty: 'transform, opacity',
+        transitionDuration: '300ms',
+        transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
+        pointerEvents: 'none',
+        top: '12px', // Initial top (2px margin + 10px inner offset)
     },
     tab: {
         height: '40px',
@@ -59,33 +84,38 @@ export const useStyles = makeStyles({
         alignItems: 'center',
         justifyContent: 'flex-start',
         position: 'relative',
-        cursor: 'pointer',
+        cursor: 'default',
         backgroundColor: 'transparent',
-        transitionProperty: 'background-color, color',
-        transitionDuration: '200ms',
+        transitionProperty: 'background-color, color, transform',
+        transitionDuration: '150ms',
         boxSizing: 'border-box',
         '&:hover': {
             backgroundColor: 'var(--colorNeutralBackground1Hover)',
         },
+        '&:active': {
+            backgroundColor: 'var(--colorNeutralBackground1Selected)', // Or a lighter shade
+            transform: 'scale(0.98)', // Add a subtle press effect
+        },
         '&::after': {
+            display: 'none !important',
+        },
+        '&::before': {
+            display: 'none !important',
+        },
+        '& .fui-Tab__indicator': {
             display: 'none !important',
         },
     },
     tabSelected: {
-        backgroundColor: 'var(--colorNeutralBackground3) !important',
+        backgroundColor: 'var(--colorNeutralBackground1Selected) !important',
         color: 'var(--colorNeutralForeground1Selected) !important',
         fontWeight: '600',
-        '&::before': {
-            content: '""',
-            position: 'absolute',
-            left: '0',
-            top: '10px',
-            bottom: '10px',
-            width: '3px',
-            backgroundColor: 'var(--colorBrandStroke1)',
-            ...shorthands.borderRadius('2px'),
-            zIndex: 10,
-            display: 'block',
+        '&:hover': {
+            backgroundColor: 'var(--colorNeutralBackground1Hover) !important',
+        },
+        '&:active': {
+            backgroundColor: 'var(--colorNeutralBackground1Selected) !important',
+            opacity: 0.8,
         }
     },
     tabIcon: {
@@ -106,39 +136,53 @@ export const useStyles = makeStyles({
     },
     main: {
         flexGrow: 1,
-        ...shorthands.padding('48px', '60px'),
+        ...shorthands.padding('32px', '24px'),
         overflowY: 'auto',
     },
     section: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '8px',
         maxWidth: '1000px',
     },
     card: {
-        ...shorthands.padding('24px'),
+        ...shorthands.padding('16px', '24px'),
         backgroundColor: 'var(--colorNeutralBackground1)',
         ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke2)'),
-        boxShadow: 'var(--shadow2)',
-        ...shorthands.borderRadius('8px'),
+        // boxShadow: 'var(--shadow2)',
+        ...shorthands.borderRadius('4px'),
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        ':hover': {
+            backgroundColor: 'var(--colorNeutralBackground1Hover)',
+        }
+    },
+    groupTitle: {
+        fontSize: '14px',
+        fontWeight: '600',
+        marginTop: '24px',
+        marginBottom: '8px',
+        color: 'var(--colorNeutralForeground1)',
     },
     sectionHeader: {
-        marginBottom: '32px',
+        marginBottom: '20px',
     },
     title: {
-        fontSize: '32px',
+        fontSize: '28px',
         fontWeight: '600',
-        marginBottom: '4px',
+        marginBottom: '8px',
+        lineHeight: '1.2',
     },
     description: {
         color: 'var(--colorNeutralForeground2)',
         fontSize: '14px',
+        lineHeight: '1.5',
     },
     formGroup: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        marginBottom: '24px',
+        gap: '4px',
     },
     label: {
         fontSize: '14px',

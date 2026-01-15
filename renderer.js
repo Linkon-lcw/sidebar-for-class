@@ -110,6 +110,7 @@ async function loadConfig() {
         }
         // 渲染小部件
         renderWidgets(config.widgets);
+        lastWidgetsJson = JSON.stringify(config.widgets);
     } catch (err) {
         console.error('加载配置失败:', err);
     }
@@ -468,26 +469,51 @@ if (settingsBtn) {
     });
 }
 
+// 记录上次更新的 widgets 字符串，用于对比
+let lastWidgetsJson = null;
+
 loadConfig();
 window.electronAPI.onConfigUpdated((newConfig) => {
-    currentConfig = newConfig;
-    // 重新应用 transforms
+    // 1. 优先应用 transforms
     if (newConfig.transforms) {
-        if (typeof newConfig.transforms.size === 'number' && newConfig.transforms.size > 0) {
-            SCALE = newConfig.transforms.size / 100;
+        const t = newConfig.transforms;
+
+        // 只有在值变化时才更新变量，减少重排
+        if (typeof t.size === 'number' && t.size > 0) {
+            const newScale = t.size / 100;
+            if (newScale !== SCALE) {
+                SCALE = newScale;
+                document.documentElement.style.setProperty('--sidebar-scale', String(SCALE));
+            }
         }
-        document.documentElement.style.setProperty('--sidebar-scale', String(SCALE));
-        if (typeof newConfig.transforms.height === 'number') {
-            START_H = newConfig.transforms.height;
+
+        if (typeof t.height === 'number' && t.height !== START_H) {
+            START_H = t.height;
         }
-        if (typeof newConfig.transforms.animation_speed === 'number') {
-            const speed = newConfig.transforms.animation_speed;
-            document.documentElement.style.setProperty('--sidebar-duration', `${0.5 / speed}s`);
-            document.documentElement.style.setProperty('--content-duration', `${0.3 / speed}s`);
+
+        if (typeof t.animation_speed === 'number') {
+            const speed = t.animation_speed;
+            const newDuration = `${0.5 / speed}s`;
+            const contentDuration = `${0.3 / speed}s`;
+            // 检查自定义属性是否一致，避免不必要的样式重算
+            if (document.documentElement.style.getPropertyValue('--sidebar-duration') !== newDuration) {
+                document.documentElement.style.setProperty('--sidebar-duration', newDuration);
+                document.documentElement.style.setProperty('--content-duration', contentDuration);
+            }
         }
     }
+
+    // 2. 更新当前位置和状态（不重新渲染整个侧边栏，除非必要）
+    currentConfig = newConfig;
     updateSidebarStyles(document.body.classList.contains('expanded') ? 1 : 0);
-    // 同时也重新渲染小部件以防万一
-    renderWidgets(newConfig.widgets);
+
+    // 3. 核心优化：只有 Widgets 配置真正改变时才重新渲染
+    const currentWidgetsJson = JSON.stringify(newConfig.widgets);
+    if (currentWidgetsJson !== lastWidgetsJson) {
+        lastWidgetsJson = currentWidgetsJson;
+        // 使用渲染队列或 requestIdleCallback（如果支持）可能是过度设计，
+        // 这里直接调用 renderWidgets 已经能解决 99% 的卡顿问题
+        renderWidgets(newConfig.widgets);
+    }
 });
 

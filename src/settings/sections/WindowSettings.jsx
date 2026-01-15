@@ -1,43 +1,58 @@
 import React from 'react';
 import {
     Card,
-    CardHeader,
-    Subtitle1,
     Label,
     Input,
     Slider,
-    Button,
     useId,
+    Dropdown,
+    Option,
 } from "@fluentui/react-components";
-import {
-    Save24Regular,
-    Checkmark24Regular,
-} from "@fluentui/react-icons";
+import { useState, useEffect } from 'react';
 
-const WindowSettings = ({ config, handleTransformChange, saveSettings, saveStatus, styles }) => {
+const WindowSettings = ({ config, handleTransformChange, styles }) => {
     const sliderId = useId("slider");
+    const dropdownId = useId("display-dropdown");
+    const [displays, setDisplays] = useState([]);
+
+    useEffect(() => {
+        const fetchDisplays = async () => {
+            const displayList = await window.electronAPI.getDisplays();
+            setDisplays(displayList);
+        };
+        fetchDisplays();
+    }, []);
 
     return (
         <div className={styles.section}>
             <div className={styles.sectionHeader}>
                 <div className={styles.title}>窗口设置</div>
-                <div className={styles.description}>调整侧边栏窗口的位置、大小和动画效果。</div>
             </div>
 
             <Card className={styles.card}>
-                <CardHeader header={<Subtitle1>布局与位置</Subtitle1>} />
-                <div className={styles.formGroup} style={{ marginTop: '20px' }}>
-                    <Label className={styles.label}>显示器索引 (Display Index)</Label>
-                    <Input
-                        type="number"
-                        value={config.transforms.display}
-                        onChange={(_, data) => handleTransformChange('display', parseInt(data.value))}
-                    />
-                    <div className={styles.helpText}>多显示器环境下，指定侧边栏所在的屏幕（0 为主屏幕）</div>
-                </div>
-
                 <div className={styles.formGroup}>
-                    <Label className={styles.label} htmlFor={sliderId}>垂直位置 (Y Position)</Label>
+                    <Label className={styles.label} htmlFor={dropdownId}>显示器</Label>
+                    <Dropdown
+                        id={dropdownId}
+                        value={displays[config.transforms.display] ?
+                            (displays[config.transforms.display].label || `显示器 ${config.transforms.display} (${displays[config.transforms.display].bounds.width}x${displays[config.transforms.display].bounds.height})`) :
+                            `显示器 ${config.transforms.display}`}
+                        selectedOptions={[config.transforms.display.toString()]}
+                        onOptionSelect={(_, data) => handleTransformChange('display', parseInt(data.selectedOptions[0]))}
+                    >
+                        {displays.map((display, index) => (
+                            <Option key={index} value={index.toString()}>
+                                {display.label || `显示器 ${index} (${display.bounds.width}x${display.bounds.height})`}
+                            </Option>
+                        ))}
+                    </Dropdown>
+                    <div className={styles.helpText}>选择侧边栏所在的屏幕</div>
+                </div>
+            </Card>
+
+            <Card className={styles.card}>
+                <div className={styles.formGroup}>
+                    <Label className={styles.label} htmlFor={sliderId}>垂直位置</Label>
                     <div className={styles.rangeContainer}>
                         <Slider
                             id={sliderId}
@@ -46,65 +61,28 @@ const WindowSettings = ({ config, handleTransformChange, saveSettings, saveStatu
                             value={config.transforms.posy}
                             onChange={(_, data) => handleTransformChange('posy', data.value)}
                         />
-                        <span className={styles.rangeValue}>{config.transforms.posy}</span>
+                        <span className={styles.rangeValue}>{config.transforms.posy}px</span>
                     </div>
                     <div className={styles.helpText}>侧边栏中心的垂直坐标</div>
-                </div>
-
-                <div className={styles.formGroup}>
-                    <Label className={styles.label}>初始高度 (Initial Height)</Label>
-                    <Input
-                        type="number"
-                        value={config.transforms.height}
-                        onChange={(_, data) => handleTransformChange('height', parseInt(data.value))}
-                    />
-                    <div className={styles.helpText}>收起状态下的触发区域高度</div>
                 </div>
             </Card>
 
             <Card className={styles.card}>
-                <CardHeader header={<Subtitle1>动画与样式</Subtitle1>} />
-                <div className={styles.formGroup} style={{ marginTop: '20px' }}>
-                    <Label className={styles.label}>动画速度 (Animation Speed)</Label>
-                    <div className={styles.rangeContainer}>
-                        <Slider
-                            min={0.1}
-                            max={3}
-                            step={0.1}
-                            value={config.transforms.animation_speed}
-                            onChange={(_, data) => handleTransformChange('animation_speed', data.value)}
-                        />
-                        <span className={styles.rangeValue}>{config.transforms.animation_speed.toFixed(1)}</span>
-                    </div>
-                    <div className={styles.helpText}>设置侧边栏展开和收起的动画播放速度</div>
-                </div>
-
                 <div className={styles.formGroup}>
-                    <Label className={styles.label}>整体缩放 (Size %)</Label>
-                    <div className={styles.rangeContainer}>
-                        <Slider
-                            min={50}
-                            max={200}
-                            value={config.transforms.size}
-                            onChange={(_, data) => handleTransformChange('size', data.value)}
-                        />
-                        <span className={styles.rangeValue}>{config.transforms.size}%</span>
-                    </div>
-                    <div className={styles.helpText}>侧边栏窗口的全局缩放比例</div>
+                    <Label className={styles.label}>初始高度</Label>
+                    <Input
+                        type="number"
+                        contentAfter="px"
+                        value={config.transforms.height}
+                        onChange={(_, data) => handleTransformChange('height', parseInt(data.value))}
+                    />
+                    <div className={styles.helpText}>收起状态下的侧边栏的高度</div>
                 </div>
             </Card>
 
-            <div className={styles.footer}>
-                <Button
-                    appearance="accent"
-                    size="large"
-                    icon={saveStatus === 'success' ? <Checkmark24Regular /> : <Save24Regular />}
-                    onClick={saveSettings}
-                    disabled={saveStatus === 'saving'}
-                >
-                    {saveStatus === 'success' ? '已保存' : '保存修改'}
-                </Button>
-            </div>
+
+
+
         </div>
     );
 };

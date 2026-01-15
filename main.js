@@ -128,6 +128,10 @@ ipcMain.handle('get-config', async () => {
   return { ...config, displayBounds: targetDisplay.bounds };
 });
 
+ipcMain.handle('get-displays', () => {
+  return screen.getAllDisplays();
+});
+
 ipcMain.on('update-config', (event, newConfig) => {
   const configPath = path.join(__dirname, 'data', 'config.json');
   try {
@@ -145,6 +149,20 @@ ipcMain.on('update-config', (event, newConfig) => {
     }
   } catch (e) {
     console.error('保存配置文件失败:', e);
+  }
+});
+
+ipcMain.on('preview-config', (event, newConfig) => {
+  config = newConfig;
+
+  // 获取新的显示器边界信息
+  const displays = screen.getAllDisplays();
+  const targetDisplay = (config.transforms?.display < displays.length) ? displays[config.transforms.display] : screen.getPrimaryDisplay();
+  const configWithBounds = { ...config, displayBounds: targetDisplay.bounds };
+
+  // 通知渲染进程配置已更新（用于实时预览）
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('config-updated', configWithBounds);
   }
 });
 
