@@ -43,6 +43,10 @@ function getExePathFromProtocol(protocol) {
  */
 async function getSystemVolume() {
     try {
+        // 如果系统处于静音状态，视作音量为 0
+        const isMuted = await loudness.getMuted();
+        if (isMuted) return 0;
+
         const volume = await loudness.getVolume();
         return volume;
     } catch (error) {
@@ -67,7 +71,16 @@ async function setSystemVolume(value) {
 
     isSettingVolume = true;
     try {
+        // 显式调整音量
         await loudness.setVolume(value);
+
+        // 解决音量设置为 0 无法静音的问题
+        // 当音量为 0 时，强制开启静音；当音量大于 0 时，强制关闭静音
+        if (value === 0) {
+            await loudness.setMuted(true);
+        } else {
+            await loudness.setMuted(false);
+        }
     } catch (error) {
         console.error('Failed to set system volume:', error);
     } finally {
@@ -75,6 +88,7 @@ async function setSystemVolume(value) {
         if (pendingVolume !== null) {
             const next = pendingVolume;
             pendingVolume = null;
+            // 处理在设置期间产生的最新音量请求
             setSystemVolume(next);
         }
     }

@@ -11,7 +11,7 @@ let isSwipeActive = false; // 是否激活了拖拽跟手（用于展开状态�
 let startX = 0; // 拖拽开始时的 X 坐标
 let lastLogTime = 0; // 上次记录日志的时间（未使用）
 const THRESHOLD = 60; // 触发展开的拖拽距离阈值
-const VELOCITY_THRESHOLD = 0.3; // 触发展开的速度阈值
+const VELOCITY_THRESHOLD = 0.5; // 触发展开的速度阈值
 
 // 动画和状态跟踪变量
 let lastX = 0; // 上一次鼠标移动的 X 坐标
@@ -239,8 +239,8 @@ const handleMove = (currentX) => {
 
     // 如果尚未激活跟手（展开状态等待快滑）
     if (!isSwipeActive) {
-        // 只有向左快速滑动才激活 (速度阈值设为 0.5)
-        if (currentVelocity < -0.5) {
+        // 只有向左快速滑动才激活 (速度阈值设为 0.8)
+        if (currentVelocity < -0.8) {
             isSwipeActive = true;
             activateDragVisuals();
         } else {
@@ -469,4 +469,25 @@ if (settingsBtn) {
 }
 
 loadConfig();
+window.electronAPI.onConfigUpdated((newConfig) => {
+    currentConfig = newConfig;
+    // 重新应用 transforms
+    if (newConfig.transforms) {
+        if (typeof newConfig.transforms.size === 'number' && newConfig.transforms.size > 0) {
+            SCALE = newConfig.transforms.size / 100;
+        }
+        document.documentElement.style.setProperty('--sidebar-scale', String(SCALE));
+        if (typeof newConfig.transforms.height === 'number') {
+            START_H = newConfig.transforms.height;
+        }
+        if (typeof newConfig.transforms.animation_speed === 'number') {
+            const speed = newConfig.transforms.animation_speed;
+            document.documentElement.style.setProperty('--sidebar-duration', `${0.5 / speed}s`);
+            document.documentElement.style.setProperty('--content-duration', `${0.3 / speed}s`);
+        }
+    }
+    updateSidebarStyles(document.body.classList.contains('expanded') ? 1 : 0);
+    // 同时也重新渲染小部件以防万一
+    renderWidgets(newConfig.widgets);
+});
 

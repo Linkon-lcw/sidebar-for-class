@@ -35,3 +35,23 @@
 ## 许可证
 
 GPL-3.0
+
+## 目录结构
+
+```
+sidebar-for-class/
+├── src/
+│   ├── settings/           # 设置页面 (React)
+│   │   ├── components/     # 导航栏等通用组件
+│   │   ├── sections/       # 各配置版块
+│   │   ├── App.jsx         # 精简后的入口
+│   │   └── App.styles.js   # 样式分离
+│   ├── widgets/            # 侧边栏小组件 (Vanilla JS)
+│   │   ├── launcher.js     
+│   │   ├── volume.js
+│   │   └── index.js        # 组件工厂
+│   └── renderer/           # 侧边栏核心交互
+│       ├── animation.js    # 动画控制
+│       └── sidebar-ui.js   # 界面更新
+└── ...
+```

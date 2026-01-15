@@ -4,6 +4,8 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const { getExePathFromProtocol, getSystemVolume, setSystemVolume } = require('./main-utils');
 
+const isDev = !app.isPackaged;
+
 let mainWindow;
 let settingsWindow = null; // 设置窗口
 
@@ -74,7 +76,11 @@ function createWindow() {
     } else clearInterval(topInterval);
   }, 200);
 
-  mainWindow.loadFile('index.html');
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:3000/index.html');
+  } else {
+    mainWindow.loadFile('index.html');
+  }
   mainWindow.on('ready-to-show', () => mainWindow.show());
   mainWindow.on('blur', () => {
     if (shouldAlwaysOnTop) {
@@ -120,6 +126,26 @@ ipcMain.handle('get-config', async () => {
   const displays = screen.getAllDisplays();
   const targetDisplay = (config.transforms?.display < displays.length) ? displays[config.transforms.display] : screen.getPrimaryDisplay();
   return { ...config, displayBounds: targetDisplay.bounds };
+});
+
+ipcMain.on('update-config', (event, newConfig) => {
+  const configPath = path.join(__dirname, 'data', 'config.json');
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 4), 'utf8');
+    config = newConfig;
+
+    // 获取新的显示器边界信息
+    const displays = screen.getAllDisplays();
+    const targetDisplay = (config.transforms?.display < displays.length) ? displays[config.transforms.display] : screen.getPrimaryDisplay();
+    const configWithBounds = { ...config, displayBounds: targetDisplay.bounds };
+
+    // 通知渲染进程配置已更新
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('config-updated', configWithBounds);
+    }
+  } catch (e) {
+    console.error('保存配置文件失败:', e);
+  }
 });
 
 ipcMain.on('launch-app', async (event, target, args) => {
@@ -245,7 +271,11 @@ function createSettingsWindow() {
   });
 
   // 加载设置页面（暂时先加载一个简单的HTML）
-  settingsWindow.loadFile('settings.html');
+  if (isDev) {
+    settingsWindow.loadURL('http://localhost:3000/settings.html');
+  } else {
+    settingsWindow.loadFile('settings.html');
+  }
 
   // 窗口关闭时清理引用
   settingsWindow.on('closed', () => {

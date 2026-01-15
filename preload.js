@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // 获取配置信息
     getConfig: () => ipcRenderer.invoke('get-config'),
+    updateConfig: (config) => ipcRenderer.send('update-config', config),
+    onConfigUpdated: (callback) => ipcRenderer.on('config-updated', (event, config) => callback(config)),
 
     // 启动外部应用
     launchApp: (target, args) => ipcRenderer.send('launch-app', target, args),
