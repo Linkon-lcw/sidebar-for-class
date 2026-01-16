@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Tab,
     TabList,
@@ -46,11 +46,25 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
     const [selectedWidgetIndex, setSelectedWidgetIndex] = useState(null);
     const [draggingIndex, setDraggingIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [isLongPressing, setIsLongPressing] = useState(false);
+    const [draggedRecently, setDraggedRecently] = useState(false);
+    const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
+
+    const longPressTimer = useRef(null);
+    const initialTouchPos = useRef({ x: 0, y: 0 });
+
+    // 组件卸载时清除计时器
+    useEffect(() => {
+        return () => {
+            if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        };
+    }, []);
 
     const selectedWidget = selectedWidgetIndex !== null ? config.widgets[selectedWidgetIndex] : null;
 
     const handleWidgetClick = (e, index) => {
         e.stopPropagation();
+        if (draggedRecently) return;
         setSelectedWidgetIndex(index);
         setActiveTab('properties');
     };
@@ -58,22 +72,77 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
     const handleDragStart = (e, index) => {
         setSelectedWidgetIndex(null);
         setDraggingIndex(index);
-        e.dataTransfer.effectAllowed = 'move';
+        if (e && e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+        }
     };
 
     const handleDragOver = (e, index) => {
-        e.preventDefault();
-        if (draggingIndex === index) return;
+        if (e) e.preventDefault();
+        if (draggingIndex === index || draggingIndex === null) return;
         setDragOverIndex(index);
     };
 
     const handleDragEnd = () => {
         setDraggingIndex(null);
         setDragOverIndex(null);
+        setIsLongPressing(false);
+    };
+
+    // 指针事件处理 (用于触屏长按拖动)
+    const handlePointerDown = (e, index) => {
+        if (e.pointerType === 'touch') {
+            initialTouchPos.current = { x: e.clientX, y: e.clientY };
+            if (longPressTimer.current) clearTimeout(longPressTimer.current);
+
+            longPressTimer.current = setTimeout(() => {
+                setIsLongPressing(true);
+                handleDragStart(null, index);
+                // 触感反馈
+                if (window.navigator.vibrate) window.navigator.vibrate(50);
+            }, 500); // 500ms 长按识别为拖动
+        }
+    };
+
+    const handlePointerMove = (e) => {
+        if (longPressTimer.current && !isLongPressing) {
+            // 如果移动超过一定距离，取消长按（识别为滚动）
+            const dist = Math.sqrt(Math.pow(e.clientX - initialTouchPos.current.x, 2) + Math.pow(e.clientY - initialTouchPos.current.y, 2));
+            if (dist > 10) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+        }
+
+        if (isLongPressing) {
+            setPointerPos({ x: e.clientX, y: e.clientY });
+            // 处于拖动模式，寻找指针下的元素更新目标位置
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const item = target?.closest('[data-widget-index]');
+            if (item) {
+                const overIndex = parseInt(item.getAttribute('data-widget-index'));
+                if (!isNaN(overIndex)) {
+                    handleDragOver(null, overIndex);
+                }
+            }
+        }
+    };
+
+    const handlePointerUp = (e) => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+
+        if (isLongPressing) {
+            handleDrop(null, dragOverIndex);
+            setDraggedRecently(true);
+            setTimeout(() => setDraggedRecently(false), 100);
+        }
     };
 
     const handleDrop = (e, targetIndex) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (draggingIndex === null || draggingIndex === targetIndex) {
             setDraggingIndex(null);
             setDragOverIndex(null);
@@ -133,14 +202,23 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
                 {/* 左侧：可视化预览 */}
                 <div
                     className={styles.previewPanel}
-                    style={{ justifyContent: 'flex-start', overflowY: 'auto' }}
+                    style={{
+                        justifyContent: 'flex-start',
+                        overflowY: 'auto',
+                        touchAction: isLongPressing ? 'none' : 'auto'
+                    }}
                     onClick={() => setSelectedWidgetIndex(null)}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
                 >
                     <div className={styles.widgetList}>
                         {config.widgets.map((widget, index) => (
                             <div
                                 key={index}
-                                draggable="true"
+                                data-widget-index={index}
+                                draggable={!isLongPressing}
+                                onPointerDown={(e) => handlePointerDown(e, index)}
                                 onDragStart={(e) => handleDragStart(e, index)}
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDragEnd={handleDragEnd}
@@ -149,9 +227,13 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
                                     styles.widgetItem,
                                     selectedWidgetIndex === index && styles.widgetItemSelected,
                                     draggingIndex === index && styles.widgetDragging,
-                                    dragOverIndex === index && styles.widgetDragOver
+                                    dragOverIndex === index && styles.widgetDragOver,
+                                    isLongPressing && draggingIndex === index && styles.widgetHidden
                                 )}
                                 onClick={(e) => handleWidgetClick(e, index)}
+                                onContextMenu={(e) => {
+                                    if (isLongPressing) e.preventDefault();
+                                }}
                             >
 
 
@@ -199,6 +281,7 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
 
                         {/* 末尾拖拽放置区域 */}
                         <div
+                            data-widget-index={config.widgets.length}
                             onDragOver={(e) => handleDragOver(e, config.widgets.length)}
                             onDrop={(e) => handleDrop(e, config.widgets.length)}
                             className={mergeClasses(
@@ -207,6 +290,51 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
                             )}
                         />
                     </div>
+
+                    {/* 触屏拖拽虚影 */}
+                    {isLongPressing && draggingIndex !== null && (
+                        <div
+                            className={styles.dragGhost}
+                            style={{
+                                left: pointerPos.x,
+                                top: pointerPos.y,
+                                width: '200px', // 后续可根据实际宽度动态调整或固定
+                                opacity: 0.8,
+                                pointerEvents: 'none',
+                                position: 'fixed',
+                                transform: 'translate(-50%, -50%) scale(1.05)',
+                                zIndex: 1000,
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
+                                background: 'var(--colorNeutralBackground1)',
+                                padding: '12px'
+                            }}
+                        >
+                            {/* 复制当前拖拽组件的内容 */}
+                            {(() => {
+                                const widget = config.widgets[draggingIndex];
+                                return (
+                                    <div style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                                        {widget.type === 'launcher' && (
+                                            <div className={`launcher-group layout-${widget.layout || 'vertical'}`}>
+                                                {widget.targets?.map((target, tIndex) => (
+                                                    <LauncherItem key={tIndex} {...target} />
+                                                ))}
+                                            </div>
+                                        )}
+                                        {widget.type === 'volume_slider' && <VolumeWidget {...widget} />}
+                                        {widget.type === 'files' && <FilesWidget {...widget} />}
+                                        {widget.type === 'drag_to_launch' && (
+                                            <div className="launcher-group layout-vertical">
+                                                <DragToLaunchWidget {...widget} isPreview={true} />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
 
                 {/* 右侧：属性和组件库 */}

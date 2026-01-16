@@ -223,6 +223,19 @@ p {
     justify-content: center;
     text-align: center;
     gap: 4px;
+    box-sizing: border-box;
+}
+
+.layout-grid .launcher-info {
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.layout-grid .launcher-name {
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .layout-grid_no_text .launcher-item {
@@ -278,6 +291,8 @@ p {
 /* 启动器文本信息 */
 .launcher-info {
     flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 44px); /* 减去图标宽度和间距 */
 }
 
 .layout-grid_no_text .launcher-info {
@@ -295,6 +310,8 @@ p {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    box-sizing: border-box;
+    padding-right: 4px;
 }
 
 .layout-vertical .launcher-name {
