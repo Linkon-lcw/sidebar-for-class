@@ -2,9 +2,9 @@
     "transforms": {
         "display": 0,
         "height": 64,
-        "posy": 340,
+        "posy": 353,
         "animation_speed": 1,
-        "size": 100
+        "size": 130
     },
     "widgets": [
         {

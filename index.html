@@ -5,36 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>侧边栏工具</title>
-    <!-- 引入外部样式表 -->
-    <link rel="stylesheet" href="style.css">
     <!-- 引入 Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app">
-        <!-- 侧边栏包装器：用于处理边缘交互 -->
-        <div id="sidebar-wrapper">
-            <!-- 侧边栏主体 -->
-            <div id="sidebar">
-                <!-- 内容容器 -->
-                <div id="content">
-                    <!-- 设置按钮 -->
-                    <button id="settings-btn" class="settings-button" title="设置">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <!-- 小组件容器：动态注入按钮或工具 -->
-                    <div id="widget-container" class="widget-list">
-                        <!-- 组件将通过 JS 动态注入此处 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 引入渲染进程脚本 -->
-    <script src="widget-renderer.js"></script>
-    <script src="renderer.js"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/sidebar/main.jsx"></script>
 </body>
 
 </html>

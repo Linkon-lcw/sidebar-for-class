@@ -211,5 +211,132 @@ export const useStyles = makeStyles({
         color: 'var(--colorNeutralForeground3)',
         fontSize: '12px',
         marginTop: '4px',
+    },
+    // Component Settings Specific
+    componentLayout: {
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '24px',
+        height: 'calc(100vh - 140px)',
+        minHeight: '500px',
+    },
+    previewPanel: {
+        flex: 1,
+        backgroundColor: 'var(--colorNeutralBackground2)',
+        ...shorthands.borderRadius('8px'),
+        ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        ...shorthands.overflow('hidden'),
+    },
+    previewPlaceholder: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px',
+        color: 'var(--colorNeutralForeground4)',
+    },
+    editorPanel: {
+        width: '460px',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--colorNeutralBackground1)',
+        ...shorthands.borderRadius('8px'),
+        ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
+        ...shorthands.overflow('hidden'),
+    },
+    tabContent: {
+        ...shorthands.padding('16px'),
+        flexGrow: 1,
+        ...shorthands.overflow('auto'),
+    },
+    widgetList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        width: '100%',
+        ...shorthands.padding('24px'),
+        boxSizing: 'border-box',
+    },
+    widgetItem: {
+        backgroundColor: 'var(--colorNeutralBackground1)',
+        ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
+        ...shorthands.borderRadius('6px'),
+        ...shorthands.padding('12px', '16px'),
+        boxShadow: 'var(--shadow2)',
+        cursor: 'default',
+        transitionProperty: 'background-color, border-color, box-shadow, transform',
+        transitionDuration: '150ms',
+        position: 'relative',
+        ':hover': {
+            backgroundColor: 'var(--colorNeutralBackground1Hover)',
+            ...shorthands.borderColor('var(--colorBrandStroke1)'),
+            boxShadow: 'var(--shadow4)',
+        },
+        ':active': {
+            transform: 'scale(0.995)',
+        }
+    },
+    widgetItemSelected: {
+        backgroundColor: 'var(--colorNeutralBackground1Hover)',
+        ...shorthands.borderColor('var(--colorBrandStroke1)'),
+        ...shorthands.borderWidth('2px'),
+        boxShadow: 'var(--shadow8)',
+    },
+    widgetDragging: {
+        opacity: 0.4,
+        ...shorthands.border('1px', 'dashed', 'var(--colorBrandStroke1)'),
+        boxShadow: 'none',
+    },
+    widgetDragOver: {
+        position: 'relative',
+        '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: '-8px', // 位于 12px 间距的正中间
+            left: '0',
+            right: '0',
+            height: '3px',
+            backgroundColor: 'var(--colorBrandStroke1)',
+            borderRadius: '2px',
+            boxShadow: '0 0 4px var(--colorBrandStroke1)',
+            zIndex: 10,
+        }
+    },
+    widgetDropZone: {
+        height: '24px',
+        marginTop: '-12px',
+        width: '100%',
+        position: 'relative',
+        cursor: 'default',
+    },
+    widgetType: {
+        fontWeight: '600',
+        fontSize: '14px',
+        color: 'var(--colorNeutralForeground1)',
+        display: 'block',
+        marginBottom: '2px',
+    },
+    widgetInfo: {
+        fontSize: '12px',
+        color: 'var(--colorNeutralForeground3)',
+    },
+    propertyGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        marginTop: '8px',
+    },
+    propertyRow: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    },
+    propertyLabel: {
+        fontSize: '14px',
+        fontWeight: '600',
     }
 });
