@@ -232,6 +232,26 @@ export const useStyles = makeStyles({
         position: 'relative',
         ...shorthands.overflow('hidden'),
     },
+    propertiesPanel: {
+        width: '460px',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--colorNeutralBackground2)',
+        ...shorthands.borderRadius('8px'),
+        ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
+        ...shorthands.overflow('hidden'),
+    },
+    propertiesContent: {
+        ...shorthands.padding('16px'),
+        flexGrow: 1,
+        ...shorthands.overflow('auto'),
+    },
+    propertySection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        marginTop: '16px',
+    },
     previewPlaceholder: {
         display: 'flex',
         flexDirection: 'column',

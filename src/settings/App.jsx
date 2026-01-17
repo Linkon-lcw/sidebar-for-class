@@ -3,7 +3,7 @@
  * 管理设置界面的整体布局、配置状态和标签页切换
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     FluentProvider,
     webLightTheme,
@@ -33,23 +33,110 @@ const App = () => {
     const isInitialMount = useRef(true);  // 标记是否为首次挂载
     const saveTimeoutRef = useRef(null);   // 保存操作的防抖定时器
 
+    const iconCache = useRef(new Map());
+    const pendingIconRequests = useRef(new Map());
+    const [widgetIcons, setWidgetIcons] = useState(new Map());
+
+    const loadIcon = useCallback(async (target) => {
+        if (!target) return null;
+
+        const cacheKey = target;
+        if (iconCache.current.has(cacheKey)) {
+            return iconCache.current.get(cacheKey);
+        }
+
+        if (pendingIconRequests.current.has(cacheKey)) {
+            return pendingIconRequests.current.get(cacheKey);
+        }
+
+        const promise = window.electronAPI.getFileIcon(target)
+            .then(iconDataUrl => {
+                if (iconDataUrl) {
+                    iconCache.current.set(cacheKey, iconDataUrl);
+                }
+                return iconDataUrl;
+            })
+            .catch(err => {
+                console.error('获取图标失败:', err);
+                return null;
+            })
+            .finally(() => {
+                pendingIconRequests.current.delete(cacheKey);
+            });
+
+        pendingIconRequests.current.set(cacheKey, promise);
+        return promise;
+    }, []);
+
+    const preloadWidgetIcons = useCallback(async (widgets) => {
+        widgets.forEach((widget, index) => {
+            if (widget.type === 'launcher' && widget.targets) {
+                widget.targets.forEach((target, tIndex) => {
+                    const key = `${index}-${tIndex}`;
+                    if (!widgetIcons.has(key) && target.target) {
+                        loadIcon(target.target).then(icon => {
+                            if (icon) {
+                                setWidgetIcons(prev => new Map(prev).set(key, icon));
+                            }
+                        });
+                    }
+                });
+            } else if (widget.type === 'drag_to_launch' && widget.targets) {
+                const key = `drag-${index}`;
+                if (!widgetIcons.has(key)) {
+                    let exePath = widget.targets;
+                    if (typeof exePath === 'string') {
+                        const placeholderIndex = exePath.indexOf('{{source}}');
+                        let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+                        if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+                            potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+                        }
+                        exePath = potentialPath;
+                    }
+                    if (exePath) {
+                        loadIcon(exePath).then(icon => {
+                            if (icon) {
+                                setWidgetIcons(prev => new Map(prev).set(key, icon));
+                            }
+                        });
+                    }
+                }
+            } else if (widget.type === 'files' && widget.folder_path) {
+                const key = `files-${index}`;
+                if (!widgetIcons.has(key)) {
+                    window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count)
+                        .then(fileList => {
+                            fileList.forEach((file, fIndex) => {
+                                const fileKey = `${key}-${fIndex}`;
+                                loadIcon(file.path).then(icon => {
+                                    if (icon) {
+                                        setWidgetIcons(prev => new Map(prev).set(fileKey, icon));
+                                    }
+                                });
+                            });
+                        })
+                        .catch(err => console.error('获取文件列表失败:', err));
+                }
+            }
+        });
+    }, [widgetIcons, loadIcon]);
+
     /**
      * 初始化：加载配置和监听系统主题变化
      */
     useEffect(() => {
-        // 异步获取配置
         const fetchConfig = async () => {
             const initialConfig = await window.electronAPI.getConfig();
             setConfig(initialConfig);
+            preloadWidgetIcons(initialConfig.widgets);
         };
         fetchConfig();
 
-        // 监听系统主题变化
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = (e) => setIsDarkMode(e.matches);
         mediaQuery.addEventListener('change', handleChange);
         return () => mediaQuery.removeEventListener('change', handleChange);
-    }, []);
+    }, [preloadWidgetIcons]);
 
     /**
      * 自动保存逻辑（仅负责写入磁盘）
@@ -136,7 +223,15 @@ const App = () => {
                     )}
 
                     {selectedTab === 'components' && (
-                        <ComponentSettings config={config} updateConfig={updateConfig} styles={styles} />
+                        <ComponentSettings 
+                            config={config} 
+                            updateConfig={updateConfig} 
+                            styles={styles}
+                            widgetIcons={widgetIcons}
+                            loadIcon={loadIcon}
+                            preloadWidgetIcons={preloadWidgetIcons}
+                            setWidgetIcons={setWidgetIcons}
+                        />
                     )}
 
                     {selectedTab === 'window' && (
