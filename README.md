@@ -40,18 +40,57 @@ GPL-3.0
 
 ```
 sidebar-for-class/
+├── data/
+│   └── config.json         # 配置文件
+├── docs/
+│   └── config.md           # 配置文档
 ├── src/
+│   ├── renderer/           # 侧边栏核心交互
+│   │   ├── animation.js    # 动画控制
+│   │   ├── main-renderer.js
+│   │   └── sidebar-ui.js   # 界面更新
 │   ├── settings/           # 设置页面 (React)
-│   │   ├── components/     # 导航栏等通用组件
-│   │   ├── sections/       # 各配置版块
-│   │   ├── App.jsx         # 精简后的入口
-│   │   └── App.styles.js   # 样式分离
-│   ├── widgets/            # 侧边栏小组件 (Vanilla JS)
-│   │   ├── launcher.js     
-│   │   ├── volume.js
-│   │   └── index.js        # 组件工厂
-│   └── renderer/           # 侧边栏核心交互
-│       ├── animation.js    # 动画控制
-│       └── sidebar-ui.js   # 界面更新
-└── ...
+│   │   ├── components/
+│   │   │   └── SidebarNav.jsx
+│   │   ├── sections/
+│   │   │   ├── components/
+│   │   │   │   ├── PreviewPanel.jsx
+│   │   │   │   └── PropertiesPanel.jsx
+│   │   │   ├── hooks/
+│   │   │   │   ├── useDragAndDrop.jsx
+│   │   │   │   ├── useLongPress.jsx
+│   │   │   │   ├── useWidgetIcons.jsx
+│   │   │   │   ├── useWidgetPreviews.jsx
+│   │   │   │   ├── useWidgetPropertyUpdate.jsx
+│   │   │   │   └── useWidgetSelection.jsx
+│   │   │   ├── BasicSettings.jsx
+│   │   │   ├── ComponentSettings.jsx
+│   │   │   ├── StyleSettings.jsx
+│   │   │   └── WindowSettings.jsx
+│   │   ├── App.jsx
+│   │   ├── App.styles.js
+│   │   └── main.jsx
+│   └── sidebar/           # 侧边栏组件 (React)
+│       ├── components/
+│       │   ├── DragToLaunchWidget.jsx
+│       │   ├── FilesWidget.jsx
+│       │   ├── LauncherItem.jsx
+│       │   └── VolumeWidget.jsx
+│       ├── hooks/
+│       │   ├── useExternalDrag.js
+│       │   ├── useGlobalEvents.js
+│       │   ├── useSidebarAnimation.js
+│       │   ├── useSidebarConfig.js
+│       │   ├── useSidebarDrag.js
+│       │   ├── useSidebarMouseIgnore.js
+│       │   └── useSidebarRefs.js
+│       ├── Sidebar.jsx
+│       └── main.jsx
+├── index.html
+├── main.js
+├── main-utils.js
+├── preload.js
+├── settings.html
+├── style.css
+└── vite.config.mjs
 ```

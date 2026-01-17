@@ -27,7 +27,8 @@
                     "args": []
                 }
             ],
-            "layout": "grid_no_text"
+            "layout": "grid_no_text",
+            "width": 227
         },
         {
             "type": "launcher",

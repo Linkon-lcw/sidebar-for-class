@@ -16,13 +16,21 @@ const PropertiesPanel = ({
     activeTab,
     setActiveTab,
     selectedWidget,
-    updateWidgetProperty
+    updateWidgetProperty,
+    onDeselectWidget
 }) => {
+    const handleTabChange = (_, data) => {
+        setActiveTab(data.value);
+        if (data.value === 'library' && onDeselectWidget) {
+            onDeselectWidget();
+        }
+    };
+
     return (
         <div className={styles.propertiesPanel}>
-            <TabList selectedValue={activeTab} onTabSelect={(_, data) => setActiveTab(data.value)}>
+            <TabList selectedValue={activeTab} onTabSelect={handleTabChange}>
                 <Tab value="properties">属性</Tab>
-                <Tab value="style">样式</Tab>
+                <Tab value="library">组件库</Tab>
             </TabList>
 
             {activeTab === 'properties' && selectedWidget && (
@@ -105,35 +113,16 @@ const PropertiesPanel = ({
                 </div>
             )}
 
-            {activeTab === 'style' && selectedWidget && (
+            {activeTab === 'library' && (
                 <div className={styles.propertiesContent}>
                     <div className={styles.propertyGroup}>
-                        <Title2 as="h3">样式设置</Title2>
-                        <Body1>调整组件的样式</Body1>
-                    </div>
-
-                    <div className={styles.propertySection}>
-                        <Field label="宽度">
-                            <Slider
-                                min={100}
-                                max={500}
-                                value={selectedWidget.width || 200}
-                                onChange={(_, data) => updateWidgetProperty('width', data.value)}
-                            />
-                        </Field>
-                        <Field label="高度">
-                            <Slider
-                                min={50}
-                                max={300}
-                                value={selectedWidget.height || 100}
-                                onChange={(_, data) => updateWidgetProperty('height', data.value)}
-                            />
-                        </Field>
+                        <Title2 as="h3">组件库</Title2>
+                        <Body1>暂时还没做这个功能</Body1>
                     </div>
                 </div>
             )}
 
-            {!selectedWidget && (
+            {activeTab === 'properties' && !selectedWidget && (
                 <div className={styles.propertiesContent}>
                     <div className={styles.propertyGroup}>
                         <Title2 as="h3">选择组件</Title2>
