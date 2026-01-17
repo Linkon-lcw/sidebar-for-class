@@ -1,3 +1,11 @@
+/**
+ * 样式设置组件
+ * 配置侧边栏的动画速度和整体缩放
+ * @param {Object} config - 配置对象
+ * @param {Function} handleTransformChange - 处理变换属性变化的回调函数
+ * @param {Object} styles - 样式对象
+ */
+
 import React from 'react';
 import {
     Card,

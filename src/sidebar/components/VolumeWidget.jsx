@@ -1,23 +1,38 @@
+/**
+ * 音量控制组件
+ * 显示一个音量滑块，用于调整系统音量
+ * @param {Array<number>} range - 音量范围 [最小值, 最大值]，默认为 [0, 100]
+ */
+
 import React, { useState, useEffect } from 'react';
 
 const VolumeWidget = ({ range }) => {
+    // 当前音量值（0-100）
     const [volume, setVolume] = useState(0);
+    // 音量范围的最小值和最大值
     const min = range ? range[0] : 0;
     const max = range ? range[1] : 100;
 
+    /**
+     * 组件挂载时获取当前系统音量
+     */
     useEffect(() => {
         window.electronAPI.getVolume()
             .then(vol => setVolume(vol))
             .catch(err => console.error('获取音量失败:', err));
     }, []);
 
+    /**
+     * 处理音量滑块变化事件
+     * @param {Event} e - 输入事件对象
+     */
     const handleVolumeChange = (e) => {
         const val = parseInt(e.target.value);
-        setVolume(val);
-        window.electronAPI.setVolume(val);
+        setVolume(val);  // 更新本地状态
+        window.electronAPI.setVolume(val);  // 更新系统音量
     };
 
-    // 计算百分比用于进度条显示
+    // 计算百分比用于进度条显示（相对于配置的范围）
     const percentage = ((volume - min) / (max - min)) * 100;
 
     return (

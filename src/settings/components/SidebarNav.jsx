@@ -1,3 +1,11 @@
+/**
+ * 侧边栏导航组件
+ * 显示设置页面的标签页导航
+ * @param {string} selectedTab - 当前选中的标签页
+ * @param {Function} onTabSelect - 标签页选择回调函数
+ * @param {Object} styles - 样式对象
+ */
+
 import React from 'react';
 import { Tab, TabList, mergeClasses } from "@fluentui/react-components";
 import {
@@ -8,7 +16,9 @@ import {
 } from "@fluentui/react-icons";
 
 const SidebarNav = ({ selectedTab, onTabSelect, styles }) => {
+    // 标签页列表
     const tabs = ['basic', 'window', 'style', 'components'];
+    // 当前选中标签页的索引，用于计算活动指示器的位置
     const selectedIndex = tabs.indexOf(selectedTab);
 
     return (

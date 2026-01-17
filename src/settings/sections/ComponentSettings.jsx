@@ -1,3 +1,11 @@
+/**
+ * 组件设置组件
+ * 提供可视化的组件管理界面，支持拖拽排序和属性编辑
+ * @param {Object} config - 配置对象
+ * @param {Function} updateConfig - 更新配置的回调函数
+ * @param {Object} styles - 样式对象
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Tab,
@@ -34,6 +42,7 @@ import DragToLaunchWidget from '../../sidebar/components/DragToLaunchWidget';
 // 导入侧边栏样式
 import '../../../style.css';
 
+// 组件类型的中文名称映射
 const WIDGET_TYPE_NAMES = {
     launcher: '启动器',
     volume_slider: '音量控制',
@@ -42,78 +51,122 @@ const WIDGET_TYPE_NAMES = {
 };
 
 const ComponentSettings = ({ config, updateConfig, styles }) => {
+    // 当前激活的标签页（'properties' 或 'library'）
     const [activeTab, setActiveTab] = useState('properties');
+    // 当前选中的组件索引
     const [selectedWidgetIndex, setSelectedWidgetIndex] = useState(null);
+    // 正在拖拽的组件索引
     const [draggingIndex, setDraggingIndex] = useState(null);
+    // 拖拽悬停的组件索引
     const [dragOverIndex, setDragOverIndex] = useState(null);
+    // 是否正在长按（触屏拖拽）
     const [isLongPressing, setIsLongPressing] = useState(false);
+    // 是否刚刚完成拖拽（用于区分点击和拖拽）
     const [draggedRecently, setDraggedRecently] = useState(false);
+    // 指针位置（用于触屏拖拽的虚影显示）
     const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
 
+    // 长按定时器引用
     const longPressTimer = useRef(null);
+    // 初始触摸位置引用
     const initialTouchPos = useRef({ x: 0, y: 0 });
 
-    // 组件卸载时清除计时器
+    /**
+     * 组件卸载时清除计时器
+     */
     useEffect(() => {
         return () => {
             if (longPressTimer.current) clearTimeout(longPressTimer.current);
         };
     }, []);
 
+    // 当前选中的组件对象
     const selectedWidget = selectedWidgetIndex !== null ? config.widgets[selectedWidgetIndex] : null;
 
+    /**
+     * 处理组件点击事件
+     * @param {Event} e - 点击事件对象
+     * @param {number} index - 组件索引
+     */
     const handleWidgetClick = (e, index) => {
         e.stopPropagation();
+        // 如果刚刚完成拖拽，不处理点击（避免拖拽后误触发点击）
         if (draggedRecently) return;
         setSelectedWidgetIndex(index);
-        setActiveTab('properties');
+        setActiveTab('properties');  // 切换到属性标签页
     };
 
+    /**
+     * 处理拖拽开始事件
+     * @param {Event} e - 拖拽事件对象（可能为 null，用于触屏拖拽）
+     * @param {number} index - 组件索引
+     */
     const handleDragStart = (e, index) => {
-        setSelectedWidgetIndex(null);
+        setSelectedWidgetIndex(null);  // 清除选中状态
         setDraggingIndex(index);
         if (e && e.dataTransfer) {
-            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.effectAllowed = 'move';  // 设置拖拽效果为移动
         }
     };
 
+    /**
+     * 处理拖拽悬停事件
+     * @param {Event} e - 拖拽事件对象（可能为 null）
+     * @param {number} index - 组件索引
+     */
     const handleDragOver = (e, index) => {
-        if (e) e.preventDefault();
+        if (e) e.preventDefault();  // 允许放置
+        // 如果悬停的是正在拖拽的组件或没有正在拖拽的组件，则不处理
         if (draggingIndex === index || draggingIndex === null) return;
-        setDragOverIndex(index);
+        setDragOverIndex(index);  // 设置悬停索引，用于视觉反馈
     };
 
+    /**
+     * 处理拖拽结束事件
+     */
     const handleDragEnd = () => {
         setDraggingIndex(null);
         setDragOverIndex(null);
         setIsLongPressing(false);
     };
 
-    // 指针事件处理 (用于触屏长按拖动)
+    /**
+     * 处理指针按下事件（用于触屏长按拖动）
+     * @param {Event} e - 指针事件对象
+     * @param {number} index - 组件索引
+     */
     const handlePointerDown = (e, index) => {
         if (e.pointerType === 'touch') {
+            // 记录初始触摸位置
             initialTouchPos.current = { x: e.clientX, y: e.clientY };
             if (longPressTimer.current) clearTimeout(longPressTimer.current);
 
+            // 设置长按定时器
             longPressTimer.current = setTimeout(() => {
                 setIsLongPressing(true);
                 handleDragStart(null, index);
-                // 触感反馈
+                // 触感反馈（如果设备支持）
                 if (window.navigator.vibrate) window.navigator.vibrate(50);
             }, 500); // 500ms 长按识别为拖动
         }
     };
 
+    /**
+     * 处理指针移动事件
+     * @param {Event} e - 指针事件对象
+     */
     const handlePointerMove = (e) => {
+        // 如果正在等待长按识别，检查是否移动距离过大（识别为滚动而非拖拽）
         if (longPressTimer.current && !isLongPressing) {
-            // 如果移动超过一定距离，取消长按（识别为滚动）
             const dist = Math.sqrt(Math.pow(e.clientX - initialTouchPos.current.x, 2) + Math.pow(e.clientY - initialTouchPos.current.y, 2));
             if (dist > 10) {
+                // 移动距离过大，取消长按识别
                 clearTimeout(longPressTimer.current);
                 longPressTimer.current = null;
             }
         }
 
+        // 如果正在长按拖拽，更新指针位置并查找悬停目标
         if (isLongPressing) {
             setPointerPos({ x: e.clientX, y: e.clientY });
             // 处于拖动模式，寻找指针下的元素更新目标位置
@@ -128,21 +181,35 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
         }
     };
 
+    /**
+     * 处理指针抬起事件
+     * @param {Event} e - 指针事件对象
+     */
     const handlePointerUp = (e) => {
+        // 清除长按定时器
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
         }
 
+        // 如果正在长按拖拽，完成放置操作
         if (isLongPressing) {
             handleDrop(null, dragOverIndex);
+            // 设置拖拽完成标记，避免误触发点击
             setDraggedRecently(true);
             setTimeout(() => setDraggedRecently(false), 100);
         }
     };
 
+    /**
+     * 处理文件放置事件
+     * 重新排序组件数组
+     * @param {Event} e - 拖拽事件对象（可能为 null）
+     * @param {number} targetIndex - 目标位置索引
+     */
     const handleDrop = (e, targetIndex) => {
         if (e) e.preventDefault();
+        // 如果没有正在拖拽的组件或目标位置相同，则不处理
         if (draggingIndex === null || draggingIndex === targetIndex) {
             setDraggingIndex(null);
             setDragOverIndex(null);
@@ -169,7 +236,7 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
 
         // 由于在 handleDragStart 中已经清除了选中状态，这里不再需要更新选中索引
 
-
+        // 更新配置
         updateConfig({
             ...config,
             widgets: newWidgets
@@ -179,8 +246,14 @@ const ComponentSettings = ({ config, updateConfig, styles }) => {
         setDragOverIndex(null);
     };
 
+    /**
+     * 更新组件属性
+     * @param {string} key - 属性键名
+     * @param {any} value - 属性值
+     */
     const updateWidgetProperty = (key, value) => {
         const newWidgets = [...config.widgets];
+        // 更新选中组件的指定属性
         newWidgets[selectedWidgetIndex] = {
             ...newWidgets[selectedWidgetIndex],
             [key]: value

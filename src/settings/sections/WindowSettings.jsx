@@ -1,3 +1,11 @@
+/**
+ * 窗口设置组件
+ * 配置侧边栏窗口的显示器、位置和尺寸
+ * @param {Object} config - 配置对象
+ * @param {Function} handleTransformChange - 处理变换属性变化的回调函数
+ * @param {Object} styles - 样式对象
+ */
+
 import React from 'react';
 import {
     Card,
@@ -11,10 +19,15 @@ import {
 import { useState, useEffect } from 'react';
 
 const WindowSettings = ({ config, handleTransformChange, styles }) => {
+    // 生成唯一的 ID 用于表单元素
     const sliderId = useId("slider");
     const dropdownId = useId("display-dropdown");
+    // 显示器列表
     const [displays, setDisplays] = useState([]);
 
+    /**
+     * 加载显示器列表
+     */
     useEffect(() => {
         const fetchDisplays = async () => {
             const displayList = await window.electronAPI.getDisplays();

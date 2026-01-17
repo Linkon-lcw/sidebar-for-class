@@ -1,3 +1,11 @@
+/**
+ * 基本设置组件
+ * 显示应用程序的基本设置选项
+ * @param {Object} config - 配置对象
+ * @param {Function} updateConfig - 更新配置的回调函数
+ * @param {Object} styles - 样式对象
+ */
+
 import React from 'react';
 import { Card, Body1 } from "@fluentui/react-components";
 
