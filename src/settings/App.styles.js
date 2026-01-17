@@ -137,7 +137,7 @@ export const useStyles = makeStyles({
     main: {
         flexGrow: 1,
         ...shorthands.padding('32px', '24px'),
-        overflowY: 'auto',
+        overflowY: 'hidden',
     },
     section: {
         display: 'flex',

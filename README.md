@@ -25,7 +25,7 @@
    ```
 3. 启动应用：
    ```bash
-   npm start
+   npm run dev
    ```
 
 ## 配置指南
