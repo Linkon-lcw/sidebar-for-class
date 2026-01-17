@@ -412,8 +412,8 @@ export const useStyles = makeStyles({
     propertyGroup: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
-        marginTop: '8px',
+        gap: '0px',
+        marginTop: '0px',
     },
     propertyRow: {
         display: 'flex',
@@ -423,5 +423,14 @@ export const useStyles = makeStyles({
     propertyLabel: {
         fontSize: '14px',
         fontWeight: '600',
+    },
+    panelTitle: {
+        marginTop: '0px',
+        marginBottom: '10px',
+    },
+    sectionTitle: {
+        fontSize: '16px',
+        fontWeight: '600',
+        marginTop: '10px',
     }
 });
