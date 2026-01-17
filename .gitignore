@@ -24,6 +24,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.trae/
 
 # Environment variables
 .env

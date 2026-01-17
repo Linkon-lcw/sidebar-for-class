@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // 获取配置信息
     getConfig: () => ipcRenderer.invoke('get-config'),
+    updateConfig: (config) => ipcRenderer.send('update-config', config),
+    previewConfig: (config) => ipcRenderer.send('preview-config', config),
+    onConfigUpdated: (callback) => ipcRenderer.on('config-updated', (event, config) => callback(config)),
 
     // 启动外部应用
     launchApp: (target, args) => ipcRenderer.send('launch-app', target, args),
@@ -43,6 +46,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // 打开设置窗口
-    openSettings: () => ipcRenderer.send('open-settings')
+    openSettings: () => ipcRenderer.send('open-settings'),
+
+    // 获取显示器信息
+    getDisplays: () => ipcRenderer.invoke('get-displays')
 });
 

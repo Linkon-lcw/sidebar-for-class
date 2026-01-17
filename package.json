@@ -4,7 +4,10 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "chcp 65001 >nul && electron . --disable-gpu --enable-logging",
+    "start": "vite",
+    "electron": "wait-on http://localhost:3000 && electron .",
+    "dev": "concurrently \"npm run start\" \"npm run electron\"",
+    "build": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,7 +23,15 @@
   },
   "homepage": "https://github.com/PANDAJSR/sidebar-for-class#readme",
   "devDependencies": {
-    "electron": "^39.2.7"
+    "@fluentui/react-components": "^9.72.9",
+    "@fluentui/react-icons": "^2.0.316",
+    "@vitejs/plugin-react": "^5.1.2",
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.7",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "vite": "^7.3.1",
+    "wait-on": "^9.0.3"
   },
   "dependencies": {
     "loudness": "^0.4.2"

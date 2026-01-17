@@ -2,9 +2,9 @@
     "transforms": {
         "display": 0,
         "height": 64,
-        "posy": 350,
+        "posy": 353,
         "animation_speed": 1,
-        "size": 100
+        "size": 130
     },
     "widgets": [
         {
@@ -52,7 +52,16 @@
         },
         {
             "type": "volume_slider",
-            "range": [0, 100]
+            "range": [
+                0,
+                100
+            ]
         }
-    ]
+    ],
+    "displayBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1707,
+        "height": 1067
+    }
 }
