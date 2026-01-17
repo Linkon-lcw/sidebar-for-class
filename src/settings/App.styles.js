@@ -1,6 +1,12 @@
+/**
+ * 应用程序样式定义
+ * 使用 Fluent UI 的 makeStyles 创建样式对象
+ */
+
 import { makeStyles, shorthands } from "@fluentui/react-components";
 
 export const useStyles = makeStyles({
+    // 根容器样式：应用的主容器，使用 flexbox 布局
     root: {
         display: 'flex',
         flexDirection: 'row',
@@ -8,6 +14,7 @@ export const useStyles = makeStyles({
         backgroundColor: 'var(--colorNeutralBackground1)',
         fontFamily: '"Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei", sans-serif',
     },
+    // 侧边栏样式：左侧导航栏
     sidebar: {
         width: '280px',
         ...shorthands.padding('8px', '4px', '12px', '4px'),
@@ -16,6 +23,7 @@ export const useStyles = makeStyles({
         backgroundColor: 'var(--colorNeutralBackground2)',
         boxShadow: 'inset -1px 0 0 0 var(--colorNeutralStroke2)',
     },
+    // 头部样式：侧边栏顶部的应用图标和标题区域
     header: {
         display: 'flex',
         alignItems: 'center',
@@ -24,14 +32,17 @@ export const useStyles = makeStyles({
         paddingBottom: '12px',
         gap: '12px',
     },
+    // 应用图标样式
     appIcon: {
         fontSize: '20px',
         color: 'var(--colorCompoundBrandStroke)',
     },
+    // 头部标题样式
     headerTitle: {
         fontSize: '14px',
         fontWeight: '400',
     },
+    // 菜单按钮样式
     menuButton: {
         ...shorthands.margin('4px', '4px', '12px', '4px'),
         minWidth: '40px',
@@ -46,6 +57,7 @@ export const useStyles = makeStyles({
             backgroundColor: 'var(--colorNeutralBackground1Hover)',
         }
     },
+    // 标签页列表样式：隐藏默认的指示器
     tabList: {
         rowGap: '2px',
         position: 'relative',
@@ -60,6 +72,7 @@ export const useStyles = makeStyles({
             display: 'none !important',
         },
     },
+    // 活动指示器样式：自定义的选中标签页指示条
     activeIndicator: {
         position: 'absolute',
         left: '8px',
@@ -72,8 +85,9 @@ export const useStyles = makeStyles({
         transitionDuration: '300ms',
         transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
         pointerEvents: 'none',
-        top: '12px', // Initial top (2px margin + 10px inner offset)
+        top: '12px', // 初始顶部位置（2px 边距 + 10px 内部偏移）
     },
+    // 标签页样式：单个标签页按钮
     tab: {
         height: '40px',
         minHeight: '40px',
@@ -89,12 +103,12 @@ export const useStyles = makeStyles({
         transitionProperty: 'background-color, color, transform',
         transitionDuration: '150ms',
         boxSizing: 'border-box',
-        '&:hover': {
+        ':hover': {
             backgroundColor: 'var(--colorNeutralBackground1Hover)',
         },
-        '&:active': {
-            backgroundColor: 'var(--colorNeutralBackground1Selected)', // Or a lighter shade
-            transform: 'scale(0.98)', // Add a subtle press effect
+        ':active': {
+            backgroundColor: 'var(--colorNeutralBackground1Selected)', // 或更浅的色调
+            transform: 'scale(0.98)', // 添加微妙的按压效果
         },
         '&::after': {
             display: 'none !important',
@@ -106,6 +120,7 @@ export const useStyles = makeStyles({
             display: 'none !important',
         },
     },
+    // 选中的标签页样式
     tabSelected: {
         backgroundColor: 'var(--colorNeutralBackground1Selected) !important',
         color: 'var(--colorNeutralForeground1Selected) !important',
@@ -118,6 +133,7 @@ export const useStyles = makeStyles({
             opacity: 0.8,
         }
     },
+    // 标签页图标样式
     tabIcon: {
         fontSize: '20px',
         width: '20px',
@@ -129,22 +145,26 @@ export const useStyles = makeStyles({
         justifyContent: 'center',
         flexShrink: 0,
     },
+    // 分隔线样式
     divider: {
         height: '1px',
         backgroundColor: 'var(--colorNeutralStroke2)',
         ...shorthands.margin('12px', '16px'),
     },
+    // 主内容区域样式
     main: {
         flexGrow: 1,
         ...shorthands.padding('32px', '24px'),
         overflowY: 'hidden',
     },
+    // 分组样式：设置页面的各个分组
     section: {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
         maxWidth: '1000px',
     },
+    // 卡片样式：设置项的容器
     card: {
         ...shorthands.padding('16px', '24px'),
         backgroundColor: 'var(--colorNeutralBackground1)',
@@ -158,6 +178,7 @@ export const useStyles = makeStyles({
             backgroundColor: 'var(--colorNeutralBackground1Hover)',
         }
     },
+    // 分组标题样式
     groupTitle: {
         fontSize: '14px',
         fontWeight: '600',
@@ -165,41 +186,49 @@ export const useStyles = makeStyles({
         marginBottom: '8px',
         color: 'var(--colorNeutralForeground1)',
     },
+    // 分区头部样式
     sectionHeader: {
         marginBottom: '20px',
     },
+    // 标题样式
     title: {
         fontSize: '28px',
         fontWeight: '600',
         marginBottom: '8px',
         lineHeight: '1.2',
     },
+    // 描述文字样式
     description: {
         color: 'var(--colorNeutralForeground2)',
         fontSize: '14px',
         lineHeight: '1.5',
     },
+    // 表单分组样式
     formGroup: {
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
     },
+    // 标签样式
     label: {
         fontSize: '14px',
         fontWeight: '500',
     },
+    // 底部样式
     footer: {
         marginTop: '40px',
         display: 'flex',
         justifyContent: 'flex-end',
         ...shorthands.padding('0', '0', '40px', '0'),
     },
+    // 滑块容器样式
     rangeContainer: {
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
         marginTop: '4px',
     },
+    // 滑块数值显示样式
     rangeValue: {
         minWidth: '48px',
         fontSize: '14px',
@@ -207,12 +236,14 @@ export const useStyles = makeStyles({
         color: 'var(--colorBrandForeground1)',
         textAlign: 'right',
     },
+    // 帮助文字样式
     helpText: {
         color: 'var(--colorNeutralForeground3)',
         fontSize: '12px',
         marginTop: '4px',
     },
-    // Component Settings Specific
+    // 组件设置特定样式
+    // 组件布局样式：左右分栏布局
     componentLayout: {
         display: 'flex',
         flexDirection: 'row',
@@ -221,6 +252,7 @@ export const useStyles = makeStyles({
         minHeight: '500px',
         position: 'relative',
     },
+    // 左侧面板样式：预览面板
     leftPanel: {
         display: 'flex',
         flexDirection: 'column',
@@ -231,6 +263,7 @@ export const useStyles = makeStyles({
         height: '100%',
         flexShrink: 0,
     },
+    // 右侧面板样式：属性面板
     rightPanel: {
         display: 'flex',
         flexDirection: 'column',
@@ -241,6 +274,7 @@ export const useStyles = makeStyles({
         height: '100%',
         flexShrink: 0,
     },
+    // 调整器样式：左右面板之间的拖拽调整宽度的分隔条
     resizer: {
         width: '4px',
         backgroundColor: 'var(--colorNeutralStroke1)',
@@ -282,6 +316,7 @@ export const useStyles = makeStyles({
             opacity: 1,
         },
     },
+    // 预览面板样式：显示组件预览的面板
     previewPanel: {
         flex: 1,
         backgroundColor: 'var(--colorNeutralBackground2)',
@@ -296,6 +331,7 @@ export const useStyles = makeStyles({
         height: '100%',
         width: '100%',
     },
+    // 属性面板样式：显示组件属性的面板
     propertiesPanel: {
         display: 'flex',
         flexDirection: 'column',
@@ -306,17 +342,20 @@ export const useStyles = makeStyles({
         height: '100%',
         width: '100%',
     },
+    // 属性内容样式：属性面板的可滚动内容区域
     propertiesContent: {
         ...shorthands.padding('16px'),
         flexGrow: 1,
         ...shorthands.overflow('auto'),
     },
+    // 属性分组样式
     propertySection: {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
         marginTop: '16px',
     },
+    // 预览占位符样式
     previewPlaceholder: {
         display: 'flex',
         flexDirection: 'column',
@@ -324,6 +363,7 @@ export const useStyles = makeStyles({
         gap: '12px',
         color: 'var(--colorNeutralForeground4)',
     },
+    // 编辑器面板样式
     editorPanel: {
         width: '460px',
         display: 'flex',
@@ -333,11 +373,13 @@ export const useStyles = makeStyles({
         ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
         ...shorthands.overflow('hidden'),
     },
+    // 标签页内容样式
     tabContent: {
         ...shorthands.padding('16px'),
         flexGrow: 1,
         ...shorthands.overflow('auto'),
     },
+    // 组件列表样式：显示所有组件的列表
     widgetList: {
         display: 'flex',
         flexDirection: 'column',
@@ -346,6 +388,7 @@ export const useStyles = makeStyles({
         ...shorthands.padding('24px'),
         boxSizing: 'border-box',
     },
+    // 组件项样式：单个组件的卡片
     widgetItem: {
         backgroundColor: 'var(--colorNeutralBackground1)',
         ...shorthands.border('1px', 'solid', 'var(--colorNeutralStroke1)'),
@@ -365,17 +408,20 @@ export const useStyles = makeStyles({
             transform: 'scale(0.995)',
         }
     },
+    // 选中的组件项样式
     widgetItemSelected: {
         backgroundColor: 'var(--colorNeutralBackground1Hover)',
         ...shorthands.borderColor('var(--colorBrandStroke1)'),
         ...shorthands.borderWidth('2px'),
         boxShadow: 'var(--shadow8)',
     },
+    // 拖拽中的组件项样式
     widgetDragging: {
         opacity: 0.4,
         ...shorthands.border('1px', 'dashed', 'var(--colorBrandStroke1)'),
         boxShadow: 'none',
     },
+    // 拖拽悬停的组件项样式
     widgetDragOver: {
         position: 'relative',
         '&::before': {
@@ -391,6 +437,7 @@ export const useStyles = makeStyles({
             zIndex: 10,
         }
     },
+    // 组件放置区域样式
     widgetDropZone: {
         height: '24px',
         marginTop: '-12px',
@@ -398,6 +445,7 @@ export const useStyles = makeStyles({
         position: 'relative',
         cursor: 'default',
     },
+    // 组件类型标签样式
     widgetType: {
         fontWeight: '600',
         fontSize: '14px',
@@ -405,29 +453,35 @@ export const useStyles = makeStyles({
         display: 'block',
         marginBottom: '2px',
     },
+    // 组件信息样式
     widgetInfo: {
         fontSize: '12px',
         color: 'var(--colorNeutralForeground3)',
     },
+    // 属性分组样式
     propertyGroup: {
         display: 'flex',
         flexDirection: 'column',
         gap: '0px',
         marginTop: '0px',
     },
+    // 属性行样式
     propertyRow: {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
     },
+    // 属性标签样式
     propertyLabel: {
         fontSize: '14px',
         fontWeight: '600',
     },
+    // 面板标题样式
     panelTitle: {
         marginTop: '0px',
         marginBottom: '10px',
     },
+    // 分区标题样式
     sectionTitle: {
         fontSize: '16px',
         fontWeight: '600',

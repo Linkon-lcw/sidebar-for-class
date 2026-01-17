@@ -1,3 +1,29 @@
+/**
+ * 预览面板组件
+ * 显示所有组件的预览，支持拖拽排序和选择
+ * @param {Object} config - 配置对象
+ * @param {Object} styles - 样式对象
+ * @param {Map} widgetIcons - 组件图标缓存
+ * @param {boolean} isLongPressing - 是否正在长按拖拽
+ * @param {number} draggingIndex - 正在拖拽的组件索引
+ * @param {number} dragOverIndex - 拖拽悬停的组件索引
+ * @param {number} selectedWidgetIndex - 选中的组件索引
+ * @param {Object} pointerPos - 指针位置
+ * @param {Function} clearSelection - 清除选择的回调
+ * @param {Function} handlePointerMove - 指针移动处理函数
+ * @param {Function} handlePointerUp - 指针抬起处理函数
+ * @param {Function} handlePointerDown - 指针按下处理函数
+ * @param {Function} handleDragStart - 拖拽开始处理函数
+ * @param {Function} handleDragOver - 拖拽悬停处理函数
+ * @param {Function} handleDragEnd - 拖拽结束处理函数
+ * @param {Function} handleDrop - 放置处理函数
+ * @param {Function} handleWidgetClick - 组件点击处理函数
+ * @param {Component} LauncherItemPreview - 启动器项预览组件
+ * @param {Component} VolumeWidgetPreview - 音量控制预览组件
+ * @param {Component} FilesWidgetPreview - 文件列表预览组件
+ * @param {Component} DragToLaunchWidgetPreview - 拖放速启预览组件
+ */
+
 import React from 'react';
 import { mergeClasses } from "@fluentui/react-components";
 
@@ -24,6 +50,7 @@ const PreviewPanel = ({
     FilesWidgetPreview,
     DragToLaunchWidgetPreview
 }) => {
+    // 组件类型名称映射
     const WIDGET_TYPE_NAMES = {
         launcher: '启动器',
         volume_slider: '音量控制',
@@ -31,6 +58,7 @@ const PreviewPanel = ({
         drag_to_launch: '拖放速启'
     };
 
+    // 包装指针抬起处理函数
     const handlePointerUpWrapper = (e) => {
         handlePointerUp(dragOverIndex);
     };
@@ -49,6 +77,7 @@ const PreviewPanel = ({
             onPointerCancel={handlePointerUpWrapper}
         >
             <div className={styles.widgetList}>
+                {/* 渲染所有组件 */}
                 {config.widgets.map((widget, index) => (
                     <div
                         key={index}
@@ -76,6 +105,7 @@ const PreviewPanel = ({
                             userSelect: 'none',
                             marginBottom: selectedWidgetIndex === index ? '12px' : '0'
                         }}>
+                            {/* 根据组件类型渲染不同的预览 */}
                             {widget.type === 'launcher' && (
                                 <div className={`launcher-group layout-${widget.layout || 'vertical'}`}>
                                     {widget.targets?.map((target, tIndex) => (
@@ -92,6 +122,7 @@ const PreviewPanel = ({
                             )}
                         </div>
 
+                        {/* 选中时显示组件信息 */}
                         {selectedWidgetIndex === index && (
                             <div style={{
                                 display: 'flex',
@@ -111,6 +142,7 @@ const PreviewPanel = ({
                     </div>
                 ))}
 
+                {/* 底部放置区域 */}
                 <div
                     data-widget-index={config.widgets.length}
                     onDragOver={(e) => handleDragOver(e, config.widgets.length)}
@@ -122,6 +154,7 @@ const PreviewPanel = ({
                 />
             </div>
 
+            {/* 长按拖拽时的幽灵元素 */}
             {isLongPressing && draggingIndex !== null && (
                 <div
                     className={styles.dragGhost}

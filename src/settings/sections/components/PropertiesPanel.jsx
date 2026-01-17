@@ -1,3 +1,14 @@
+/**
+ * 属性面板组件
+ * 显示选中组件的属性，支持编辑组件的各种配置
+ * @param {Object} styles - 样式对象
+ * @param {string} activeTab - 当前激活的标签页
+ * @param {Function} setActiveTab - 设置激活标签页的函数
+ * @param {Object} selectedWidget - 当前选中的组件对象
+ * @param {Function} updateWidgetProperty - 更新组件属性的函数
+ * @param {Function} onDeselectWidget - 取消选择组件的回调函数
+ */
+
 import React, { useState } from 'react';
 import {
     Tab,
@@ -29,8 +40,10 @@ const PropertiesPanel = ({
     updateWidgetProperty,
     onDeselectWidget
 }) => {
+    // 当前正在编辑的目标索引（用于启动器组件）
     const [editingTargetIndex, setEditingTargetIndex] = useState(null);
 
+    // 处理标签页切换事件
     const handleTabChange = (_, data) => {
         setActiveTab(data.value);
         if (data.value === 'library' && onDeselectWidget) {
@@ -38,6 +51,7 @@ const PropertiesPanel = ({
         }
     };
 
+    // 添加新的启动目标
     const handleAddTarget = () => {
         const currentTargets = selectedWidget.targets || [];
         const newTarget = {
@@ -49,6 +63,7 @@ const PropertiesPanel = ({
         setEditingTargetIndex(currentTargets.length);
     };
 
+    // 删除启动目标
     const handleDeleteTarget = (index) => {
         const currentTargets = selectedWidget.targets || [];
         const newTargets = currentTargets.filter((_, i) => i !== index);
@@ -60,6 +75,7 @@ const PropertiesPanel = ({
         }
     };
 
+    // 更新启动目标
     const handleUpdateTarget = (index, field, value) => {
         const currentTargets = selectedWidget.targets || [];
         const newTargets = currentTargets.map((target, i) => {
@@ -71,6 +87,7 @@ const PropertiesPanel = ({
         updateWidgetProperty('targets', newTargets);
     };
 
+    // 移动启动目标位置
     const handleMoveTarget = (index, direction) => {
         const currentTargets = selectedWidget.targets || [];
         if (direction === 'up' && index > 0) {
@@ -96,11 +113,13 @@ const PropertiesPanel = ({
 
     return (
         <div className={styles.propertiesPanel}>
+            {/* 标签页导航 */}
             <TabList selectedValue={activeTab} onTabSelect={handleTabChange}>
                 <Tab value="properties">属性</Tab>
                 <Tab value="library">组件库</Tab>
             </TabList>
 
+            {/* 属性标签页内容 */}
             {activeTab === 'properties' && selectedWidget && (
                 <div className={styles.propertiesContent}>
                     <div className={styles.propertyGroup}>
@@ -108,6 +127,7 @@ const PropertiesPanel = ({
                         <Body1>编辑选中组件的属性</Body1>
                     </div>
 
+                    {/* 启动器组件的属性 */}
                     {selectedWidget.type === 'launcher' && (
                         <div className={styles.propertySection}>
                             <Field label="布局方式">
@@ -137,6 +157,7 @@ const PropertiesPanel = ({
                                         添加目标
                                     </Button>
                                 </div>
+                                {/* 渲染所有启动目标 */}
                                 {(selectedWidget.targets || []).map((target, index) => (
                                     <div
                                         key={index}
@@ -196,6 +217,7 @@ const PropertiesPanel = ({
                                         </Field>
                                     </div>
                                 ))}
+                                {/* 无目标时的提示 */}
                                 {(selectedWidget.targets || []).length === 0 && (
                                     <div style={{
                                         textAlign: 'center',
@@ -209,6 +231,7 @@ const PropertiesPanel = ({
                         </div>
                     )}
 
+                    {/* 音量控制组件的属性 */}
                     {selectedWidget.type === 'volume_slider' && (
                         <div className={styles.propertySection}>
                             <Field label="最小值">
@@ -228,6 +251,7 @@ const PropertiesPanel = ({
                         </div>
                     )}
 
+                    {/* 文件列表组件的属性 */}
                     {selectedWidget.type === 'files' && (
                         <div className={styles.propertySection}>
                             <Field label="文件夹路径">
@@ -259,6 +283,7 @@ const PropertiesPanel = ({
                         </div>
                     )}
 
+                    {/* 拖放速启组件的属性 */}
                     {selectedWidget.type === 'drag_to_launch' && (
                         <div className={styles.propertySection}>
                             <Field label="显示名称">
@@ -291,6 +316,7 @@ const PropertiesPanel = ({
                 </div>
             )}
 
+            {/* 组件库标签页内容 */}
             {activeTab === 'library' && (
                 <div className={styles.propertiesContent}>
                     <div className={styles.propertyGroup}>
@@ -300,6 +326,7 @@ const PropertiesPanel = ({
                 </div>
             )}
 
+            {/* 未选择组件时的提示 */}
             {activeTab === 'properties' && !selectedWidget && (
                 <div className={styles.propertiesContent}>
                     <div className={styles.propertyGroup}>
