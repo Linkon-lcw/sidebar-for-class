@@ -2,7 +2,7 @@
     "transforms": {
         "display": 0,
         "height": 64,
-        "posy": 353,
+        "posy": 310,
         "animation_speed": 1,
         "size": 130
     },
@@ -27,7 +27,8 @@
                     "args": []
                 }
             ],
-            "layout": "grid_no_text"
+            "layout": "grid_no_text",
+            "width": 227
         },
         {
             "type": "launcher",

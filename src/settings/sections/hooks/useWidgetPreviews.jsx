@@ -1,8 +1,16 @@
+/**
+ * 组件预览 Hook
+ * 提供各种组件类型的预览组件，用于在设置界面中显示组件效果
+ * @param {Map} widgetIcons - 组件图标缓存
+ * @returns {Object} 包含各种组件预览组件的对象
+ */
+
 import React, { useState, useEffect } from 'react';
 
 const useWidgetPreviews = (widgetIcons) => {
+    // 启动器项预览组件：显示单个启动目标
     const LauncherItemPreview = React.memo(({ name, target, widgetIndex, targetIndex }) => {
-        const iconKey = `${widgetIndex}-${targetIndex}`;
+        const iconKey = target;
         const icon = widgetIcons.get(iconKey);
 
         return (
@@ -21,11 +29,13 @@ const useWidgetPreviews = (widgetIcons) => {
         );
     });
 
+    // 音量控制预览组件：显示音量滑块
     const VolumeWidgetPreview = React.memo(({ range }) => {
         const min = range ? range[0] : 0;
         const max = range ? range[1] : 100;
         const volume = 50;
 
+        // 计算音量百分比
         const percentage = ((volume - min) / (max - min)) * 100;
 
         return (
@@ -54,9 +64,11 @@ const useWidgetPreviews = (widgetIcons) => {
         );
     });
 
+    // 文件列表预览组件：显示文件夹中的文件
     const FilesWidgetPreview = React.memo(({ folder_path, max_count, layout = 'vertical', widgetIndex }) => {
         const [files, setFiles] = useState([]);
 
+        // 加载文件夹中的文件列表
         useEffect(() => {
             window.electronAPI.getFilesInFolder(folder_path, max_count)
                 .then(fileList => setFiles(fileList))
@@ -66,6 +78,7 @@ const useWidgetPreviews = (widgetIcons) => {
         return (
             <div className={`launcher-group layout-${layout} compact-files`}>
                 {files.map((file, index) => {
+                    // 移除 .lnk 扩展名
                     let displayName = file.name;
                     if (displayName.toLowerCase().endsWith('.lnk')) {
                         displayName = displayName.slice(0, -4);
@@ -85,7 +98,16 @@ const useWidgetPreviews = (widgetIcons) => {
     });
 
     const DragToLaunchWidgetPreview = React.memo(({ name, targets, widgetIndex }) => {
-        const iconKey = `drag-${widgetIndex}`;
+        let exePath = targets;
+        if (typeof exePath === 'string') {
+            const placeholderIndex = exePath.indexOf('{{source}}');
+            let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+            if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+                potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+            }
+            exePath = potentialPath;
+        }
+        const iconKey = exePath;
         const icon = widgetIcons.get(iconKey);
 
         return (

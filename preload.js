@@ -49,6 +49,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openSettings: () => ipcRenderer.send('open-settings'),
 
     // 获取显示器信息
-    getDisplays: () => ipcRenderer.invoke('get-displays')
+    getDisplays: () => ipcRenderer.invoke('get-displays'),
+    // 监听显示器更新
+    onDisplaysUpdated: (callback) => {
+        const subscription = (event, displays) => callback(displays);
+        ipcRenderer.on('displays-updated', subscription);
+        return () => ipcRenderer.removeListener('displays-updated', subscription);
+    }
 });
 
