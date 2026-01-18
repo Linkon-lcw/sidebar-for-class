@@ -71,8 +71,8 @@ const App = () => {
     const preloadWidgetIcons = useCallback(async (widgets) => {
         widgets.forEach((widget, index) => {
             if (widget.type === 'launcher' && widget.targets) {
-                widget.targets.forEach((target, tIndex) => {
-                    const key = `${index}-${tIndex}`;
+                widget.targets.forEach((target) => {
+                    const key = target.target;
                     if (!widgetIcons.has(key) && target.target) {
                         loadIcon(target.target).then(icon => {
                             if (icon) {
@@ -82,41 +82,38 @@ const App = () => {
                     }
                 });
             } else if (widget.type === 'drag_to_launch' && widget.targets) {
-                const key = `drag-${index}`;
-                if (!widgetIcons.has(key)) {
-                    let exePath = widget.targets;
-                    if (typeof exePath === 'string') {
-                        const placeholderIndex = exePath.indexOf('{{source}}');
-                        let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
-                        if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
-                            potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+                let exePath = widget.targets;
+                if (typeof exePath === 'string') {
+                    const placeholderIndex = exePath.indexOf('{{source}}');
+                    let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+                    if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+                        potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+                    }
+                    exePath = potentialPath;
+                }
+                const key = exePath;
+                if (!widgetIcons.has(key) && exePath) {
+                    loadIcon(exePath).then(icon => {
+                        if (icon) {
+                            setWidgetIcons(prev => new Map(prev).set(key, icon));
                         }
-                        exePath = potentialPath;
-                    }
-                    if (exePath) {
-                        loadIcon(exePath).then(icon => {
-                            if (icon) {
-                                setWidgetIcons(prev => new Map(prev).set(key, icon));
-                            }
-                        });
-                    }
+                    });
                 }
             } else if (widget.type === 'files' && widget.folder_path) {
-                const key = `files-${index}`;
-                if (!widgetIcons.has(key)) {
-                    window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count)
-                        .then(fileList => {
-                            fileList.forEach((file, fIndex) => {
-                                const fileKey = `${key}-${fIndex}`;
+                window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count)
+                    .then(fileList => {
+                        fileList.forEach((file) => {
+                            const key = file.path;
+                            if (!widgetIcons.has(key)) {
                                 loadIcon(file.path).then(icon => {
                                     if (icon) {
-                                        setWidgetIcons(prev => new Map(prev).set(fileKey, icon));
+                                        setWidgetIcons(prev => new Map(prev).set(key, icon));
                                     }
                                 });
-                            });
-                        })
-                        .catch(err => console.error('获取文件列表失败:', err));
-                }
+                            }
+                        });
+                    })
+                    .catch(err => console.error('获取文件列表失败:', err));
             }
         });
     }, [widgetIcons, loadIcon]);

@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 const useWidgetPreviews = (widgetIcons) => {
     // 启动器项预览组件：显示单个启动目标
     const LauncherItemPreview = React.memo(({ name, target, widgetIndex, targetIndex }) => {
-        const iconKey = `${widgetIndex}-${targetIndex}`;
+        const iconKey = target;
         const icon = widgetIcons.get(iconKey);
 
         return (
@@ -97,9 +97,17 @@ const useWidgetPreviews = (widgetIcons) => {
         );
     });
 
-    // 拖放速启预览组件：显示拖放启动目标
     const DragToLaunchWidgetPreview = React.memo(({ name, targets, widgetIndex }) => {
-        const iconKey = `drag-${widgetIndex}`;
+        let exePath = targets;
+        if (typeof exePath === 'string') {
+            const placeholderIndex = exePath.indexOf('{{source}}');
+            let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+            if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+                potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+            }
+            exePath = potentialPath;
+        }
+        const iconKey = exePath;
         const icon = widgetIcons.get(iconKey);
 
         return (

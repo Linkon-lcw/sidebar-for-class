@@ -76,7 +76,7 @@ const PreviewPanel = ({
             onPointerUp={handlePointerUpWrapper}
             onPointerCancel={handlePointerUpWrapper}
         >
-            <div className={styles.widgetList}>
+            <div className={styles.widgetList} style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* 渲染所有组件 */}
                 {config.widgets.map((widget, index) => (
                     <div
@@ -142,16 +142,20 @@ const PreviewPanel = ({
                     </div>
                 ))}
 
-                {/* 底部放置区域 */}
+                {/* 底部放置区域：占据剩余空间，但指示线只在顶部显示 */}
                 <div
-                    data-widget-index={config.widgets.length}
+                    style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100px' }}
                     onDragOver={(e) => handleDragOver(e, config.widgets.length)}
                     onDrop={(e) => handleDrop(e, config.widgets.length)}
-                    className={mergeClasses(
-                        styles.widgetDropZone,
-                        dragOverIndex === config.widgets.length && styles.widgetDragOver
-                    )}
-                />
+                >
+                    <div
+                        data-widget-index={config.widgets.length}
+                        className={mergeClasses(
+                            styles.widgetDropZone,
+                            dragOverIndex === config.widgets.length && styles.widgetDropZoneDragOver
+                        )}
+                    />
+                </div>
             </div>
 
             {/* 长按拖拽时的幽灵元素 */}

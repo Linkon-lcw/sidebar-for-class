@@ -445,6 +445,21 @@ export const useStyles = makeStyles({
         position: 'relative',
         cursor: 'default',
     },
+    // 底部放置区域拖拽悬停样式（指示线在底部）
+    widgetDropZoneDragOver: {
+        '&::before': {
+            content: '""',
+            position: 'absolute',
+            bottom: '0',
+            left: '0',
+            right: '0',
+            height: '3px',
+            backgroundColor: 'var(--colorBrandStroke1)',
+            borderRadius: '2px',
+            boxShadow: '0 0 4px var(--colorBrandStroke1)',
+            zIndex: 10,
+        }
+    },
     // 组件类型标签样式
     widgetType: {
         fontWeight: '600',

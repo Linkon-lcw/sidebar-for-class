@@ -235,18 +235,36 @@ const PropertiesPanel = ({
                     {selectedWidget.type === 'volume_slider' && (
                         <div className={styles.propertySection}>
                             <Field label="最小值">
-                                <Input
-                                    type="number"
-                                    value={selectedWidget.range?.[0] || 0}
-                                    onChange={(_, data) => updateWidgetProperty('range', [parseInt(data.value) || 0, selectedWidget.range?.[1] || 100])}
-                                />
+                                <div className={styles.rangeContainer}>
+                                    <Slider
+                                        min={0}
+                                        max={100}
+                                        step={1}
+                                        value={selectedWidget.range?.[0] || 0}
+                                        onChange={(_, data) => {
+                                            const currentMax = selectedWidget.range?.[1] || 100;
+                                            const newVal = Math.min(data.value, currentMax);
+                                            updateWidgetProperty('range', [newVal, currentMax]);
+                                        }}
+                                    />
+                                    <span className={styles.rangeValue}>{selectedWidget.range?.[0] || 0}%</span>
+                                </div>
                             </Field>
                             <Field label="最大值">
-                                <Input
-                                    type="number"
-                                    value={selectedWidget.range?.[1] || 100}
-                                    onChange={(_, data) => updateWidgetProperty('range', [selectedWidget.range?.[0] || 0, parseInt(data.value) || 100])}
-                                />
+                                <div className={styles.rangeContainer}>
+                                    <Slider
+                                        min={0}
+                                        max={100}
+                                        step={1}
+                                        value={selectedWidget.range?.[1] || 100}
+                                        onChange={(_, data) => {
+                                            const currentMin = selectedWidget.range?.[0] || 0;
+                                            const newVal = Math.max(data.value, currentMin);
+                                            updateWidgetProperty('range', [currentMin, newVal]);
+                                        }}
+                                    />
+                                    <span className={styles.rangeValue}>{selectedWidget.range?.[1] || 100}%</span>
+                                </div>
                             </Field>
                         </div>
                     )}

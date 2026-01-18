@@ -310,5 +310,24 @@ ipcMain.on('open-settings', () => {
 });
 
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  // 监听显示器变化
+  const updateDisplays = () => {
+    const displays = screen.getAllDisplays();
+    // 通知主窗口
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('displays-updated', displays);
+    }
+    // 通知设置窗口
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send('displays-updated', displays);
+    }
+  };
+
+  screen.on('display-added', updateDisplays);
+  screen.on('display-removed', updateDisplays);
+  screen.on('display-metrics-changed', updateDisplays);
+});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

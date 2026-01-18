@@ -34,6 +34,15 @@ const WindowSettings = ({ config, handleTransformChange, styles }) => {
             setDisplays(displayList);
         };
         fetchDisplays();
+
+        // 监听显示器插拔/变化
+        const removeListener = window.electronAPI.onDisplaysUpdated((updatedDisplays) => {
+            setDisplays(updatedDisplays);
+        });
+
+        return () => {
+            if (removeListener) removeListener();
+        };
     }, []);
 
     return (

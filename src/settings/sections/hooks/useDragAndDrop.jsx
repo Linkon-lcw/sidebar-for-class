@@ -19,6 +19,7 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
     const handleDragStart = useCallback((e, index) => {
         setSelectedWidgetIndex(null);
         setDraggingIndex(index);
+        setDragOverIndex(null);
         if (e && e.dataTransfer) {
             e.dataTransfer.effectAllowed = 'move';
         }
@@ -26,8 +27,21 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
 
     // 处理拖拽悬停事件
     const handleDragOver = useCallback((e, index) => {
-        if (e) e.preventDefault();
-        if (draggingIndex === index || draggingIndex === null) return;
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (draggingIndex === null) return;
+
+        // 计算调整后的目标索引（与 handleDrop 中的逻辑一致）
+        const adjustedTargetIndex = index > draggingIndex ? index - 1 : index;
+
+        // 只有当调整后的目标索引与原始索引不同时，才是有效操作
+        if (adjustedTargetIndex === draggingIndex) {
+            setDragOverIndex(null);
+            return;
+        }
+
         setDragOverIndex(index);
     }, [draggingIndex]);
 
@@ -39,7 +53,10 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
 
     // 处理放置事件：重新排列组件顺序
     const handleDrop = useCallback((e, targetIndex) => {
-        if (e) e.preventDefault();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         if (draggingIndex === null || draggingIndex === targetIndex) {
             setDraggingIndex(null);
             setDragOverIndex(null);
@@ -54,10 +71,13 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
         newWidgets.splice(draggingIndex, 1);
 
         // 插入到新位置
-        if (targetIndex >= config.widgets.length) {
+        // 如果向下拖拽（targetIndex > draggingIndex），由于已经移除了一个元素，目标索引需要减 1
+        const adjustedTargetIndex = targetIndex > draggingIndex ? targetIndex - 1 : targetIndex;
+
+        if (adjustedTargetIndex >= newWidgets.length) {
             newWidgets.push(draggedItem);
         } else {
-            newWidgets.splice(targetIndex, 0, draggedItem);
+            newWidgets.splice(adjustedTargetIndex, 0, draggedItem);
         }
 
         // 更新配置
