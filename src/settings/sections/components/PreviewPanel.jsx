@@ -43,6 +43,7 @@ const PreviewPanel = ({
     handlePointerDown,
     handleDragStart,
     handleDragOver,
+    handleDragLeave,
     handleDragEnd,
     handleDrop,
     handleWidgetClick,
@@ -88,6 +89,10 @@ const PreviewPanel = ({
                         onPointerDown={(e) => handlePointerDown(e, index)}
                         onDragStart={(e) => handleDragStart(e, index)}
                         onDragOver={(e) => handleDragOver(e, index)}
+                        onDragLeave={(e) => {
+                            if (e.currentTarget.contains(e.relatedTarget)) return;
+                            handleDragLeave(index);
+                        }}
                         onDragEnd={handleDragEnd}
                         onDrop={(e) => handleDrop(e, index)}
                         className={mergeClasses(
@@ -161,6 +166,10 @@ const PreviewPanel = ({
                 <div
                     style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100px' }}
                     onDragOver={(e) => handleDragOver(e, config.widgets.length)}
+                    onDragLeave={(e) => {
+                        if (e.currentTarget.contains(e.relatedTarget)) return;
+                        handleDragLeave(config.widgets.length);
+                    }}
                     onDrop={(e) => handleDrop(e, config.widgets.length)}
                 >
                     <div

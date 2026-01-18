@@ -243,13 +243,22 @@ export const useStyles = makeStyles({
         marginTop: '4px',
     },
     // 组件设置特定样式
+    // 组件设置页面的主容器，不限制最大宽度，且占满高度
+    componentSettingsSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        maxWidth: 'none',
+        height: '100%',
+    },
     // 组件布局样式：左右分栏布局
     componentLayout: {
         display: 'flex',
         flexDirection: 'row',
         gap: '0',
-        height: 'calc(100vh - 140px)',
-        minHeight: '500px',
+        // height: 'calc(100vh - 140px)', // 移除固定高度
+        flexGrow: 1, // 自动填充剩余垂直空间
+        minHeight: '0', // 允许内容收缩以支持滚动
         position: 'relative',
     },
     // 左侧面板样式：预览面板
@@ -501,5 +510,58 @@ export const useStyles = makeStyles({
         fontSize: '16px',
         fontWeight: '600',
         marginTop: '10px',
+    },
+
+    // 组件库网格布局
+    libraryGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '16px',
+        marginTop: '16px',
+    },
+    // 组件库项目卡片
+    libraryItem: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: '16px',
+        gap: '16px',
+        backgroundColor: 'var(--colorNeutralBackground1)',
+        border: '1px solid var(--colorNeutralStroke1)',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        transition: 'all 0.2s cubic-bezier(0.33, 0, 0.67, 1)',
+        ':hover': {
+            backgroundColor: 'var(--colorNeutralBackground1Hover)',
+            borderColor: 'var(--colorBrandStroke1)',
+            transform: 'translateY(-2px)',
+            boxShadow: 'var(--shadow4)',
+        }
+    },
+    // 组件库图标
+    libraryItemIcon: {
+        fontSize: '32px',
+        color: 'var(--colorBrandForeground1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // 组件库文本内容
+    libraryItemContent: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+    },
+    // 组件名称
+    libraryItemTitle: {
+        fontSize: '14px',
+        fontWeight: '600',
+        color: 'var(--colorNeutralForeground1)',
+    },
+    // 组件描述
+    libraryItemDesc: {
+        fontSize: '12px',
+        color: 'var(--colorNeutralForeground3)',
+        lineHeight: '1.4',
     }
 });

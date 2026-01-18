@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react';
 
-const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
+const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex, createWidget) => {
     // 正在拖拽的组件索引
     const [draggingIndex, setDraggingIndex] = useState(null);
     // 拖拽悬停的组件索引
@@ -31,7 +31,18 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
             e.preventDefault();
             e.stopPropagation();
         }
-        if (draggingIndex === null) return;
+
+        // 如果没有正在拖拽的组件，检查是否有外部拖拽（从组件库）
+        if (draggingIndex === null) {
+            // 兼容性处理：检查 types 是否包含特定类型
+            const types = e.dataTransfer?.types;
+            const hasType = types && (types.includes ? types.includes('application/react-dnd-type') : (types.contains && types.contains('application/react-dnd-type')));
+
+            if (hasType) {
+                setDragOverIndex(index);
+            }
+            return;
+        }
 
         // 计算调整后的目标索引（与 handleDrop 中的逻辑一致）
         const adjustedTargetIndex = index > draggingIndex ? index - 1 : index;
@@ -57,7 +68,32 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
             e.preventDefault();
             e.stopPropagation();
         }
-        if (draggingIndex === null || draggingIndex === targetIndex) {
+
+        // 检查是否是外部组件库拖拽
+        if (draggingIndex === null) {
+            const newWidgetType = e.dataTransfer && e.dataTransfer.getData('application/react-dnd-type');
+            if (newWidgetType && createWidget) {
+                const newWidget = createWidget(newWidgetType);
+                const newWidgets = [...config.widgets];
+
+                // 插入到目标位置
+                newWidgets.splice(targetIndex, 0, newWidget);
+
+                updateConfig({
+                    ...config,
+                    widgets: newWidgets
+                });
+
+                // 选中新添加的组件
+                setSelectedWidgetIndex(targetIndex);
+
+                // 清除状态
+                setDragOverIndex(null);
+            }
+            return;
+        }
+
+        if (draggingIndex === targetIndex) {
             setDraggingIndex(null);
             setDragOverIndex(null);
             return;
@@ -89,13 +125,19 @@ const useDragAndDrop = (config, updateConfig, setSelectedWidgetIndex) => {
         // 清除拖拽状态
         setDraggingIndex(null);
         setDragOverIndex(null);
-    }, [config, updateConfig, draggingIndex]);
+    }, [config, updateConfig, draggingIndex, createWidget, setSelectedWidgetIndex]);
+
+    // 处理拖拽离开事件
+    const handleDragLeave = useCallback((index) => {
+        setDragOverIndex(prev => prev === index ? null : prev);
+    }, []);
 
     return {
         draggingIndex,
         dragOverIndex,
         handleDragStart,
         handleDragOver,
+        handleDragLeave,
         handleDragEnd,
         handleDrop
     };

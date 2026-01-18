@@ -66,15 +66,47 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
         clearSelection
     } = useWidgetSelection();
 
+    // 创建新组件的辅助函数
+    const createWidget = useCallback((type) => {
+        const newWidget = {
+            type: type
+        };
+
+        // 根据类型设置默认属性
+        if (type === 'launcher') {
+            newWidget.layout = 'vertical';
+            newWidget.targets = [{
+                name: '新目标',
+                target: '',
+                args: []
+            }];
+        } else if (type === 'volume_slider') {
+            newWidget.range = [0, 100];
+        } else if (type === 'drag_to_launch') {
+            newWidget.name = '拖放速启';
+            newWidget.targets = '';
+            newWidget.show_all_time = false;
+        } else if (type === 'files') {
+            newWidget.folder_path = '';
+            newWidget.max_count = 10;
+            newWidget.layout = 'vertical';
+        }
+
+        return newWidget;
+    }, []);
+
     // 使用拖拽排序 Hook：管理组件的拖拽排序功能
     const {
         draggingIndex,
         dragOverIndex,
         handleDragStart,
         handleDragOver,
+        handleDragLeave,
         handleDragEnd,
         handleDrop
-    } = useDragAndDrop(config, updateConfig, setSelectedWidgetIndex);
+    } = useDragAndDrop(config, updateConfig, setSelectedWidgetIndex, createWidget);
+
+    // ... existing hooks ...
 
     // 使用长按拖拽 Hook：管理触摸设备上的长按拖拽功能
     const {
@@ -226,8 +258,21 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
         }
     };
 
+    // 添加新组件
+    const handleAddComponent = (type) => {
+        const newWidget = createWidget(type);
+        const newWidgets = [...config.widgets, newWidget];
+        updateConfig({
+            ...config,
+            widgets: newWidgets
+        });
+
+        // 选中新添加的组件
+        setSelectedWidgetIndex(newWidgets.length - 1);
+    };
+
     return (
-        <div className={styles.section}>
+        <div className={styles.componentSettingsSection}>
             <div className={styles.sectionHeader}>
                 <div className={styles.title}>组件设置</div>
                 <div className={styles.description}>可视化管理侧边栏组件，通过简单的拖拽和属性调整来定制你的侧边栏。</div>
@@ -251,6 +296,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                         handlePointerDown={handlePointerDown}
                         handleDragStart={handleDragStart}
                         handleDragOver={handleDragOver}
+                        handleDragLeave={handleDragLeave}
                         handleDragEnd={handleDragEnd}
                         handleDrop={handleDrop}
                         handleWidgetClick={handleWidgetClickWrapper}
@@ -282,6 +328,8 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                         selectedWidget={selectedWidget}
                         updateWidgetProperty={updateWidgetProperty}
                         onDeselectWidget={clearSelection}
+                        onAddComponent={handleAddComponent}
+                        onDragEnd={handleDragEnd}
                     />
                 </div>
             </div>

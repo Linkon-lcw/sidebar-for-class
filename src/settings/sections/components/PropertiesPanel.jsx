@@ -29,7 +29,11 @@ import {
     AddRegular,
     DeleteRegular,
     ArrowUpRegular,
-    ArrowDownRegular
+    ArrowDownRegular,
+    RocketRegular,
+    Speaker2Regular,
+    ArrowImportRegular,
+    FolderRegular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
@@ -38,7 +42,9 @@ const PropertiesPanel = ({
     setActiveTab,
     selectedWidget,
     updateWidgetProperty,
-    onDeselectWidget
+    onDeselectWidget,
+    onAddComponent,
+    onDragEnd
 }) => {
     // 当前正在编辑的目标索引（用于启动器组件）
     const [editingTargetIndex, setEditingTargetIndex] = useState(null);
@@ -109,6 +115,12 @@ const PropertiesPanel = ({
                 setEditingTargetIndex(index);
             }
         }
+    };
+
+    // 处理库组件拖拽开始
+    const handleLibraryDragStart = (e, type) => {
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('application/react-dnd-type', type);
     };
 
     return (
@@ -239,7 +251,7 @@ const PropertiesPanel = ({
                                     <Slider
                                         min={0}
                                         max={100}
-                                        step={1}
+                                        step={10}
                                         value={selectedWidget.range?.[0] || 0}
                                         onChange={(_, data) => {
                                             const currentMax = selectedWidget.range?.[1] || 100;
@@ -255,7 +267,7 @@ const PropertiesPanel = ({
                                     <Slider
                                         min={0}
                                         max={100}
-                                        step={1}
+                                        step={10}
                                         value={selectedWidget.range?.[1] || 100}
                                         onChange={(_, data) => {
                                             const currentMin = selectedWidget.range?.[0] || 0;
@@ -337,9 +349,79 @@ const PropertiesPanel = ({
             {/* 组件库标签页内容 */}
             {activeTab === 'library' && (
                 <div className={styles.propertiesContent}>
-                    <div className={styles.propertyGroup}>
-                        <Title2 as="h3" className={styles.panelTitle}>组件库</Title2>
-                        <Body1>暂时还没做这个功能</Body1>
+                    <Title2 as="h3" className={styles.panelTitle}>组件库</Title2>
+                    <div className={styles.libraryGrid}>
+                        {/* 启动器组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('launcher')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'launcher')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <RocketRegular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>启动器</span>
+                                <span className={styles.libraryItemDesc}>快速启动应用程序或文件</span>
+                            </div>
+                        </div>
+
+                        {/* 音量控制组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('volume_slider')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'volume_slider')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <Speaker2Regular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>音量控制</span>
+                                <span className={styles.libraryItemDesc}>滑动调节系统音量</span>
+                            </div>
+                        </div>
+
+                        {/* 拖放速启组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('drag_to_launch')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'drag_to_launch')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <ArrowImportRegular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>拖放速启</span>
+                                <span className={styles.libraryItemDesc}>拖拽文件到此处快速打开</span>
+                            </div>
+                        </div>
+
+                        {/* 文件列表组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('files')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'files')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <FolderRegular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>文件列表</span>
+                                <span className={styles.libraryItemDesc}>显示指定文件夹内容</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
