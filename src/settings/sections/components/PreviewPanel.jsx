@@ -25,7 +25,8 @@
  */
 
 import React from 'react';
-import { mergeClasses } from "@fluentui/react-components";
+import { mergeClasses, Button } from "@fluentui/react-components";
+import { DeleteRegular } from "@fluentui/react-icons";
 
 const PreviewPanel = ({
     config,
@@ -45,6 +46,7 @@ const PreviewPanel = ({
     handleDragEnd,
     handleDrop,
     handleWidgetClick,
+    handleDeleteWidget,
     LauncherItemPreview,
     VolumeWidgetPreview,
     FilesWidgetPreview,
@@ -134,8 +136,21 @@ const PreviewPanel = ({
                                 <div className={styles.widgetType} style={{ marginBottom: 0 }}>
                                     {WIDGET_TYPE_NAMES[widget.type] || widget.type}
                                 </div>
-                                <div className={styles.widgetInfo}>
-                                    {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div className={styles.widgetInfo}>
+                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
+                                    </div>
+                                    <Button
+                                        icon={<DeleteRegular />}
+                                        appearance="subtle"
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteWidget(index);
+                                        }}
+                                        aria-label="删除组件"
+                                        title="删除组件"
+                                    />
                                 </div>
                             </div>
                         )}

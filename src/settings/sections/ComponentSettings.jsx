@@ -164,6 +164,68 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
         };
     }, [isDragging, handleResizerMouseMove, handleResizerMouseUp]);
 
+    // 撤销删除相关状态
+    const [deletedWidget, setDeletedWidget] = useState(null);
+    const [deletedWidgetIndex, setDeletedWidgetIndex] = useState(null);
+    const [showUndoNotification, setShowUndoNotification] = useState(false);
+    const undoTimerRef = useRef(null);
+
+    // 删除组件处理函数
+    const handleDeleteWidget = (index) => {
+        const widgetToDelete = config.widgets[index];
+        setDeletedWidget(widgetToDelete);
+        setDeletedWidgetIndex(index);
+        setShowUndoNotification(true);
+
+        // 设置5秒倒计时
+        if (undoTimerRef.current) {
+            clearTimeout(undoTimerRef.current);
+        }
+        undoTimerRef.current = setTimeout(() => {
+            setShowUndoNotification(false);
+            setDeletedWidget(null);
+            setDeletedWidgetIndex(null);
+        }, 5000);
+
+        const newWidgets = [...config.widgets];
+        newWidgets.splice(index, 1);
+        updateConfig({
+            ...config,
+            widgets: newWidgets
+        });
+
+        // 如果删除的是当前选中的组件，或者是该组件之前的组件，需要更新选中状态
+        if (selectedWidgetIndex === index) {
+            clearSelection();
+        } else if (selectedWidgetIndex > index) {
+            setSelectedWidgetIndex(selectedWidgetIndex - 1);
+        }
+    };
+
+    // 撤销删除函数
+    const handleUndoDelete = () => {
+        if (!deletedWidget || deletedWidgetIndex === null) return;
+
+        const newWidgets = [...config.widgets];
+        newWidgets.splice(deletedWidgetIndex, 0, deletedWidget);
+
+        updateConfig({
+            ...config,
+            widgets: newWidgets
+        });
+
+        // 恢复选中状态（可选，如果用户还在当前页面可能会比较友好）
+        // setSelectedWidgetIndex(deletedWidgetIndex);
+
+        // 清除状态
+        setShowUndoNotification(false);
+        setDeletedWidget(null);
+        setDeletedWidgetIndex(null);
+        if (undoTimerRef.current) {
+            clearTimeout(undoTimerRef.current);
+        }
+    };
+
     return (
         <div className={styles.section}>
             <div className={styles.sectionHeader}>
@@ -192,6 +254,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                         handleDragEnd={handleDragEnd}
                         handleDrop={handleDrop}
                         handleWidgetClick={handleWidgetClickWrapper}
+                        handleDeleteWidget={handleDeleteWidget}
                         LauncherItemPreview={LauncherItemPreview}
                         VolumeWidgetPreview={VolumeWidgetPreview}
                         FilesWidgetPreview={FilesWidgetPreview}
@@ -222,6 +285,33 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                     />
                 </div>
             </div>
+            {/* 撤销删除通知横幅 */}
+            {showUndoNotification && (
+                <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'var(--colorNeutralBackgroundInverted)',
+                    color: 'var(--colorNeutralForegroundInverted)',
+                    padding: '12px 16px',
+                    borderRadius: '4px',
+                    boxShadow: 'var(--shadow8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    zIndex: 10000,
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <span>已删除组件</span>
+                    <Button
+                        appearance="primary"
+                        size="small"
+                        onClick={handleUndoDelete}
+                    >
+                        撤销
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
