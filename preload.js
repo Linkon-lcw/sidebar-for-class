@@ -55,6 +55,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
         const subscription = (event, displays) => callback(displays);
         ipcRenderer.on('displays-updated', subscription);
         return () => ipcRenderer.removeListener('displays-updated', subscription);
-    }
+    },
+
+    // 显示桌面（模拟 Win+D）
+    showDesktop: () => ipcRenderer.send('show-desktop'),
+
+    // 任务视图（模拟 Win+Tab）
+    taskview: () => ipcRenderer.send('taskview'),
+
+    // 截图
+    screenshot: () => ipcRenderer.invoke('screenshot'),
 });
 

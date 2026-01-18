@@ -2,7 +2,7 @@
     "transforms": {
         "display": 0,
         "height": 64,
-        "posy": 310,
+        "posy": 283,
         "animation_speed": 1,
         "size": 130
     },
@@ -56,6 +56,15 @@
             "range": [
                 0,
                 100
+            ]
+        },
+        {
+            "type": "toolbar",
+            "tools": [
+                "screenshot",
+                "screenrecord",
+                "show_desktop",
+                "taskview"
             ]
         }
     ],

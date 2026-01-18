@@ -1,0 +1,90 @@
+/**
+ * 工具栏组件
+ * 显示工具按钮，每行最多显示5个按钮，超过自动换行
+ * @param {Array<string>} tools - 工具名称数组
+ * @param {boolean} isExpanded - 侧边栏是否展开
+ * @param {Function} collapse - 收起侧边栏的函数
+ */
+import { useState } from 'react';
+
+const Toolbar = ({ tools = [], isExpanded, collapse }) => {
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+
+    /**
+     * 处理工具按钮点击事件
+     * @param {string} tool - 工具名称
+     */
+    const handleToolClick = async (tool) => {
+        // 根据不同的工具执行不同的操作
+        if (tool === 'screenshot' && window.electronAPI && window.electronAPI.screenshot) {
+            try {
+                // 如果侧边栏是展开的，先收起并等待动画完成
+                if (isExpanded && collapse) {
+                    collapse();
+                    // 等待收起动画完成（默认300ms，加上一些缓冲时间）
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+
+                // 执行截图
+                await window.electronAPI.screenshot();
+            } catch (error) {
+                console.error('Screenshot failed:', error);
+            }
+        } else if (tool === 'show_desktop' && window.electronAPI && window.electronAPI.showDesktop) {
+            window.electronAPI.showDesktop();
+        } else if (tool === 'taskview' && window.electronAPI && window.electronAPI.taskview) {
+            window.electronAPI.taskview();
+        } else {
+            console.log(`工具按钮被点击: ${tool}`);
+        }
+    };
+
+    /**
+     * 获取工具对应的图标类名
+     * @param {string} tool - 工具名称
+     * @returns {string} - FontAwesome 图标类名
+     */
+    const getToolIcon = (tool) => {
+        const iconMap = {
+            'screenshot': 'fa-camera',
+            'show_desktop': 'fa-desktop',
+            'taskview': 'fa-columns',
+        };
+        return iconMap[tool] || 'fa-tools';
+    };
+
+    /**
+     * 获取工具对应的中文显示名称
+     * @param {string} tool - 工具名称
+     * @returns {string} - 中文名称
+     */
+    const getToolDisplayName = (tool) => {
+        const nameMap = {
+            'screenshot': '截图',
+            'show_desktop': '显示桌面',
+            'taskview': '任务视图',
+        };
+        return nameMap[tool] || tool;
+    };
+
+    return (
+        <div className={`toolbar-widget ${tools.length === 1 ? 'single-tool' : ''}`}>
+            <div className="toolbar-buttons">
+                {tools.map((tool, index) => (
+                    <button
+                        key={index}
+                        className="toolbar-button"
+                        onClick={() => handleToolClick(tool)}
+                        title={getToolDisplayName(tool)}
+                    >
+                        <i className={`fas ${getToolIcon(tool)}`}></i>
+                        <span className="toolbar-button-text">{getToolDisplayName(tool)}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default Toolbar;
