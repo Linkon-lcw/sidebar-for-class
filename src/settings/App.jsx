@@ -35,7 +35,7 @@ const App = () => {
 
     const iconCache = useRef(new Map());
     const pendingIconRequests = useRef(new Map());
-    const [widgetIcons, setWidgetIcons] = useState(new Map());
+
 
     const loadIcon = useCallback(async (target) => {
         if (!target) return null;
@@ -73,13 +73,10 @@ const App = () => {
             if (widget.type === 'launcher' && widget.targets) {
                 widget.targets.forEach((target) => {
                     const key = target.target;
-                    if (!widgetIcons.has(key) && target.target) {
-                        loadIcon(target.target).then(icon => {
-                            if (icon) {
-                                setWidgetIcons(prev => new Map(prev).set(key, icon));
-                            }
-                        });
-                    }
+                    // 不再需要 widgetIcons 缓存，直接加载
+                    loadIcon(target.target).then(icon => {
+                        // 不再需要 widgetIcons 缓存
+                    });
                 });
             } else if (widget.type === 'drag_to_launch' && widget.targets) {
                 let exePath = widget.targets;
@@ -92,31 +89,25 @@ const App = () => {
                     exePath = potentialPath;
                 }
                 const key = exePath;
-                if (!widgetIcons.has(key) && exePath) {
-                    loadIcon(exePath).then(icon => {
-                        if (icon) {
-                            setWidgetIcons(prev => new Map(prev).set(key, icon));
-                        }
-                    });
-                }
+                // 不再需要 widgetIcons 缓存，直接加载
+                loadIcon(exePath).then(icon => {
+                    // 不再需要 widgetIcons 缓存
+                });
             } else if (widget.type === 'files' && widget.folder_path) {
                 window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count)
                     .then(fileList => {
                         fileList.forEach((file) => {
                             const key = file.path;
-                            if (!widgetIcons.has(key)) {
-                                loadIcon(file.path).then(icon => {
-                                    if (icon) {
-                                        setWidgetIcons(prev => new Map(prev).set(key, icon));
-                                    }
-                                });
-                            }
+                            // 不再需要 widgetIcons 缓存，直接加载
+                            loadIcon(file.path).then(icon => {
+                                // 不再需要 widgetIcons 缓存
+                            });
                         });
                     })
                     .catch(err => console.error('获取文件列表失败:', err));
             }
         });
-    }, [widgetIcons, loadIcon]);
+    }, [loadIcon]);
 
     /**
      * 初始化：加载配置和监听系统主题变化
@@ -224,10 +215,8 @@ const App = () => {
                             config={config} 
                             updateConfig={updateConfig} 
                             styles={styles}
-                            widgetIcons={widgetIcons}
                             loadIcon={loadIcon}
                             preloadWidgetIcons={preloadWidgetIcons}
-                            setWidgetIcons={setWidgetIcons}
                         />
                     )}
 

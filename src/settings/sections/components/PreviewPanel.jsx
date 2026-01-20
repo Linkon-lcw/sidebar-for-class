@@ -31,7 +31,6 @@ import { DeleteRegular } from "@fluentui/react-icons";
 const PreviewPanel = ({
     config,
     styles,
-    widgetIcons,
     isLongPressing,
     draggingIndex,
     dragOverIndex,
@@ -51,7 +50,6 @@ const PreviewPanel = ({
     LauncherItemPreview,
     VolumeWidgetPreview,
     FilesWidgetPreview,
-
     DragToLaunchWidgetPreview,
     ToolbarWidgetPreview
 }) => {

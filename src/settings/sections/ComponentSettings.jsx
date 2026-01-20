@@ -56,7 +56,7 @@ const WIDGET_TYPE_NAMES = {
     toolbar: '工具栏'
 };
 
-const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon, preloadWidgetIcons, setWidgetIcons }) => {
+const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidgetIcons, setWidgetIcons }) => {
     // 使用组件选择 Hook：管理当前选中的组件和标签页状态
     const {
         activeTab,
@@ -134,7 +134,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
         FilesWidgetPreview,
         DragToLaunchWidgetPreview,
         ToolbarWidgetPreview
-    } = useWidgetPreviews(widgetIcons);
+    } = useWidgetPreviews();
 
     // 获取当前选中的组件
     const selectedWidget = selectedWidgetIndex !== null ? config.widgets[selectedWidgetIndex] : null;
@@ -288,7 +288,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                     <PreviewPanel
                         config={config}
                         styles={styles}
-                        widgetIcons={widgetIcons}
+
                         isLongPressing={isLongPressing}
                         draggingIndex={draggingIndex}
                         dragOverIndex={dragOverIndex}

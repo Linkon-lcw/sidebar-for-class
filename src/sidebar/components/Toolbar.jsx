@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 
-const Toolbar = ({ tools = [], isExpanded, collapse }) => {
+const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
@@ -16,6 +16,8 @@ const Toolbar = ({ tools = [], isExpanded, collapse }) => {
      * @param {string} tool - 工具名称
      */
     const handleToolClick = async (tool) => {
+        if (isPreview) return;
+        
         // 根据不同的工具执行不同的操作
         if (tool === 'screenshot' && window.electronAPI && window.electronAPI.screenshot) {
             try {

@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const VolumeWidget = ({ range }) => {
+const VolumeWidget = ({ range, isPreview = false }) => {
     // 当前音量值（0-100）
     const [volume, setVolume] = useState(0);
     // 音量范围的最小值和最大值
@@ -29,7 +29,9 @@ const VolumeWidget = ({ range }) => {
     const handleVolumeChange = (e) => {
         const val = parseInt(e.target.value);
         setVolume(val);  // 更新本地状态
-        window.electronAPI.setVolume(val);  // 更新系统音量
+        if (!isPreview) {
+            window.electronAPI.setVolume(val);  // 更新系统音量
+        }
     };
 
     // 计算百分比用于进度条显示（相对于配置的范围）
@@ -46,13 +48,14 @@ const VolumeWidget = ({ range }) => {
                 </div>
                 <div className="slider-wrapper">
                     <input
-                        type="range"
-                        className="volume-slider"
-                        min={min}
-                        max={max}
-                        value={volume}
-                        onChange={handleVolumeChange}
-                    />
+                    type="range"
+                    className="volume-slider"
+                    min={min}
+                    max={max}
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    disabled={isPreview}
+                />
                     <div className="slider-fill" style={{ width: `${percentage}%` }}></div>
                 </div>
                 <div className="volume-value">{volume}%</div>

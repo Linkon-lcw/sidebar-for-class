@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const LauncherItem = ({ name, target, args }) => {
+const LauncherItem = ({ name, target, args, isPreview = false }) => {
     // 图标状态：存储从主进程获取的图标数据 URL
     const [icon, setIcon] = useState(null);
 
@@ -32,6 +32,10 @@ const LauncherItem = ({ name, target, args }) => {
      * @param {Event} e - 点击事件对象
      */
     const handleClick = (e) => {
+        if (isPreview) {
+            e.stopPropagation();
+            return;
+        }
         e.stopPropagation();  // 阻止事件冒泡，避免触发侧边栏的拖拽
         window.electronAPI.launchApp(target, args || []);  // 调用主进程启动应用
     };

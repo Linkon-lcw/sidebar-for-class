@@ -61,10 +61,10 @@
         {
             "type": "toolbar",
             "tools": [
-                "screenshot",
                 "screenrecord",
-                "show_desktop",
-                "taskview"
+                "screenshot",
+                "taskview",
+                "show_desktop"
             ]
         }
     ],
