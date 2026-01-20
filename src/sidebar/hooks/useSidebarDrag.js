@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
 
-const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
+const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, setWindowToLarge) => {
     const { BASE_START_W, TARGET_W, VELOCITY_THRESHOLD } = constants;
 
     const activateDragVisuals = () => {
         if (wrapperRef.current) wrapperRef.current.style.width = '500px';
         if (sidebarRef.current) sidebarRef.current.style.transition = 'none';
+        if (setWindowToLarge) setWindowToLarge(); // Ensure window is large enough for drag
     };
 
     const handleStart = (currentX, target) => {

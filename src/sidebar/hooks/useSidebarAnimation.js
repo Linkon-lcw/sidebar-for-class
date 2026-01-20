@@ -12,6 +12,54 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         }
     };
 
+    const calculateLayout = useCallback((progress) => {
+        if (!config?.transforms || !config?.displayBounds) return null;
+        
+        const { posy } = config.transforms;
+        const { y: screenY, height: screenH } = config.displayBounds;
+
+        // Calculate Target Window Dimensions (Max Size)
+        const expandedWinH = (TARGET_H + 120) * scale;
+        const targetWinW = Math.floor(TARGET_W + 100 * scale); // Max Width
+        const targetWinH = Math.ceil(TARGET_H + 40 * scale);   // Max Height
+
+        // Calculate Centers
+        const startCenterY = screenY + posy;
+        const safeCenterY = Math.max(
+            screenY + expandedWinH / 2 + 20,
+            Math.min(screenY + screenH - expandedWinH / 2 - 20, startCenterY)
+        );
+
+        // Interpolate CenterY based on progress
+        const currentCenterY = startCenterY + (safeCenterY - startCenterY) * progress;
+
+        // Final Window Position (at progress = 1)
+        const finalWindowY = safeCenterY - (targetWinH / 2);
+
+        return {
+            targetWinW,
+            targetWinH,
+            finalWindowY,
+            currentCenterY,
+            safeCenterY,
+            startCenterY
+        };
+    }, [config, scale, TARGET_W, TARGET_H]);
+
+    const setWindowToLarge = useCallback(() => {
+        if (!window.electronAPI) return;
+        const layout = calculateLayout(1);
+        if (layout) {
+            window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
+        }
+    }, [calculateLayout]);
+
+    const setWindowToSmall = useCallback(() => {
+        if (!window.electronAPI) return;
+        // Small Window Size
+        window.electronAPI.resizeWindow(20 * scale, (startH + 40) * scale);
+    }, [scale, startH]);
+
     const updateSidebarStyles = useCallback((progress) => {
         if (!sidebarRef.current) return;
 
@@ -27,43 +75,21 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
 
-        if (config?.transforms && config?.displayBounds) {
-            if (!window.electronAPI) return;
-            const { posy } = config.transforms;
-            const { y: screenY, height: screenH } = config.displayBounds;
-            let targetWinW, targetWinH;
-
-            if (progress <= 0) {
-                targetWinW = 20 * scale;
-                targetWinH = (startH + 40) * scale;
-            } else {
-                const rect = sidebarRef.current.getBoundingClientRect();
-                targetWinW = Math.floor(rect.width + 100 * scale);
-                targetWinH = Math.ceil(rect.height + 40 * scale);
-            }
-
-            const startCenterY = screenY + posy;
-            const expandedWinH = (TARGET_H + 120) * scale;
-            const safeCenterY = Math.max(
-                screenY + expandedWinH / 2 + 20,
-                Math.min(screenY + screenH - expandedWinH / 2 - 20, startCenterY)
-            );
-            const currentCenterY = startCenterY + (safeCenterY - startCenterY) * progress;
-            const newWindowY = currentCenterY - (targetWinH / 2);
-
-            if (progress === 0 || progress === 1) {
-                window.electronAPI.resizeWindow(targetWinW, targetWinH, newWindowY);
-            } else {
-                if (Date.now() - draggingState.current.lastResizeTime > 16) {
-                    window.electronAPI.resizeWindow(targetWinW, targetWinH, newWindowY);
-                    draggingState.current.lastResizeTime = Date.now();
-                }
+        // Handle visual position offset (compensate for Window Center shift)
+        if (wrapperRef.current && config?.transforms && config?.displayBounds) {
+            const layout = calculateLayout(progress);
+            if (layout) {
+                // We assume the window is at the "Final" position (Large).
+                // Window Center is layout.safeCenterY.
+                // We want Sidebar Center to be at layout.currentCenterY.
+                const offsetY = layout.currentCenterY - layout.safeCenterY;
+                wrapperRef.current.style.transform = `translateY(${offsetY}px)`;
             }
         }
 
         const gray = Math.floor(156 + (255 - 156) * progress);
         sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${0.8 + 0.15 * progress})`;
-    }, [config, scale, startH, sidebarRef, draggingState, BASE_START_W, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, sidebarRef, wrapperRef, BASE_START_W, TARGET_W, TARGET_H, calculateLayout]);
 
     const stopAnimation = () => {
         if (animationIdRef.current) {
@@ -78,9 +104,12 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
     };
 
     const finishCollapse = () => {
-        window.electronAPI.resizeWindow(20 * scale, (startH + 40) * scale);
+        setWindowToSmall();
         setIgnoreMouse(false);
-        if (wrapperRef.current) wrapperRef.current.style.width = '';
+        if (wrapperRef.current) {
+            wrapperRef.current.style.width = '';
+            wrapperRef.current.style.transform = ''; // Reset transform
+        }
         if (sidebarRef.current) {
             sidebarRef.current.style.transition = '';
             ['width', 'height', 'borderRadius', 'marginLeft', 'background', 'backgroundColor'].forEach(p => sidebarRef.current.style[p] = '');
@@ -95,6 +124,9 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         setIsExpanded(true);
         if (wrapperRef.current) wrapperRef.current.style.width = '100%';
         if (sidebarRef.current) sidebarRef.current.style.transition = 'none';
+
+        // Immediately resize window to Large
+        setWindowToLarge();
 
         const speed = config?.transforms?.animation_speed || 1;
         const duration = 300 / speed;
@@ -157,7 +189,8 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         collapse,
         updateSidebarStyles,
         stopAnimation,
-        setIgnoreMouse
+        setIgnoreMouse,
+        setWindowToLarge // Exported for drag
     };
 };
 

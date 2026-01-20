@@ -15,8 +15,8 @@ import useGlobalEvents from './hooks/useGlobalEvents';
 const Sidebar = () => {
     const { sidebarRef, wrapperRef, animationIdRef, draggingState, constants } = useSidebarRefs();
     const { config, scale, startH } = useSidebarConfig();
-    const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse } = useSidebarAnimation(config, scale, startH, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
-    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
+    const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse, setWindowToLarge } = useSidebarAnimation(config, scale, startH, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
+    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, setWindowToLarge);
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
     useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef);
     useGlobalEvents(handleMove, handleEnd, draggingState);
