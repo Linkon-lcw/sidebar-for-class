@@ -177,37 +177,96 @@ p {
 /* 启动器分组样式 */
 .launcher-group {
     display: flex;
-    gap: 8px;
+    background: #f3f4f6; /* 强化浅灰色背景，体现整体感 */
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    position: relative;
+    gap: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* 增加微弱阴影增强整体感 */
+}
+
+/* 移除底部装饰线 */
+.launcher-group::after {
+    display: none;
 }
 
 .launcher-group.layout-vertical {
     flex-direction: column;
-    gap: 4px;
 }
 
 .launcher-group.layout-grid {
-    display: flex;
     flex-wrap: wrap;
-    gap: 8px;
 }
 
 .launcher-group.layout-grid_no_text {
-    display: flex;
     flex-wrap: wrap;
-    gap: 6px;
 }
 
 /* 启动器项目样式 */
 .launcher-item {
     display: flex;
     align-items: center;
-    background: rgba(243, 244, 246, 0.5);
-    border-radius: 12px;
+    background: transparent; /* 移除单个背景 */
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: none; /* 移除单个边框 */
     box-sizing: border-box;
+    position: relative;
 }
+
+/* 分割线逻辑 */
+/* 垂直布局下的水平分割线：排除第一个 */
+.layout-vertical .launcher-item:not(:first-child)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12px;  /* 线左右有间距 */
+    right: 12px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* 网格布局下的垂直分割线（左右相邻项之间） */
+/* 排除每一行的第一个（3列布局排除 3n+1，4列布局排除 4n+1） */
+.layout-grid .launcher-item:not(:nth-child(3n+1))::before,
+.layout-grid_no_text .launcher-item:not(:nth-child(4n+1))::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;    /* 线上下有间距 */
+    bottom: 10px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* 网格布局下的水平分割线（上下相邻行之间） */
+/* 排除第一行（3列布局排除前3个，4列布局排除前4个） */
+.layout-grid .launcher-item:not(:nth-child(-n+3))::after,
+.layout-grid_no_text .launcher-item:not(:nth-child(-n+4))::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10px;   /* 线左右有间距 */
+    right: 10px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* 修正网格布局容器：移除多余的负边距 */
+.launcher-group.layout-grid,
+.launcher-group.layout-grid_no_text {
+    width: 100%;
+}
+
+/* 修正网格布局容器 */
+.launcher-group.layout-grid,
+.launcher-group.layout-grid_no_text {
+    width: 100%;
+    margin-top: 0;
+}
+
 
 .layout-vertical .launcher-item {
     padding: 8px 14px;
@@ -248,12 +307,12 @@ p {
 
 /* 启动器项目悬停效果 */
 .launcher-item:hover {
-    background: rgba(243, 244, 246, 0.8);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(0, 0, 0, 0.04); /* 在浅灰背景上轻微变深 */
 }
 
 /* 启动器项目点击效果 */
 .launcher-item:active {
+    background: rgba(0, 0, 0, 0.05);
     scale: 0.98;
 }
 
@@ -425,12 +484,12 @@ p {
 
 /* 紧凑文件列表样式 (类 Explorer 详细信息) */
 .launcher-group.compact-files {
-    gap: 1px;
+    gap: 0;
 }
 
 .compact-files .launcher-item {
-    padding: 3px 8px;
-    border-radius: 4px;
+    padding: 4px 12px;
+    border-radius: 0;
     background: transparent;
     border: none;
     min-height: 28px;
@@ -462,9 +521,10 @@ p {
 /* 拖拽启动组件样式 */
 .drag-to-launch {
     padding: 12px;
-    border: 2px dashed rgba(156, 163, 175, 0.4);
-    background: rgba(243, 244, 246, 0.5);
+    border: 2px dashed rgba(156, 163, 175, 0.3);
+    background: transparent;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
 }
 
 .drag-to-launch:hover {

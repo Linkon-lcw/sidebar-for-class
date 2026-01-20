@@ -182,22 +182,24 @@ const DragToLaunchWidget = ({ name, targets, show_all_time = true, isPreview = f
     if (!isVisible) return null;
 
     return (
-        <div
-            className={`launcher-item drag-to-launch ${isDragOver ? 'drag-over' : ''}`}
-            title={name || "Drag files here to send"}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
-            <div className="launcher-icon">
-                {icon ? (
-                    <img src={icon} alt={name || 'Drop Target'} />
-                ) : (
-                    <div className="launcher-icon-placeholder" style={{ width: '32px', height: '32px', background: '#e5e7eb', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📤</div>
-                )}
-            </div>
-            <div className="launcher-info">
-                <div className="launcher-name">{name || 'Drop to Send'}</div>
+        <div className="launcher-group layout-vertical">
+            <div
+                className={`launcher-item drag-to-launch ${isDragOver ? 'drag-over' : ''}`}
+                title={name || "Drag files here to send"}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                <div className="launcher-icon">
+                    {icon ? (
+                        <img src={icon} alt={name || 'Drop Target'} />
+                    ) : (
+                        <div className="launcher-icon-placeholder" style={{ width: '32px', height: '32px', background: '#e5e7eb', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📤</div>
+                    )}
+                </div>
+                <div className="launcher-info">
+                    <div className="launcher-name">{name || 'Drop to Send'}</div>
+                </div>
             </div>
         </div>
     );

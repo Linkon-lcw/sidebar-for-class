@@ -56,11 +56,7 @@ const Sidebar = () => {
                                 return <FilesWidget key={index} {...widget} />;
                             } 
                             else if (widget.type === 'drag_to_launch') {
-                                return (
-                                    <div key={index} className="launcher-group layout-vertical">
-                                        <DragToLaunchWidget {...widget} />
-                                    </div>
-                                );
+                                return <DragToLaunchWidget key={index} {...widget} />;
                             }
                             else if (widget.type === 'toolbar') {
                                 return <Toolbar key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;

@@ -217,9 +217,7 @@ const PreviewPanel = ({
                                 {widget.type === 'volume_slider' && <VolumeWidgetPreview {...widget} />}
                                 {widget.type === 'files' && <FilesWidgetPreview {...widget} widgetIndex={draggingIndex} />}
                                 {widget.type === 'drag_to_launch' && (
-                                    <div className="launcher-group layout-vertical">
-                                        <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
-                                    </div>
+                                    <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
                                 )}
                                 {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
                             </div>
