@@ -51,7 +51,9 @@ const PreviewPanel = ({
     LauncherItemPreview,
     VolumeWidgetPreview,
     FilesWidgetPreview,
-    DragToLaunchWidgetPreview
+
+    DragToLaunchWidgetPreview,
+    ToolbarWidgetPreview
 }) => {
     // 组件类型名称映射
     const WIDGET_TYPE_NAMES = {
@@ -127,6 +129,7 @@ const PreviewPanel = ({
                                     <DragToLaunchWidgetPreview {...widget} widgetIndex={index} />
                                 </div>
                             )}
+                            {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
                         </div>
 
                         {/* 选中时显示组件信息 */}
@@ -220,6 +223,7 @@ const PreviewPanel = ({
                                         <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
                                     </div>
                                 )}
+                                {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
                             </div>
                         );
                     })()}

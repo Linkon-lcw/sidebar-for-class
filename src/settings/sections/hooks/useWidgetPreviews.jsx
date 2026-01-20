@@ -6,6 +6,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import {
+    CameraRegular,
+    DesktopRegular,
+    BoardRegular,
+    WrenchRegular
+} from "@fluentui/react-icons";
 
 const useWidgetPreviews = (widgetIcons) => {
     // 启动器项预览组件：显示单个启动目标
@@ -126,11 +132,54 @@ const useWidgetPreviews = (widgetIcons) => {
         );
     });
 
+    // 工具栏预览组件
+    const ToolbarWidgetPreview = React.memo(({ tools = [] }) => {
+        const getToolIcon = (tool) => {
+            if (tool === 'screenshot') return <CameraRegular />;
+            if (tool === 'show_desktop') return <DesktopRegular />;
+            if (tool === 'taskview') return <BoardRegular />;
+            return <WrenchRegular />;
+        };
+
+        const getToolName = (tool) => {
+            const map = {
+                'screenshot': '截图',
+                'show_desktop': '显示桌面',
+                'taskview': '任务视图'
+            };
+            return map[tool] || tool;
+        };
+
+        return (
+            <div className="toolbar-widget preview">
+                <div className="toolbar-buttons" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {tools.map((tool, index) => (
+                        <div key={index} className="toolbar-button" style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            padding: '8px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            minWidth: '40px'
+                        }}>
+                            <div style={{ fontSize: '16px', marginBottom: '4px' }}>
+                                {getToolIcon(tool)}
+                            </div>
+                            <span style={{ fontSize: '10px' }}>{getToolName(tool)}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    });
+
     return {
         LauncherItemPreview,
         VolumeWidgetPreview,
         FilesWidgetPreview,
-        DragToLaunchWidgetPreview
+        DragToLaunchWidgetPreview,
+        ToolbarWidgetPreview
     };
 };
 

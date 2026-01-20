@@ -33,7 +33,8 @@ import {
     RocketRegular,
     Speaker2Regular,
     ArrowImportRegular,
-    FolderRegular
+    FolderRegular,
+    WrenchRegular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
@@ -343,6 +344,37 @@ const PropertiesPanel = ({
                             </div>
                         </div>
                     )}
+                    {/* 工具栏组件的属性 */}
+                    {selectedWidget.type === 'toolbar' && (
+                        <div className={styles.propertySection}>
+                            <div className={styles.propertyGroup}>
+                                <Title2 as="h3" className={styles.sectionTitle}>显示的工具</Title2>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {[
+                                        { id: 'screenshot', label: '截图' },
+                                        { id: 'show_desktop', label: '显示桌面' },
+                                        { id: 'taskview', label: '任务视图' }
+                                    ].map(tool => (
+                                        <Switch
+                                            key={tool.id}
+                                            label={tool.label}
+                                            checked={(selectedWidget.tools || []).includes(tool.id)}
+                                            onChange={(_, data) => {
+                                                const currentTools = selectedWidget.tools || [];
+                                                let newTools;
+                                                if (data.checked) {
+                                                    newTools = [...currentTools, tool.id];
+                                                } else {
+                                                    newTools = currentTools.filter(t => t !== tool.id);
+                                                }
+                                                updateWidgetProperty('tools', newTools);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -420,6 +452,24 @@ const PropertiesPanel = ({
                             <div className={styles.libraryItemContent}>
                                 <span className={styles.libraryItemTitle}>文件列表</span>
                                 <span className={styles.libraryItemDesc}>显示指定文件夹内容</span>
+                            </div>
+                        </div>
+
+                        {/* 工具栏组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('toolbar')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'toolbar')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <WrenchRegular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>工具栏</span>
+                                <span className={styles.libraryItemDesc}>包含截图、显示桌面等工具</span>
                             </div>
                         </div>
                     </div>
