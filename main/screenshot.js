@@ -5,9 +5,9 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { Notification } = require('electron');
 const screenshot = require('screenshot-desktop');
 const sharp = require('sharp');
-const notifier = require('node-notifier');
 
 /**
  * 执行截图并保存到桌面
@@ -139,13 +139,15 @@ async function mergeScreenshots(images, displays, bounds, totalWidth, totalHeigh
  * @param {string} message - 通知内容
  */
 function showNotification(title, message) {
-  notifier.notify({
-    title,
-    message,
-    icon: undefined,
-    sound: true,
-    wait: false
-  });
+  if (Notification.isSupported()) {
+    new Notification({
+      title,
+      body: message,
+      silent: false
+    }).show();
+  } else {
+    console.log(`Notification: [${title}] ${message}`);
+  }
 }
 
 module.exports = {

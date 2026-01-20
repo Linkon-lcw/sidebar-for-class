@@ -61,10 +61,9 @@
         {
             "type": "toolbar",
             "tools": [
-                "screenrecord",
                 "screenshot",
-                "taskview",
-                "show_desktop"
+                "show_desktop",
+                "taskview"
             ]
         }
     ],

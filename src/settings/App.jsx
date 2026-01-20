@@ -20,6 +20,9 @@ import ComponentSettings from './sections/ComponentSettings';
 import WindowSettings from './sections/WindowSettings';
 import StyleSettings from './sections/StyleSettings';
 
+// 导入图标缓存
+import { iconCache } from '../sidebar/components/LauncherItem';
+
 const App = () => {
     const styles = useStyles();
     // 当前选中的标签页
@@ -33,7 +36,7 @@ const App = () => {
     const isInitialMount = useRef(true);  // 标记是否为首次挂载
     const saveTimeoutRef = useRef(null);   // 保存操作的防抖定时器
 
-    const iconCache = useRef(new Map());
+    // 使用全局共享的图标缓存
     const pendingIconRequests = useRef(new Map());
 
 
@@ -41,8 +44,8 @@ const App = () => {
         if (!target) return null;
 
         const cacheKey = target;
-        if (iconCache.current.has(cacheKey)) {
-            return iconCache.current.get(cacheKey);
+        if (iconCache.has(cacheKey)) {
+            return iconCache.get(cacheKey);
         }
 
         if (pendingIconRequests.current.has(cacheKey)) {
@@ -52,7 +55,7 @@ const App = () => {
         const promise = window.electronAPI.getFileIcon(target)
             .then(iconDataUrl => {
                 if (iconDataUrl) {
-                    iconCache.current.set(cacheKey, iconDataUrl);
+                    iconCache.set(cacheKey, iconDataUrl);
                 }
                 return iconDataUrl;
             })

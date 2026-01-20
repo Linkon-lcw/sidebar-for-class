@@ -8,22 +8,58 @@
 
 import React, { useState, useEffect } from 'react';
 
+// 全局图标缓存，避免重复从主进程获取相同的图标
+// 格式: { [target]: dataUrl }
+export const iconCache = new Map();
+// 正在进行的图标请求，避免并发重复请求同一个图标
+export const pendingIcons = new Map();
+
 const LauncherItem = ({ name, target, args, isPreview = false }) => {
     // 图标状态：存储从主进程获取的图标数据 URL
-    const [icon, setIcon] = useState(null);
+    const [icon, setIcon] = useState(iconCache.get(target) || null);
 
     /**
      * 加载应用图标
      * 当 target 改变时，从主进程获取对应的文件图标
      */
     useEffect(() => {
-        if (target) {
-            window.electronAPI.getFileIcon(target)
-                .then(iconDataUrl => {
-                    if (iconDataUrl) setIcon(iconDataUrl);
-                })
-                .catch(err => console.error('获取图标失败:', err));
+        if (!target) {
+            setIcon(null);
+            return;
         }
+
+        // 1. 检查缓存
+        if (iconCache.has(target)) {
+            setIcon(iconCache.get(target));
+            return;
+        }
+
+        // 2. 检查是否有正在进行的请求
+        if (pendingIcons.has(target)) {
+            pendingIcons.get(target).then(iconDataUrl => {
+                if (iconDataUrl) setIcon(iconDataUrl);
+            });
+            return;
+        }
+
+        // 3. 发起新请求
+        const iconPromise = window.electronAPI.getFileIcon(target)
+            .then(iconDataUrl => {
+                if (iconDataUrl) {
+                    iconCache.set(target, iconDataUrl);
+                    setIcon(iconDataUrl);
+                }
+                return iconDataUrl;
+            })
+            .catch(err => {
+                console.error('获取图标失败:', err);
+                return null;
+            })
+            .finally(() => {
+                pendingIcons.delete(target);
+            });
+
+        pendingIcons.set(target, iconPromise);
     }, [target]);
 
     /**

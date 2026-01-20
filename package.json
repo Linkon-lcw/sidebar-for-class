@@ -35,7 +35,6 @@
   },
   "dependencies": {
     "loudness": "^0.4.2",
-    "node-notifier": "^10.0.1",
     "screenshot-desktop": "^1.15.3",
     "sharp": "^0.34.5"
   }

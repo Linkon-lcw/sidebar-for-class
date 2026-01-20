@@ -8,6 +8,11 @@ const { registerIPCHandlers, registerDisplayEventListeners } = require('./main/i
 
 // 应用就绪后执行
 app.whenReady().then(() => {
+  // 设置 AppUserModelId 以支持 Windows 通知
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.sidebar.class');
+  }
+
   // 创建主窗口
   createWindow();
 

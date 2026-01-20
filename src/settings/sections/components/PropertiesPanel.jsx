@@ -34,7 +34,8 @@ import {
     Speaker2Regular,
     ArrowImportRegular,
     FolderRegular,
-    WrenchRegular
+    WrenchRegular,
+    LineHorizontal3Regular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
@@ -49,6 +50,10 @@ const PropertiesPanel = ({
 }) => {
     // 当前正在编辑的目标索引（用于启动器组件）
     const [editingTargetIndex, setEditingTargetIndex] = useState(null);
+
+    // 工具栏拖拽状态
+    const [draggingToolIndex, setDraggingToolIndex] = useState(null);
+    const [dragOverToolIndex, setDragOverToolIndex] = useState(null);
 
     // 处理标签页切换事件
     const handleTabChange = (_, data) => {
@@ -116,6 +121,65 @@ const PropertiesPanel = ({
                 setEditingTargetIndex(index);
             }
         }
+    };
+
+    // --- 工具栏组件处理函数 ---
+
+    // 添加工具项
+    const handleAddTool = () => {
+        const currentTools = selectedWidget.tools || [];
+        updateWidgetProperty('tools', [...currentTools, 'screenshot']);
+    };
+
+    // 删除工具项
+    const handleDeleteTool = (index) => {
+        const currentTools = selectedWidget.tools || [];
+        const newTools = currentTools.filter((_, i) => i !== index);
+        updateWidgetProperty('tools', newTools);
+    };
+
+    // 更新工具项
+    const handleUpdateTool = (index, newValue) => {
+        const currentTools = selectedWidget.tools || [];
+        const newTools = [...currentTools];
+        newTools[index] = newValue;
+        updateWidgetProperty('tools', newTools);
+    };
+
+    // 工具项拖拽开始
+    const handleToolDragStart = (e, index) => {
+        setDraggingToolIndex(index);
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    };
+
+    // 工具项拖拽悬停
+    const handleToolDragOver = (e, index) => {
+        e.preventDefault();
+        if (draggingToolIndex === null || draggingToolIndex === index) return;
+        setDragOverToolIndex(index);
+    };
+
+    // 工具项放置
+    const handleToolDrop = (e, targetIndex) => {
+        e.preventDefault();
+        if (draggingToolIndex === null || draggingToolIndex === targetIndex) {
+            setDraggingToolIndex(null);
+            setDragOverToolIndex(null);
+            return;
+        }
+
+        const currentTools = selectedWidget.tools || [];
+        const newTools = [...currentTools];
+        const draggedTool = newTools[draggingToolIndex];
+
+        newTools.splice(draggingToolIndex, 1);
+        newTools.splice(targetIndex, 0, draggedTool);
+
+        updateWidgetProperty('tools', newTools);
+        setDraggingToolIndex(null);
+        setDragOverToolIndex(null);
     };
 
     // 处理库组件拖拽开始
@@ -348,29 +412,93 @@ const PropertiesPanel = ({
                     {selectedWidget.type === 'toolbar' && (
                         <div className={styles.propertySection}>
                             <div className={styles.propertyGroup}>
-                                <Title2 as="h3" className={styles.sectionTitle}>显示的工具</Title2>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <Title2 as="h3" className={styles.sectionTitle}>显示的工具</Title2>
+                                    <Button
+                                        appearance="primary"
+                                        icon={<AddRegular />}
+                                        onClick={handleAddTool}
+                                    >
+                                        添加工具
+                                    </Button>
+                                </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {[
-                                        { id: 'screenshot', label: '截图' },
-                                        { id: 'show_desktop', label: '显示桌面' },
-                                        { id: 'taskview', label: '任务视图' }
-                                    ].map(tool => (
-                                        <Switch
-                                            key={tool.id}
-                                            label={tool.label}
-                                            checked={(selectedWidget.tools || []).includes(tool.id)}
-                                            onChange={(_, data) => {
-                                                const currentTools = selectedWidget.tools || [];
-                                                let newTools;
-                                                if (data.checked) {
-                                                    newTools = [...currentTools, tool.id];
-                                                } else {
-                                                    newTools = currentTools.filter(t => t !== tool.id);
-                                                }
-                                                updateWidgetProperty('tools', newTools);
-                                            }}
-                                        />
-                                    ))}
+                                    {(selectedWidget.tools || []).map((toolId, index) => {
+                                        const toolOptions = [
+                                            { id: 'screenshot', label: '截图' },
+                                            { id: 'show_desktop', label: '显示桌面' },
+                                            { id: 'taskview', label: '任务视图' }
+                                        ];
+                                        const currentTool = toolOptions.find(t => t.id === toolId) || { id: toolId, label: toolId };
+
+                                        return (
+                                            <div
+                                                key={`${index}-${toolId}`}
+                                                draggable
+                                                onDragStart={(e) => handleToolDragStart(e, index)}
+                                                onDragOver={(e) => handleToolDragOver(e, index)}
+                                                onDrop={(e) => handleToolDrop(e, index)}
+                                                onDragEnd={() => {
+                                                    setDraggingToolIndex(null);
+                                                    setDragOverToolIndex(null);
+                                                }}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '8px',
+                                                    backgroundColor: draggingToolIndex === index 
+                                                        ? 'var(--colorNeutralBackground3)' 
+                                                        : dragOverToolIndex === index 
+                                                            ? 'var(--colorNeutralBackground2)' 
+                                                            : 'var(--colorNeutralBackground1)',
+                                                    border: '1px solid var(--colorNeutralStroke1)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'default',
+                                                    opacity: draggingToolIndex === index ? 0.5 : 1,
+                                                    transition: 'all 0.1s ease'
+                                                }}
+                                            >
+                                                <div style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: 'var(--colorNeutralForeground3)' }}>
+                                                    <LineHorizontal3Regular />
+                                                </div>
+                                                
+                                                <div style={{ flex: 1 }}>
+                                                    <Dropdown
+                                                        style={{ minWidth: 'auto', width: '100%' }}
+                                                        value={currentTool.label}
+                                                        selectedOptions={[toolId]}
+                                                        onOptionSelect={(_, data) => handleUpdateTool(index, data.optionValue)}
+                                                    >
+                                                        {toolOptions.map(option => (
+                                                            <Option key={option.id} value={option.id}>
+                                                                {option.label}
+                                                            </Option>
+                                                        ))}
+                                                    </Dropdown>
+                                                </div>
+
+                                                <Button
+                                                    appearance="subtle"
+                                                    icon={<DeleteRegular />}
+                                                    onClick={() => handleDeleteTool(index)}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+
+                                    {(selectedWidget.tools || []).length === 0 && (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: '12px',
+                                            color: 'var(--colorNeutralForeground3)',
+                                            fontSize: '12px',
+                                            border: '1px dashed var(--colorNeutralStroke1)',
+                                            borderRadius: '4px'
+                                        }}>
+                                            暂无工具，点击上方按钮添加
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
