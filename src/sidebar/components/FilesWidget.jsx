@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import LauncherItem from './LauncherItem';
 
-const FilesWidget = ({ folder_path, max_count, layout = 'vertical' }) => {
+const FilesWidget = ({ folder_path, max_count, layout = 'vertical', isPreview = false }) => {
     // 文件列表状态
     const [files, setFiles] = useState([]);
 
@@ -36,6 +36,7 @@ const FilesWidget = ({ folder_path, max_count, layout = 'vertical' }) => {
                         key={index}
                         name={displayName}
                         target={file.path}
+                        isPreview={isPreview}
                     />
                 );
             })}

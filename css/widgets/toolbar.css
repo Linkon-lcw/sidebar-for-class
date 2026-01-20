@@ -1,0 +1,96 @@
+/* 工具栏组件样式 */
+.toolbar-widget {
+    padding: 0;
+}
+
+.toolbar-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    background: var(--widget-bg);
+    backdrop-filter: blur(12px);
+    border-radius: var(--widget-border-radius);
+    border: var(--widget-border);
+    overflow: hidden;
+    position: relative;
+    gap: 0;
+    transition: all 0.2s ease;
+    box-shadow: var(--widget-shadow);
+}
+
+.toolbar-buttons:hover {
+    background: var(--widget-bg-hover);
+}
+
+.toolbar-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 0;
+    flex: 1 1 20%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.toolbar-widget.single-tool .toolbar-button {
+    flex: 1 1 100%;
+    max-width: 100%;
+}
+
+.toolbar-button:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-button:active {
+    background: rgba(0, 0, 0, 0.05);
+    scale: 0.98;
+}
+
+/* 分割线逻辑 */
+.toolbar-button:not(:nth-child(5n+1))::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.toolbar-button:not(:nth-child(-n+5))::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.toolbar-button i {
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.toolbar-button:hover i { color: var(--primary-color); }
+
+.toolbar-button-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    transition: color 0.2s ease;
+}
+
+.toolbar-button:hover .toolbar-button-text { color: var(--text-main); }

@@ -52,10 +52,11 @@ const WIDGET_TYPE_NAMES = {
     launcher: '启动器',
     volume_slider: '音量控制',
     files: '文件列表',
-    drag_to_launch: '拖放速启'
+    drag_to_launch: '拖放速启',
+    toolbar: '工具栏'
 };
 
-const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon, preloadWidgetIcons, setWidgetIcons }) => {
+const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidgetIcons, setWidgetIcons }) => {
     // 使用组件选择 Hook：管理当前选中的组件和标签页状态
     const {
         activeTab,
@@ -90,6 +91,8 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
             newWidget.folder_path = '';
             newWidget.max_count = 10;
             newWidget.layout = 'vertical';
+        } else if (type === 'toolbar') {
+            newWidget.tools = ['screenshot', 'show_desktop', 'taskview'];
         }
 
         return newWidget;
@@ -129,8 +132,9 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
         LauncherItemPreview,
         VolumeWidgetPreview,
         FilesWidgetPreview,
-        DragToLaunchWidgetPreview
-    } = useWidgetPreviews(widgetIcons);
+        DragToLaunchWidgetPreview,
+        ToolbarWidgetPreview
+    } = useWidgetPreviews();
 
     // 获取当前选中的组件
     const selectedWidget = selectedWidgetIndex !== null ? config.widgets[selectedWidgetIndex] : null;
@@ -284,7 +288,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                     <PreviewPanel
                         config={config}
                         styles={styles}
-                        widgetIcons={widgetIcons}
+
                         isLongPressing={isLongPressing}
                         draggingIndex={draggingIndex}
                         dragOverIndex={dragOverIndex}
@@ -305,6 +309,7 @@ const ComponentSettings = ({ config, updateConfig, styles, widgetIcons, loadIcon
                         VolumeWidgetPreview={VolumeWidgetPreview}
                         FilesWidgetPreview={FilesWidgetPreview}
                         DragToLaunchWidgetPreview={DragToLaunchWidgetPreview}
+                        ToolbarWidgetPreview={ToolbarWidgetPreview}
                     />
                 </div>
 

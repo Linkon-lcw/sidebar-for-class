@@ -20,6 +20,9 @@ import ComponentSettings from './sections/ComponentSettings';
 import WindowSettings from './sections/WindowSettings';
 import StyleSettings from './sections/StyleSettings';
 
+// 导入图标缓存
+import { iconCache } from '../sidebar/components/LauncherItem';
+
 const App = () => {
     const styles = useStyles();
     // 当前选中的标签页
@@ -33,16 +36,16 @@ const App = () => {
     const isInitialMount = useRef(true);  // 标记是否为首次挂载
     const saveTimeoutRef = useRef(null);   // 保存操作的防抖定时器
 
-    const iconCache = useRef(new Map());
+    // 使用全局共享的图标缓存
     const pendingIconRequests = useRef(new Map());
-    const [widgetIcons, setWidgetIcons] = useState(new Map());
+
 
     const loadIcon = useCallback(async (target) => {
         if (!target) return null;
 
         const cacheKey = target;
-        if (iconCache.current.has(cacheKey)) {
-            return iconCache.current.get(cacheKey);
+        if (iconCache.has(cacheKey)) {
+            return iconCache.get(cacheKey);
         }
 
         if (pendingIconRequests.current.has(cacheKey)) {
@@ -52,7 +55,7 @@ const App = () => {
         const promise = window.electronAPI.getFileIcon(target)
             .then(iconDataUrl => {
                 if (iconDataUrl) {
-                    iconCache.current.set(cacheKey, iconDataUrl);
+                    iconCache.set(cacheKey, iconDataUrl);
                 }
                 return iconDataUrl;
             })
@@ -73,13 +76,10 @@ const App = () => {
             if (widget.type === 'launcher' && widget.targets) {
                 widget.targets.forEach((target) => {
                     const key = target.target;
-                    if (!widgetIcons.has(key) && target.target) {
-                        loadIcon(target.target).then(icon => {
-                            if (icon) {
-                                setWidgetIcons(prev => new Map(prev).set(key, icon));
-                            }
-                        });
-                    }
+                    // 不再需要 widgetIcons 缓存，直接加载
+                    loadIcon(target.target).then(icon => {
+                        // 不再需要 widgetIcons 缓存
+                    });
                 });
             } else if (widget.type === 'drag_to_launch' && widget.targets) {
                 let exePath = widget.targets;
@@ -92,31 +92,25 @@ const App = () => {
                     exePath = potentialPath;
                 }
                 const key = exePath;
-                if (!widgetIcons.has(key) && exePath) {
-                    loadIcon(exePath).then(icon => {
-                        if (icon) {
-                            setWidgetIcons(prev => new Map(prev).set(key, icon));
-                        }
-                    });
-                }
+                // 不再需要 widgetIcons 缓存，直接加载
+                loadIcon(exePath).then(icon => {
+                    // 不再需要 widgetIcons 缓存
+                });
             } else if (widget.type === 'files' && widget.folder_path) {
                 window.electronAPI.getFilesInFolder(widget.folder_path, widget.max_count)
                     .then(fileList => {
                         fileList.forEach((file) => {
                             const key = file.path;
-                            if (!widgetIcons.has(key)) {
-                                loadIcon(file.path).then(icon => {
-                                    if (icon) {
-                                        setWidgetIcons(prev => new Map(prev).set(key, icon));
-                                    }
-                                });
-                            }
+                            // 不再需要 widgetIcons 缓存，直接加载
+                            loadIcon(file.path).then(icon => {
+                                // 不再需要 widgetIcons 缓存
+                            });
                         });
                     })
                     .catch(err => console.error('获取文件列表失败:', err));
             }
         });
-    }, [widgetIcons, loadIcon]);
+    }, [loadIcon]);
 
     /**
      * 初始化：加载配置和监听系统主题变化
@@ -224,10 +218,8 @@ const App = () => {
                             config={config} 
                             updateConfig={updateConfig} 
                             styles={styles}
-                            widgetIcons={widgetIcons}
                             loadIcon={loadIcon}
                             preloadWidgetIcons={preloadWidgetIcons}
-                            setWidgetIcons={setWidgetIcons}
                         />
                     )}
 

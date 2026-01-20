@@ -1,0 +1,17 @@
+/* CSS 变量定义 */
+:root {
+    --sidebar-duration: 0.5s;
+    --content-duration: 0.3s;
+    --sidebar-scale: 1;
+
+    /* 小组件通用变量 */
+    --widget-bg: rgba(255, 255, 255, 0.15);
+    --widget-bg-hover: rgba(255, 255, 255, 0.25);
+    --widget-border-radius: 12px;
+    --widget-border: 1px solid rgba(255, 255, 255, 0.2);
+    --widget-shadow: none;
+    --primary-color: #3b82f6;
+    --text-main: #1f2937;
+    --text-muted: #4b5563;
+    --slider-bg: rgba(0, 0, 0, 0.1);
+}

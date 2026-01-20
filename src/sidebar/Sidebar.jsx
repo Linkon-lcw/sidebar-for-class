@@ -3,6 +3,7 @@ import LauncherItem from './components/LauncherItem';
 import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
 import DragToLaunchWidget from './components/DragToLaunchWidget';
+import Toolbar from './components/Toolbar';
 import useSidebarRefs from './hooks/useSidebarRefs';
 import useSidebarConfig from './hooks/useSidebarConfig';
 import useSidebarAnimation from './hooks/useSidebarAnimation';
@@ -55,11 +56,10 @@ const Sidebar = () => {
                                 return <FilesWidget key={index} {...widget} />;
                             } 
                             else if (widget.type === 'drag_to_launch') {
-                                return (
-                                    <div key={index} className="launcher-group layout-vertical">
-                                        <DragToLaunchWidget {...widget} />
-                                    </div>
-                                );
+                                return <DragToLaunchWidget key={index} {...widget} />;
+                            }
+                            else if (widget.type === 'toolbar') {
+                                return <Toolbar key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;
                             }
                             return null;
                         })}

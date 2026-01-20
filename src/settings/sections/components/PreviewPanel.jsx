@@ -31,7 +31,6 @@ import { DeleteRegular } from "@fluentui/react-icons";
 const PreviewPanel = ({
     config,
     styles,
-    widgetIcons,
     isLongPressing,
     draggingIndex,
     dragOverIndex,
@@ -51,7 +50,8 @@ const PreviewPanel = ({
     LauncherItemPreview,
     VolumeWidgetPreview,
     FilesWidgetPreview,
-    DragToLaunchWidgetPreview
+    DragToLaunchWidgetPreview,
+    ToolbarWidgetPreview
 }) => {
     // 组件类型名称映射
     const WIDGET_TYPE_NAMES = {
@@ -127,6 +127,7 @@ const PreviewPanel = ({
                                     <DragToLaunchWidgetPreview {...widget} widgetIndex={index} />
                                 </div>
                             )}
+                            {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
                         </div>
 
                         {/* 选中时显示组件信息 */}
@@ -216,10 +217,9 @@ const PreviewPanel = ({
                                 {widget.type === 'volume_slider' && <VolumeWidgetPreview {...widget} />}
                                 {widget.type === 'files' && <FilesWidgetPreview {...widget} widgetIndex={draggingIndex} />}
                                 {widget.type === 'drag_to_launch' && (
-                                    <div className="launcher-group layout-vertical">
-                                        <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
-                                    </div>
+                                    <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
                                 )}
+                                {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
                             </div>
                         );
                     })()}

@@ -8,10 +8,27 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { iconCache, pendingIcons } from './LauncherItem';
 
 const DragToLaunchWidget = ({ name, targets, show_all_time = true, isPreview = false }) => {
+    // 从命令模板中提取可执行文件路径
+    const getExePath = (template) => {
+        let exePath = template;
+        if (typeof exePath === 'string') {
+            const placeholderIndex = exePath.indexOf('{{source}}');
+            let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
+            if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
+                potentialPath = potentialPath.substring(1, potentialPath.length - 1);
+            }
+            return potentialPath;
+        }
+        return exePath;
+    };
+
+    const targetExePath = getExePath(targets);
+
     // 图标状态
-    const [icon, setIcon] = useState(null);
+    const [icon, setIcon] = useState(iconCache.get(targetExePath) || null);
     // 是否正在拖拽文件到此组件上方
     const [isDragOver, setIsDragOver] = useState(false);
     // 是否可见（当 show_all_time 为 false 时，只在拖拽时显示）
@@ -30,27 +47,37 @@ const DragToLaunchWidget = ({ name, targets, show_all_time = true, isPreview = f
      * 加载图标和设置全局拖拽监听
      */
     useEffect(() => {
-        // 从命令模板中提取可执行文件路径用于获取图标
-        let exePath = targets;
-        if (typeof exePath === 'string') {
-            // 查找 {{source}} 占位符的位置
-            const placeholderIndex = exePath.indexOf('{{source}}');
-            // 如果有占位符，取占位符之前的部分作为路径
-            let potentialPath = placeholderIndex > -1 ? exePath.substring(0, placeholderIndex).trim() : exePath;
-            // 如果路径被引号包裹，去掉引号
-            if (potentialPath.startsWith('"') && potentialPath.endsWith('"')) {
-                potentialPath = potentialPath.substring(1, potentialPath.length - 1);
-            }
-            exePath = potentialPath;
-        }
+        const exePath = targetExePath;
 
         // 获取可执行文件的图标
         if (exePath) {
-            window.electronAPI.getFileIcon(exePath)
-                .then(iconDataUrl => {
+            // 1. 检查缓存
+            if (iconCache.has(exePath)) {
+                setIcon(iconCache.get(exePath));
+            } else if (pendingIcons.has(exePath)) {
+                // 2. 检查是否有正在进行的请求
+                pendingIcons.get(exePath).then(iconDataUrl => {
                     if (iconDataUrl) setIcon(iconDataUrl);
-                })
-                .catch(err => console.error('获取图标失败:', err));
+                });
+            } else {
+                // 3. 发起新请求
+                const iconPromise = window.electronAPI.getFileIcon(exePath)
+                    .then(iconDataUrl => {
+                        if (iconDataUrl) {
+                            iconCache.set(exePath, iconDataUrl);
+                            setIcon(iconDataUrl);
+                        }
+                        return iconDataUrl;
+                    })
+                    .catch(err => {
+                        console.error('获取图标失败:', err);
+                        return null;
+                    })
+                    .finally(() => {
+                        pendingIcons.delete(exePath);
+                    });
+                pendingIcons.set(exePath, iconPromise);
+            }
         }
 
         // 如果配置为不始终显示，则监听全局拖拽事件
@@ -155,22 +182,24 @@ const DragToLaunchWidget = ({ name, targets, show_all_time = true, isPreview = f
     if (!isVisible) return null;
 
     return (
-        <div
-            className={`launcher-item drag-to-launch ${isDragOver ? 'drag-over' : ''}`}
-            title={name || "Drag files here to send"}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
-            <div className="launcher-icon">
-                {icon ? (
-                    <img src={icon} alt={name || 'Drop Target'} />
-                ) : (
-                    <div className="launcher-icon-placeholder" style={{ width: '32px', height: '32px', background: '#e5e7eb', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📤</div>
-                )}
-            </div>
-            <div className="launcher-info">
-                <div className="launcher-name">{name || 'Drop to Send'}</div>
+        <div className="launcher-group layout-vertical">
+            <div
+                className={`launcher-item drag-to-launch ${isDragOver ? 'drag-over' : ''}`}
+                title={name || "Drag files here to send"}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                <div className="launcher-icon">
+                    {icon ? (
+                        <img src={icon} alt={name || 'Drop Target'} />
+                    ) : (
+                        <div className="launcher-icon-placeholder" style={{ width: '32px', height: '32px', background: '#e5e7eb', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📤</div>
+                    )}
+                </div>
+                <div className="launcher-info">
+                    <div className="launcher-name">{name || 'Drop to Send'}</div>
+                </div>
             </div>
         </div>
     );

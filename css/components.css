@@ -1,0 +1,30 @@
+/* 设置按钮样式 */
+.settings-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    z-index: 10;
+    padding: 0;
+}
+
+.settings-button:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    transform: rotate(90deg);
+}
+
+.settings-button:active {
+    transform: rotate(90deg) scale(0.9);
+}

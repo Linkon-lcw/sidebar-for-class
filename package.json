@@ -34,6 +34,8 @@
     "wait-on": "^9.0.3"
   },
   "dependencies": {
-    "loudness": "^0.4.2"
+    "loudness": "^0.4.2",
+    "screenshot-desktop": "^1.15.3",
+    "sharp": "^0.34.5"
   }
 }

@@ -1,0 +1,169 @@
+/* 启动器分组样式 */
+.launcher-group {
+    display: flex;
+    background: var(--widget-bg);
+    backdrop-filter: blur(12px);
+    border-radius: var(--widget-border-radius);
+    border: var(--widget-border);
+    overflow: hidden;
+    position: relative;
+    gap: 0;
+    transition: all 0.2s ease;
+    box-shadow: var(--widget-shadow);
+}
+
+.launcher-group:hover {
+    background: var(--widget-bg-hover);
+}
+
+.launcher-group::after {
+    display: none;
+}
+
+.launcher-group.layout-vertical {
+    flex-direction: column;
+}
+
+.launcher-group.layout-grid,
+.launcher-group.layout-grid_no_text {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 0;
+}
+
+/* 启动器项目 */
+.launcher-item {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.launcher-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.launcher-item:active {
+    background: rgba(0, 0, 0, 0.05);
+    scale: 0.98;
+}
+
+/* 分割线逻辑 */
+.layout-vertical .launcher-item:not(:first-child)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.layout-grid .launcher-item:not(:nth-child(3n+1))::before,
+.layout-grid_no_text .launcher-item:not(:nth-child(4n+1))::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.layout-grid .launcher-item:not(:nth-child(-n+3))::after,
+.layout-grid_no_text .launcher-item:not(:nth-child(-n+4))::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* 不同布局下的具体尺寸 */
+.layout-vertical .launcher-item {
+    padding: 8px 14px;
+    flex-direction: row;
+}
+
+.layout-grid .launcher-item {
+    flex: 1 1 30%;
+    min-width: 0;
+    padding: 8px 4px;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.layout-grid_no_text .launcher-item {
+    flex: 1 1 21%;
+    min-width: 0;
+    padding: 8px;
+    justify-content: center;
+}
+
+/* 图标与文字 */
+.launcher-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.layout-vertical .launcher-icon { margin-right: 12px; }
+.launcher-icon img { width: 100%; height: 100%; object-fit: contain; }
+
+.launcher-info {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 44px);
+}
+
+.layout-grid .launcher-info {
+    max-width: 100%;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.layout-grid_no_text .launcher-info { display: none; }
+
+.launcher-name {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.layout-vertical .launcher-name { font-size: 15px; }
+
+/* 紧凑文件列表样式 */
+.launcher-group.compact-files .launcher-item {
+    padding: 4px 12px;
+    border-radius: 0;
+    min-height: 28px;
+}
+
+.compact-files .launcher-icon {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 8px;
+}
+
+.compact-files .launcher-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: #333;
+}
