@@ -1,0 +1,33 @@
+/* 全局基础样式 */
+body,
+html {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: transparent;
+    font-family: "Microsoft YaHei", -apple-system, sans-serif;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+#app {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding-left: 0;
+}
+
+h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #111827;
+}
+
+p {
+    margin: 0;
+    line-height: 1.6;
+    color: #4b5563;
+}

@@ -1,0 +1,32 @@
+/* 拖拽启动组件样式 */
+.drag-to-launch {
+    padding: 12px;
+    border: 2px dashed rgba(156, 163, 175, 0.3);
+    background: transparent;
+    border-radius: var(--widget-border-radius);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+}
+
+.drag-to-launch:hover {
+    border-color: rgba(59, 130, 246, 0.6);
+    background: var(--widget-bg-hover);
+    backdrop-filter: blur(8px);
+}
+
+.drag-to-launch.drag-over {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+    transform: scale(1.02);
+}
+
+.drag-to-launch .launcher-icon-placeholder {
+    font-size: 1.25rem;
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.drag-to-launch:hover .launcher-icon-placeholder,
+.drag-to-launch.drag-over .launcher-icon-placeholder {
+    color: #3b82f6;
+}

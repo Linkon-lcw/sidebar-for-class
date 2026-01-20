@@ -1,0 +1,79 @@
+/* 侧边栏包装器 */
+#sidebar-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+    width: 16px;
+    cursor: default;
+    touch-action: none;
+}
+
+/* 侧边栏主体 */
+#sidebar {
+    width: 4px;
+    height: 64px;
+    flex-shrink: 0;
+    background-color: rgba(156, 163, 175, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-left: 6px;
+    transition: width var(--sidebar-duration) cubic-bezier(0.16, 1, 0.3, 1),
+        height var(--sidebar-duration) cubic-bezier(0.16, 1, 0.3, 1),
+        border-radius var(--sidebar-duration) cubic-bezier(0.16, 1, 0.3, 1),
+        margin-left var(--sidebar-duration) cubic-bezier(0.16, 1, 0.3, 1),
+        background-color var(--sidebar-duration) cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transform-origin: center left;
+    transform: scale(var(--sidebar-scale));
+}
+
+/* 侧边栏装饰性伪元素 */
+#sidebar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgb(154, 164, 180), rgb(136, 142, 152));
+    opacity: 1;
+    transition: opacity var(--sidebar-duration) ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 侧边栏内容容器 */
+#content {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    padding: 20px;
+    transition: opacity var(--content-duration) ease;
+    color: #1f2937;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 400px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+/* 展开状态逻辑 */
+.expanded #sidebar-wrapper {
+    width: 100%;
+}
+
+.expanded #sidebar::before {
+    opacity: 0;
+}
+
+.expanded #content {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity var(--content-duration) ease calc(var(--sidebar-duration) * 0.4);
+}
