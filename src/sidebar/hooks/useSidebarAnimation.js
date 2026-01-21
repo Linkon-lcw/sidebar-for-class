@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 
-const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
+const useSidebarAnimation = (config, scale, startH, targetW, targetH, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const { BASE_START_W, TARGET_W, TARGET_H } = constants;
+    const { BASE_START_W } = constants;
 
     const setIgnoreMouse = (ignore) => {
         if (window.electronAPI && ignore !== draggingState.current.lastIgnoreState) {
@@ -17,8 +17,8 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
 
         progress = Math.max(0, Math.min(1, progress));
 
-        const currentW = BASE_START_W + (TARGET_W - BASE_START_W) * progress;
-        const currentH = startH + (TARGET_H - startH) * progress;
+        const currentW = BASE_START_W + (targetW - BASE_START_W) * progress;
+        const currentH = startH + (targetH - startH) * progress;
         const currentRadius = 4 + (12 * progress);
         const currentMargin = 6 + (6 * progress);
 
@@ -26,6 +26,13 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         sidebarRef.current.style.height = `${currentH}px`;
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
+
+        // 控制内容容器的透明度，实现平滑的显示/隐藏效果
+        const contentElement = sidebarRef.current.querySelector('#content');
+        if (contentElement) {
+            contentElement.style.opacity = `${progress}`;
+            contentElement.style.pointerEvents = progress > 0.1 ? 'auto' : 'none';
+        }
 
         if (config?.transforms && config?.displayBounds) {
             if (!window.electronAPI) return;
@@ -43,7 +50,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
             }
 
             const startCenterY = screenY + posy;
-            const expandedWinH = (TARGET_H + 120) * scale;
+            const expandedWinH = (targetH + 120) * scale;
             const safeCenterY = Math.max(
                 screenY + expandedWinH / 2 + 20,
                 Math.min(screenY + screenH - expandedWinH / 2 - 20, startCenterY)
@@ -62,8 +69,11 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         }
 
         const gray = Math.floor(156 + (255 - 156) * progress);
-        sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${0.8 + 0.15 * progress})`;
-    }, [config, scale, startH, sidebarRef, draggingState, BASE_START_W, TARGET_W, TARGET_H]);
+        const targetOpacity = config?.transforms?.panel?.opacity || 0.9;
+        const startOpacity = 0.6; // 收起状态的透明度
+        const currentOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
+        sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${currentOpacity})`;
+    }, [config, scale, startH, targetW, targetH, sidebarRef, draggingState, BASE_START_W]);
 
     const stopAnimation = () => {
         if (animationIdRef.current) {
@@ -89,7 +99,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
 
     const expand = () => {
         const baseW = sidebarRef.current ? parseFloat(sidebarRef.current.style.width) || BASE_START_W : BASE_START_W;
-        if (isExpanded && !draggingState.current.isDragging && !animationIdRef.current && Math.abs(baseW - TARGET_W) < 1) return;
+        if (isExpanded && !draggingState.current.isDragging && !animationIdRef.current && Math.abs(baseW - targetW) < 1) return;
 
         stopAnimation();
         setIsExpanded(true);
@@ -100,7 +110,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         const duration = 300 / speed;
         const startTime = performance.now();
         const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4);
-        const startProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (TARGET_W - BASE_START_W)));
+        const startProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (targetW - BASE_START_W)));
 
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
@@ -129,7 +139,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         const startTime = performance.now();
         const easeOutQuart = (x) => 1 - Math.pow(1 - x, 4);
         const baseW = sidebarRef.current ? parseFloat(sidebarRef.current.style.width) || BASE_START_W : BASE_START_W;
-        const startProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (TARGET_W - BASE_START_W)));
+        const startProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (targetW - BASE_START_W)));
 
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
@@ -149,7 +159,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
 
     useEffect(() => {
         updateSidebarStyles(isExpanded ? 1 : 0);
-    }, [isExpanded, scale, startH, updateSidebarStyles]);
+    }, [isExpanded, scale, startH, targetW, targetH, updateSidebarStyles]);
 
     return {
         isExpanded,

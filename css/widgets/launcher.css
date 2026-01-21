@@ -1,8 +1,8 @@
 /* 启动器分组样式 */
 .launcher-group {
     display: flex;
-    background: var(--widget-bg);
-    backdrop-filter: blur(12px);
+    background: var(--bg-transparent);
+    opacity: 0.95;
     border-radius: var(--widget-border-radius);
     border: var(--widget-border);
     overflow: hidden;
@@ -10,10 +10,12 @@
     gap: 0;
     transition: all 0.2s ease;
     box-shadow: var(--widget-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .launcher-group:hover {
-    background: var(--widget-bg-hover);
+    background: var(--bg-transparent-hover);
 }
 
 .launcher-group::after {
