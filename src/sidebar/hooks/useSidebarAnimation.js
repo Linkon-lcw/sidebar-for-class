@@ -19,9 +19,10 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         const { y: screenY, height: screenH } = config.displayBounds;
 
         // Calculate Target Window Dimensions (Max Size)
-        const expandedWinH = (TARGET_H + 120) * scale;
-        const targetWinW = Math.floor(TARGET_W + 100 * scale); // Max Width
-        const targetWinH = Math.ceil(TARGET_H + 40 * scale);   // Max Height
+        const expandedWinH = TARGET_H * scale + 120;
+        const targetWinW = Math.floor(TARGET_W * scale + 100); // Max Width
+        const targetWinH = Math.ceil(TARGET_H * scale + 40);   // Max Height
+
 
         // Calculate Centers
         const startCenterY = screenY + posy;
