@@ -4,6 +4,8 @@ const useSidebarConfig = () => {
     const [config, setConfig] = useState(null);
     const [scale, setScale] = useState(1);
     const [startH, setStartH] = useState(64);
+    const [panelWidth, setPanelWidth] = useState(450);
+    const [panelHeight, setPanelHeight] = useState(400);
 
     const applyConfig = (c) => {
         setConfig(c);
@@ -18,6 +20,14 @@ const useSidebarConfig = () => {
                 const speed = c.transforms.animation_speed;
                 document.documentElement.style.setProperty('--sidebar-duration', `${0.5 / speed}s`);
                 document.documentElement.style.setProperty('--content-duration', `${0.3 / speed}s`);
+            }
+            if (c.transforms.panel) {
+                if (typeof c.transforms.panel.width === 'number') {
+                    setPanelWidth(c.transforms.panel.width);
+                }
+                if (typeof c.transforms.panel.height === 'number') {
+                    setPanelHeight(c.transforms.panel.height);
+                }
             }
         }
         document.documentElement.style.setProperty('--sidebar-scale', String(c.transforms?.size / 100 || 1));
@@ -43,7 +53,9 @@ const useSidebarConfig = () => {
     return {
         config,
         scale,
-        startH
+        startH,
+        panelWidth,
+        panelHeight
     };
 };
 

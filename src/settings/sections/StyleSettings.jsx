@@ -56,6 +56,48 @@ const StyleSettings = ({ config, handleTransformChange, styles }) => {
 
             <Card className={styles.card}>
                 <div className={styles.formGroup}>
+                    <Label className={styles.label}>展开后宽度</Label>
+                    <div className={styles.rangeContainer}>
+                        <Slider
+                            min={300}
+                            max={800}
+                            step={10}
+                            value={config.transforms?.panel?.width || 450}
+                            onChange={(_, data) => {
+                                const newWidth = data.value;
+                                const currentPanelConfig = config.transforms?.panel || {};
+                                handleTransformChange('panel', { ...currentPanelConfig, width: newWidth });
+                            }}
+                        />
+                        <span className={styles.rangeValue}>{config.transforms?.panel?.width || 450}px</span>
+                    </div>
+                    <div className={styles.helpText}>侧边栏展开后的宽度</div>
+                </div>
+            </Card>
+
+            <Card className={styles.card}>
+                <div className={styles.formGroup}>
+                    <Label className={styles.label}>展开后高度</Label>
+                    <div className={styles.rangeContainer}>
+                        <Slider
+                            min={300}
+                            max={800}
+                            step={10}
+                            value={config.transforms?.panel?.height || 400}
+                            onChange={(_, data) => {
+                                const newHeight = data.value;
+                                const currentPanelConfig = config.transforms?.panel || {};
+                                handleTransformChange('panel', { ...currentPanelConfig, height: newHeight });
+                            }}
+                        />
+                        <span className={styles.rangeValue}>{config.transforms?.panel?.height || 400}px</span>
+                    </div>
+                    <div className={styles.helpText}>侧边栏展开后的高度</div>
+                </div>
+            </Card>
+
+            <Card className={styles.card}>
+                <div className={styles.formGroup}>
                     <Label className={styles.label}>展开后不透明度</Label>
                     <div className={styles.rangeContainer}>
                         <Slider
