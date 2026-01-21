@@ -40,7 +40,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgb(154, 164, 180), rgb(136, 142, 152));
+    background: linear-gradient(135deg, rgba(154, 164, 180, 0.8), rgba(136, 142, 152, 0.8));
     opacity: 1;
     transition: opacity var(--sidebar-duration) ease;
     z-index: 0;
@@ -61,11 +61,17 @@
     width: 400px;
     box-sizing: border-box;
     pointer-events: none;
+    background-color: transparent;
+    border-radius: var(--widget-border-radius);
 }
 
 /* 展开状态逻辑 */
 .expanded #sidebar-wrapper {
     width: 100%;
+}
+
+.expanded #sidebar {
+    background-color: rgba(156, 163, 175, 0.7);
 }
 
 .expanded #sidebar::before {

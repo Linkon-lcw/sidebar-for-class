@@ -6,8 +6,8 @@
 .toolbar-buttons {
     display: flex;
     flex-wrap: wrap;
-    background: var(--widget-bg);
-    backdrop-filter: blur(12px);
+    background: var(--bg-transparent);
+    opacity: 0.95;
     border-radius: var(--widget-border-radius);
     border: var(--widget-border);
     overflow: hidden;
@@ -15,10 +15,12 @@
     gap: 0;
     transition: all 0.2s ease;
     box-shadow: var(--widget-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .toolbar-buttons:hover {
-    background: var(--widget-bg-hover);
+    background: var(--bg-transparent-hover);
 }
 
 .toolbar-button {

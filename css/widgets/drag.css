@@ -2,7 +2,8 @@
 .drag-to-launch {
     padding: 12px;
     border: 2px dashed rgba(156, 163, 175, 0.3);
-    background: transparent;
+    background: var(--bg-transparent);
+    backdrop-filter: blur(20px);
     border-radius: var(--widget-border-radius);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
@@ -10,8 +11,8 @@
 
 .drag-to-launch:hover {
     border-color: rgba(59, 130, 246, 0.6);
-    background: var(--widget-bg-hover);
-    backdrop-filter: blur(8px);
+    background: var(--bg-transparent-hover);
+    backdrop-filter: blur(20px);
 }
 
 .drag-to-launch.drag-over {

@@ -47,7 +47,9 @@ function createWindow() {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-    }
+      experimentalFeatures: true,
+    },
+    // backgroundMaterial: 'acrylic',
   });
 
   mainWindow.setVisibleOnAllWorkspaces(true);

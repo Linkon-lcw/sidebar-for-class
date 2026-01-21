@@ -53,6 +53,27 @@ const StyleSettings = ({ config, handleTransformChange, styles }) => {
                     <div className={styles.helpText}>侧边栏窗口的全局缩放比例</div>
                 </div>
             </Card>
+
+            <Card className={styles.card}>
+                <div className={styles.formGroup}>
+                    <Label className={styles.label}>展开后不透明度</Label>
+                    <div className={styles.rangeContainer}>
+                        <Slider
+                            min={0.1}
+                            max={1}
+                            step={0.05}
+                            value={config.transforms?.panel?.opacity || 0.9}
+                            onChange={(_, data) => {
+                                const newOpacity = data.value;
+                                const currentPanelConfig = config.transforms?.panel || {};
+                                handleTransformChange('panel', { ...currentPanelConfig, opacity: newOpacity });
+                            }}
+                        />
+                        <span className={styles.rangeValue}>{((config.transforms?.panel?.opacity || 0.9) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div className={styles.helpText}>侧边栏展开后的不透明度</div>
+                </div>
+            </Card>
         </div>
     );
 };

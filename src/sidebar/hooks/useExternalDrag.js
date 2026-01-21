@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef) => {
+const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config) => {
     useEffect(() => {
         let dragLeaveTimer = null;
 
@@ -43,13 +43,13 @@ const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreM
         };
 
         const onWindowMouseDown = (e) => {
-            if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+            if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(e.target) && config?.auto_hide) {
                 collapse();
             }
         };
 
         const onBlur = () => {
-            if (isExpanded) collapse();
+            if (isExpanded && config?.auto_hide) collapse();
         };
 
         window.addEventListener('dragenter', onDragEnter);
@@ -68,7 +68,7 @@ const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreM
             window.removeEventListener('mousedown', onWindowMouseDown);
             window.removeEventListener('blur', onBlur);
         };
-    }, [isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef]);
+    }, [isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config]);
 };
 
 export default useExternalDrag;

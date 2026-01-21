@@ -18,7 +18,7 @@ const Sidebar = () => {
     const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse } = useSidebarAnimation(config, scale, startH, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
     const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
-    useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef);
+    useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config);
     useGlobalEvents(handleMove, handleEnd, draggingState);
 
     const handleSettingsClick = (e) => {

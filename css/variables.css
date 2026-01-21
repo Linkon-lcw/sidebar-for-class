@@ -4,14 +4,19 @@
     --content-duration: 0.3s;
     --sidebar-scale: 1;
 
+    /* 半透明背景变量 */
+    --bg-transparent: rgba(255, 255, 255, 0.15);
+    --bg-transparent-hover: rgba(255, 255, 255, 0.25);
+    --bg-transparent-dark: rgba(0, 0, 0, 0.1);
+    
     /* 小组件通用变量 */
-    --widget-bg: rgba(255, 255, 255, 0.15);
-    --widget-bg-hover: rgba(255, 255, 255, 0.25);
+    --widget-bg: var(--bg-transparent);
+    --widget-bg-hover: var(--bg-transparent-hover);
     --widget-border-radius: 12px;
     --widget-border: 1px solid rgba(255, 255, 255, 0.2);
     --widget-shadow: none;
     --primary-color: #3b82f6;
     --text-main: #1f2937;
     --text-muted: #4b5563;
-    --slider-bg: rgba(0, 0, 0, 0.1);
+    --slider-bg: var(--bg-transparent-dark);
 }

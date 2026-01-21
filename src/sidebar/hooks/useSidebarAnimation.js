@@ -62,7 +62,10 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         }
 
         const gray = Math.floor(156 + (255 - 156) * progress);
-        sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${0.8 + 0.15 * progress})`;
+        const targetOpacity = config?.transforms?.panel?.opacity || 0.9;
+        const startOpacity = 0.6; // 收起状态的透明度
+        const currentOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
+        sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${currentOpacity})`;
     }, [config, scale, startH, sidebarRef, draggingState, BASE_START_W, TARGET_W, TARGET_H]);
 
     const stopAnimation = () => {
