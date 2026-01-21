@@ -49,11 +49,37 @@ function registerIPCHandlers() {
   ipcMain.on('update-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
     updateConfig(newConfig, { screen, mainWindow });
+    
+    // 同时更新窗口位置
+    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0 };
+    const displays = screen.getAllDisplays();
+    const targetDisplay = (transforms.display < displays.length) 
+      ? displays[transforms.display] 
+      : screen.getPrimaryDisplay();
+    const screenBounds = targetDisplay.bounds;
+    
+    const yPos = Math.floor(screenBounds.y + transforms.posy - transforms.height / 2);
+    
+    // 调用窗口位置更新函数，传入配置对象
+    resizeMainWindow(20, transforms.height, yPos, newConfig);
   });
 
   ipcMain.on('preview-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
     previewConfig(newConfig, { screen, mainWindow });
+    
+    // 同时更新窗口位置
+    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0 };
+    const displays = screen.getAllDisplays();
+    const targetDisplay = (transforms.display < displays.length) 
+      ? displays[transforms.display] 
+      : screen.getPrimaryDisplay();
+    const screenBounds = targetDisplay.bounds;
+    
+    const yPos = Math.floor(screenBounds.y + transforms.posy - transforms.height / 2);
+    
+    // 调用窗口位置更新函数，传入配置对象
+    resizeMainWindow(20, transforms.height, yPos, newConfig);
   });
 
   // ===== 显示器管理 =====

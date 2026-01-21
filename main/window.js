@@ -121,12 +121,13 @@ function setAlwaysOnTopFlag(flag) {
  * @param {number} width - 窗口宽度
  * @param {number} height - 窗口高度
  * @param {number|null} y - 窗口 Y 坐标（可选）
+ * @param {Object|null} config - 配置对象（可选，如果不提供则从文件读取）
  */
-function resizeMainWindow(width, height, y = null) {
+function resizeMainWindow(width, height, y = null, config = null) {
   if (!mainWindow) return;
 
-  const config = getConfigSync();
-  const transforms = config.transforms || { display: 0, height: 64, posy: 0 };
+  const finalConfig = config || getConfigSync();
+  const transforms = finalConfig.transforms || { display: 0, height: 64, posy: 0 };
   
   const targetDisplay = getTargetDisplay(transforms.display);
   const screenBounds = targetDisplay.bounds;

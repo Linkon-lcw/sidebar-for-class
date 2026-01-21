@@ -5,6 +5,7 @@
 const { app } = require('electron');
 const { createWindow } = require('./main/window');
 const { registerIPCHandlers, registerDisplayEventListeners } = require('./main/ipcHandlers');
+const { createTray } = require('./main/tray');
 
 // 应用就绪后执行
 app.whenReady().then(() => {
@@ -15,6 +16,9 @@ app.whenReady().then(() => {
 
   // 创建主窗口
   createWindow();
+
+  // 创建系统托盘
+  createTray();
 
   // 注册所有 IPC 处理器
   registerIPCHandlers();
