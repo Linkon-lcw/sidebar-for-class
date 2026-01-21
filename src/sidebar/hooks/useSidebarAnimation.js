@@ -12,44 +12,55 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         }
     };
 
-    const calculateLayout = useCallback((progress) => {
+    const calculateLayout = useCallback((progress, windowType = 'large') => {
         if (!config?.transforms || !config?.displayBounds) return null;
         
         const { posy } = config.transforms;
         const { y: screenY, height: screenH } = config.displayBounds;
 
-        // Calculate Target Window Dimensions (Max Size)
-        const expandedWinH = TARGET_H * scale + 120;
-        const targetWinW = Math.floor(TARGET_W * scale + 100); // Max Width
-        const targetWinH = Math.ceil(TARGET_H * scale + 40);   // Max Height
+        // Calculate Window Dimensions
+        const winW = (windowType === 'large')
+            ? Math.floor(TARGET_W * scale + 100)
+            : Math.floor(20 * scale);
+        const winH = (windowType === 'large')
+            ? Math.ceil(TARGET_H * scale + 40)
+            : Math.ceil((startH + 40) * scale);
 
+        // Sidebar current visual height
+        const currentSidebarH = (startH + (TARGET_H - startH) * progress) * scale;
 
-        // Calculate Centers
+        // Target center position (absolute)
         const startCenterY = screenY + posy;
+
+        // Window Center (clamped to keep window on screen)
         const safeCenterY = Math.max(
-            screenY + expandedWinH / 2 + 20,
-            Math.min(screenY + screenH - expandedWinH / 2 - 20, startCenterY)
+            screenY + winH / 2,
+            Math.min(screenY + screenH - winH / 2, startCenterY)
         );
 
-        // Interpolate CenterY based on progress
-        const currentCenterY = startCenterY + (safeCenterY - startCenterY) * progress;
+        // Final Window Y Position
+        const windowY = safeCenterY - (winH / 2);
 
-        // Final Window Position (at progress = 1)
-        const finalWindowY = safeCenterY - (targetWinH / 2);
+        // Calculate offsetY to align sidebar center with startCenterY
+        let offsetY = startCenterY - safeCenterY;
+
+        // Clamp offsetY to prevent sidebar from being clipped by window bounds
+        const maxOffset = Math.max(0, (winH - currentSidebarH) / 2);
+        offsetY = Math.max(-maxOffset, Math.min(maxOffset, offsetY));
 
         return {
-            targetWinW,
-            targetWinH,
-            finalWindowY,
-            currentCenterY,
+            targetWinW: winW,
+            targetWinH: winH,
+            finalWindowY: windowY,
+            offsetY,
             safeCenterY,
             startCenterY
         };
-    }, [config, scale, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, TARGET_W, TARGET_H]);
 
     const setWindowToLarge = useCallback(() => {
         if (!window.electronAPI) return;
-        const layout = calculateLayout(1);
+        const layout = calculateLayout(1, 'large');
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
         }
@@ -57,9 +68,11 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
 
     const setWindowToSmall = useCallback(() => {
         if (!window.electronAPI) return;
-        // Small Window Size
-        window.electronAPI.resizeWindow(20 * scale, (startH + 40) * scale);
-    }, [scale, startH]);
+        const layout = calculateLayout(0, 'small');
+        if (layout) {
+            window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
+        }
+    }, [calculateLayout]);
 
     const updateSidebarStyles = useCallback((progress) => {
         if (!sidebarRef.current) return;
@@ -78,19 +91,17 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
 
         // Handle visual position offset (compensate for Window Center shift)
         if (wrapperRef.current && config?.transforms && config?.displayBounds) {
-            const layout = calculateLayout(progress);
+            // During animation we are in 'large' window
+            const windowType = (progress > 0 || isExpanded) ? 'large' : 'small';
+            const layout = calculateLayout(progress, windowType);
             if (layout) {
-                // We assume the window is at the "Final" position (Large).
-                // Window Center is layout.safeCenterY.
-                // We want Sidebar Center to be at layout.currentCenterY.
-                const offsetY = layout.currentCenterY - layout.safeCenterY;
-                wrapperRef.current.style.transform = `translateY(${offsetY}px)`;
+                wrapperRef.current.style.transform = `translateY(${layout.offsetY}px)`;
             }
         }
 
         const gray = Math.floor(156 + (255 - 156) * progress);
         sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${0.8 + 0.15 * progress})`;
-    }, [config, scale, startH, sidebarRef, wrapperRef, BASE_START_W, TARGET_W, TARGET_H, calculateLayout]);
+    }, [config, scale, startH, sidebarRef, wrapperRef, BASE_START_W, TARGET_W, TARGET_H, calculateLayout, isExpanded]);
 
     const stopAnimation = () => {
         if (animationIdRef.current) {
@@ -109,7 +120,7 @@ const useSidebarAnimation = (config, scale, startH, sidebarRef, wrapperRef, anim
         setIgnoreMouse(false);
         if (wrapperRef.current) {
             wrapperRef.current.style.width = '';
-            wrapperRef.current.style.transform = ''; // Reset transform
+            // Do not reset transform here, as it might contain the offsetY for clamped positions
         }
         if (sidebarRef.current) {
             sidebarRef.current.style.transition = '';
