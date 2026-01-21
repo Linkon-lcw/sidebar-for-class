@@ -27,6 +27,13 @@ const useSidebarAnimation = (config, scale, startH, targetW, targetH, sidebarRef
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
 
+        // 控制内容容器的透明度，实现平滑的显示/隐藏效果
+        const contentElement = sidebarRef.current.querySelector('#content');
+        if (contentElement) {
+            contentElement.style.opacity = `${progress}`;
+            contentElement.style.pointerEvents = progress > 0.1 ? 'auto' : 'none';
+        }
+
         if (config?.transforms && config?.displayBounds) {
             if (!window.electronAPI) return;
             const { posy } = config.transforms;

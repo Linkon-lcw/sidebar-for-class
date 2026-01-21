@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import LauncherItem from './components/LauncherItem';
 import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
@@ -20,6 +20,41 @@ const Sidebar = () => {
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
     useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config);
     useGlobalEvents(handleMove, handleEnd, draggingState);
+
+    // Auto-hide functionality when sidebar window loses focus
+    useEffect(() => {
+        // 检查是否在 Electron 环境中
+        if (!window.electronAPI) {
+            console.log('Not in Electron environment, auto-hide functionality disabled');
+            return;
+        }
+
+        // 处理窗口失去焦点事件
+        const handleWindowBlur = () => {
+            console.log('Auto-hide debug:', {
+                autoHideEnabled: config?.transforms?.auto_hide,
+                isExpanded: isExpanded,
+                event: 'window-blur'
+            });
+
+            if (config?.transforms?.auto_hide && isExpanded) {
+                console.log('Collapsing sidebar due to window focus loss');
+                collapse();
+            }
+        };
+
+        // 监听窗口失去焦点事件
+        console.log('Adding window blur listener');
+        const unsubscribe = window.electronAPI.onWindowBlur(handleWindowBlur);
+
+        // 清理函数
+        return () => {
+            console.log('Removing window blur listener');
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
+    }, [config, isExpanded, collapse]);
 
     const handleSettingsClick = (e) => {
         e.stopPropagation();

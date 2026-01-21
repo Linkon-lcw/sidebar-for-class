@@ -70,6 +70,10 @@ function createWindow() {
     if (shouldAlwaysOnTop) {
       mainWindow.setAlwaysOnTop(true, 'screen-saver');
     }
+    // 通知渲染进程窗口失去焦点
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-blur');
+    }
   });
 
   return mainWindow;

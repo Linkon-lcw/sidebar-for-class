@@ -65,5 +65,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // 截图
     screenshot: () => ipcRenderer.invoke('screenshot'),
+
+    // 窗口焦点事件
+    onWindowBlur: (callback) => {
+        const subscription = (event) => callback();
+        ipcRenderer.on('window-blur', subscription);
+        return () => ipcRenderer.removeListener('window-blur', subscription);
+    },
 });
 
