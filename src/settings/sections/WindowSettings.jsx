@@ -12,6 +12,7 @@ import {
     Label,
     Input,
     Slider,
+    Switch,
     useId,
     Dropdown,
     Option,
@@ -91,7 +92,7 @@ const WindowSettings = ({ config, handleTransformChange, styles }) => {
 
             <Card className={styles.card}>
                 <div className={styles.formGroup}>
-                    <Label className={styles.label}>初始高度</Label>
+                    <Label>初始高度</Label>
                     <Input
                         type="number"
                         contentAfter="px"
@@ -99,6 +100,19 @@ const WindowSettings = ({ config, handleTransformChange, styles }) => {
                         onChange={(_, data) => handleTransformChange('height', parseInt(data.value))}
                     />
                     <div className={styles.helpText}>收起状态下的侧边栏的高度</div>
+                </div>
+            </Card>
+
+            <Card className={styles.card}>
+                <div className={styles.formGroup}>
+                    <div className={styles.switchRow}>
+                        <Label>自动收起</Label>
+                        <Switch
+                            checked={config.transforms.auto_hide}
+                            onChange={(_, data) => handleTransformChange('auto_hide', data.checked)}
+                        />
+                    </div>
+                    <div className={styles.helpText}>失去焦点时自动收起侧边栏</div>
                 </div>
             </Card>
 

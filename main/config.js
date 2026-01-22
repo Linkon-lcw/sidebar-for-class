@@ -33,16 +33,15 @@ function updateConfig(newConfig, dependencies = {}) {
   const { screen, mainWindow } = dependencies;
   
   try {
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 4), 'utf8');
+    const { displayBounds, ...configToSave } = newConfig;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(configToSave, null, 4), 'utf8');
     
-    // 获取新的显示器边界信息
     const displays = screen.getAllDisplays();
     const targetDisplay = (newConfig.transforms?.display < displays.length) 
       ? displays[newConfig.transforms.display] 
       : screen.getPrimaryDisplay();
     const configWithBounds = { ...newConfig, displayBounds: targetDisplay.bounds };
 
-    // 通知渲染进程配置已更新
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('config-updated', configWithBounds);
     }
