@@ -53,12 +53,20 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
 
         const now = performance.now();
         const dt = now - ds.lastTime;
-        if (dt > 0) ds.currentVelocity = (currentX - ds.lastX) / dt;
+        if (dt > 0) {
+            // 使用简单的平滑处理
+            const instantVelocity = (currentX - ds.lastX) / dt;
+            ds.currentVelocity = ds.currentVelocity * 0.3 + instantVelocity * 0.7;
+        }
         ds.lastX = currentX;
         ds.lastTime = now;
 
+        const deltaXTotal = currentX - ds.startX;
+        const deltaXFromStart = isExpanded ? (deltaXTotal - 250) : deltaXTotal;
+
         if (!ds.isSwipeActive) {
-            if (ds.currentVelocity < -0.8) {
+            // 如果移动距离超过 10px 或者速度超过某一阈值，则激活滑动
+            if (Math.abs(deltaXFromStart) > 10 || Math.abs(ds.currentVelocity) > 0.3) {
                 ds.isSwipeActive = true;
                 activateDragVisuals();
             } else {
@@ -68,7 +76,7 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
 
         const deltaX = currentX - ds.startX;
         updateSidebarStyles(deltaX / 250);
-    }, [updateSidebarStyles, draggingState, activateDragVisuals]);
+    }, [updateSidebarStyles, draggingState, activateDragVisuals, isExpanded]);
 
     const handleEnd = useCallback((currentX) => {
         const ds = draggingState.current;
@@ -77,15 +85,19 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
 
         if (!ds.isSwipeActive) return;
 
-        const deltaX = currentX ? (currentX - ds.startX) : 0;
+        const finalX = currentX || ds.lastX;
+        const deltaX = finalX - ds.startX;
         const duration = performance.now() - ds.startTimeStamp;
 
+        // 根据速度和距离判断最终状态
+        // 1. 如果向左快速划
         if (ds.currentVelocity < -VELOCITY_THRESHOLD) {
             collapse();
             return;
         }
 
-        if (deltaX > 60 || ds.currentVelocity > VELOCITY_THRESHOLD || (duration < 200 && deltaX > 20)) {
+        // 2. 如果向右快速划，或者滑动距离超过门槛，或者快速短促滑动
+        if (ds.currentVelocity > VELOCITY_THRESHOLD || deltaX > 120 || (duration < 250 && deltaX > 30)) {
             expand();
         } else {
             collapse();
