@@ -145,7 +145,7 @@ const PreviewPanel = ({
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <div className={styles.widgetInfo}>
-                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
+                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : widget.type === 'toolbar' ? `${widget.tools?.length || 0} 个工具` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
                                     </div>
                                     <Button
                                         icon={<DeleteRegular />}
