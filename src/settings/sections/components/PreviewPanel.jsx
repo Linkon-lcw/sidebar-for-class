@@ -58,7 +58,8 @@ const PreviewPanel = ({
         launcher: '启动器',
         volume_slider: '音量控制',
         files: '文件列表',
-        drag_to_launch: '拖放速启'
+        drag_to_launch: '拖放速启',
+        toolbar: '快捷工具栏'
     };
 
     // 包装指针抬起处理函数

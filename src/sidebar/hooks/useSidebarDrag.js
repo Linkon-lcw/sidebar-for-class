@@ -30,9 +30,10 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
 
         ds.isSwipeActive = true;
 
+        const baseW = sidebarRef.current ? parseFloat(sidebarRef.current.style.width) || BASE_START_W : BASE_START_W;
+        const currentProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (panelWidth - BASE_START_W)));
+
         if (animationIdRef.current) {
-            const baseW = sidebarRef.current ? parseFloat(sidebarRef.current.style.width) || BASE_START_W : BASE_START_W;
-            const currentProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (panelWidth - BASE_START_W)));
             ds.startX = currentX - (currentProgress * 250);
             stopAnimation();
         } else {
@@ -44,7 +45,10 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
             }
         }
 
-        if (ds.isSwipeActive) activateDragVisuals();
+        if (ds.isSwipeActive) {
+            activateDragVisuals();
+            updateSidebarStyles(currentProgress);
+        }
     };
 
     const handleMove = useCallback((currentX) => {

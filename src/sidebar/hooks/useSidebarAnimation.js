@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const currentWindowTypeRef = useRef('small');
 
     const { BASE_START_W, TARGET_W, TARGET_H } = constants;
 
@@ -48,6 +49,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const setWindowToLarge = useCallback(() => {
         if (!window.electronAPI) return;
+        currentWindowTypeRef.current = 'large';
         const layout = calculateLayout(1, 'large');
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
@@ -56,6 +58,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const setWindowToSmall = useCallback(() => {
         if (!window.electronAPI) return;
+        currentWindowTypeRef.current = 'small';
         const layout = calculateLayout(0, 'small');
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
@@ -77,12 +80,17 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
 
+        const layout = calculateLayout(progress, currentWindowTypeRef.current);
+        if (layout) {
+            sidebarRef.current.style.transform = `scale(var(--sidebar-scale)) translateY(${layout.offsetY / scale}px)`;
+        }
+
         const gray = Math.floor(156 + (255 - 156) * progress);
         const targetOpacity = config?.transforms?.panel?.opacity || 0.9;
         const startOpacity = 0.6;
         const currentOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
         sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${currentOpacity})`;
-    }, [config, scale, startH, panelWidth, panelHeight, sidebarRef, BASE_START_W, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, panelWidth, panelHeight, sidebarRef, BASE_START_W, TARGET_W, TARGET_H, calculateLayout]);
 
     const stopAnimation = () => {
         if (animationIdRef.current) {
@@ -104,7 +112,8 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         }
         if (sidebarRef.current) {
             sidebarRef.current.style.transition = '';
-            ['width', 'height', 'borderRadius', 'marginLeft', 'background', 'backgroundColor'].forEach(p => sidebarRef.current.style[p] = '');
+            ['width', 'height', 'borderRadius', 'marginLeft', 'background', 'backgroundColor', 'transform'].forEach(p => sidebarRef.current.style[p] = '');
+            updateSidebarStyles(0);
         }
     };
 

@@ -47,14 +47,14 @@ import useWidgetPreviews from './hooks/useWidgetPreviews.jsx';
 import PreviewPanel from './components/PreviewPanel.jsx';
 import PropertiesPanel from './components/PropertiesPanel.jsx';
 
-// 组件类型名称映射
-const WIDGET_TYPE_NAMES = {
-    launcher: '启动器',
-    volume_slider: '音量控制',
-    files: '文件列表',
-    drag_to_launch: '拖放速启',
-    toolbar: '工具栏'
-};
+// // 组件类型名称映射
+// const WIDGET_TYPE_NAMES = {
+//     launcher: '启动器',
+//     volume_slider: '音量控制',
+//     files: '文件列表',
+//     drag_to_launch: '拖放速启',
+//     toolbar: '快捷工具栏'
+// };
 
 const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidgetIcons, setWidgetIcons }) => {
     // 使用组件选择 Hook：管理当前选中的组件和标签页状态
