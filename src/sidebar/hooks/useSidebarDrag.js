@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 
-const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, setWindowToLarge) => {
-    const { BASE_START_W, TARGET_W, VELOCITY_THRESHOLD } = constants;
+const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge) => {
+    const { BASE_START_W, VELOCITY_THRESHOLD } = constants;
 
     const activateDragVisuals = () => {
         if (wrapperRef.current) wrapperRef.current.style.width = '500px';
         if (sidebarRef.current) sidebarRef.current.style.transition = 'none';
-        if (setWindowToLarge) setWindowToLarge(); // Ensure window is large enough for drag
+        if (setWindowToLarge) setWindowToLarge();
     };
 
     const handleStart = (currentX, target) => {
@@ -32,7 +32,7 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
 
         if (animationIdRef.current) {
             const baseW = sidebarRef.current ? parseFloat(sidebarRef.current.style.width) || BASE_START_W : BASE_START_W;
-            const currentProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (TARGET_W - BASE_START_W)));
+            const currentProgress = Math.max(0, Math.min(1, (baseW - BASE_START_W) / (panelWidth - BASE_START_W)));
             ds.startX = currentX - (currentProgress * 250);
             stopAnimation();
         } else {

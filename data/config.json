@@ -4,7 +4,13 @@
         "height": 64,
         "posy": 507,
         "animation_speed": 1,
-        "size": 130
+        "size": 140,
+        "auto_hide": false,
+        "panel": {
+            "opacity": 0.9,
+            "height": 450,
+            "width": 380
+        }
     },
     "widgets": [
         {

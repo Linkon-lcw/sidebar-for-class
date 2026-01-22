@@ -47,7 +47,9 @@ function createWindow() {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-    }
+      experimentalFeatures: true,
+    },
+    // backgroundMaterial: 'acrylic',
   });
 
   mainWindow.setVisibleOnAllWorkspaces(true);
@@ -67,6 +69,10 @@ function createWindow() {
   mainWindow.on('blur', () => {
     if (shouldAlwaysOnTop) {
       mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+    // 通知渲染进程窗口失去焦点
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-blur');
     }
   });
 
