@@ -62,14 +62,36 @@ function updateConfig(newConfig, dependencies = {}) {
 function previewConfig(newConfig, dependencies = {}) {
   const { screen, mainWindow } = dependencies;
   
-  // 获取新的显示器边界信息
+  const baseConfig = getConfigSync();
+  const mergedConfig = {
+    ...baseConfig,
+    ...newConfig,
+    widgets: newConfig.widgets !== undefined ? newConfig.widgets : baseConfig.widgets,
+    transforms: {
+      ...(baseConfig.transforms || {}),
+      ...(newConfig.transforms || {}),
+      display: newConfig.transforms?.display ?? baseConfig.transforms?.display ?? 0,
+      height: newConfig.transforms?.height ?? baseConfig.transforms?.height ?? 64,
+      posy: newConfig.transforms?.posy ?? baseConfig.transforms?.posy ?? 0,
+      size: newConfig.transforms?.size ?? baseConfig.transforms?.size ?? 100,
+      auto_hide: newConfig.transforms?.auto_hide ?? baseConfig.transforms?.auto_hide ?? false,
+      animation_speed: newConfig.transforms?.animation_speed ?? baseConfig.transforms?.animation_speed ?? 1,
+      panel: {
+        ...(baseConfig.transforms?.panel || {}),
+        ...(newConfig.transforms?.panel || {}),
+        width: newConfig.transforms?.panel?.width ?? baseConfig.transforms?.panel?.width ?? 450,
+        height: newConfig.transforms?.panel?.height ?? baseConfig.transforms?.panel?.height ?? 400,
+        opacity: newConfig.transforms?.panel?.opacity ?? baseConfig.transforms?.panel?.opacity ?? 0.9,
+      }
+    }
+  };
+  
   const displays = screen.getAllDisplays();
-  const targetDisplay = (newConfig.transforms?.display < displays.length) 
-    ? displays[newConfig.transforms.display] 
+  const targetDisplay = (mergedConfig.transforms.display < displays.length) 
+    ? displays[mergedConfig.transforms.display] 
     : screen.getPrimaryDisplay();
-  const configWithBounds = { ...newConfig, displayBounds: targetDisplay.bounds };
+  const configWithBounds = { ...mergedConfig, displayBounds: targetDisplay.bounds };
 
-  // 通知渲染进程配置已更新（用于实时预览）
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('config-updated', configWithBounds);
   }

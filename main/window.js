@@ -19,19 +19,23 @@ let topInterval = null;
  */
 function createWindow() {
   const config = getConfigSync();
-  const transforms = config.transforms || { display: 0, height: 64, posy: 0 };
-  
+  const transforms = config.transforms || { display: 0, height: 64, posy: 0, size: 100 };
+  const scale = (transforms.size || 100) / 100;
+
   const targetDisplay = getTargetDisplay(transforms.display);
   const screenBounds = targetDisplay.bounds;
-  const initialHeight = 100;
-  
+
+  // 采用与 useSidebarAnimation 一致的初步计算逻辑
+  const initialWidth = Math.floor(20 * scale);
+  const initialHeight = Math.ceil((transforms.height + 40) * scale);
+
   let yPos = screenBounds.y + transforms.posy - (initialHeight / 2);
   yPos = calculateWindowYPosition(yPos, initialHeight, screenBounds);
-  
+
   const xPos = screenBounds.x;
 
   mainWindow = new BrowserWindow({
-    width: 20,
+    width: initialWidth,
     height: initialHeight,
     x: xPos,
     y: yPos,
@@ -134,14 +138,14 @@ function resizeMainWindow(width, height, y = null, config = null) {
 
   const finalConfig = config || getConfigSync();
   const transforms = finalConfig.transforms || { display: 0, height: 64, posy: 0 };
-  
+
   const targetDisplay = getTargetDisplay(transforms.display);
   const screenBounds = targetDisplay.bounds;
-  
-  const newY = (typeof y === 'number') 
-    ? y 
+
+  const newY = (typeof y === 'number')
+    ? y
     : Math.floor(screenBounds.y + transforms.posy - height / 2);
-  
+
   const adjustedY = calculateWindowYPosition(newY, height, screenBounds);
   const adjustedX = calculateWindowXPosition(screenBounds.x, width, screenBounds);
 

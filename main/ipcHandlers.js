@@ -18,7 +18,7 @@ const { takeScreenshot } = require('./screenshot');
  */
 function registerIPCHandlers() {
   // ===== 窗口管理 =====
-  
+
   ipcMain.on('resize-window', (event, width, height, y) => {
     resizeMainWindow(width, height, y);
   });
@@ -40,8 +40,8 @@ function registerIPCHandlers() {
   ipcMain.handle('get-config', async () => {
     const config = getConfigSync();
     const displays = getAllDisplays();
-    const targetDisplay = (config.transforms?.display < displays.length) 
-      ? displays[config.transforms.display] 
+    const targetDisplay = (config.transforms?.display < displays.length)
+      ? displays[config.transforms.display]
       : screen.getPrimaryDisplay();
     return { ...config, displayBounds: targetDisplay.bounds };
   });
@@ -49,37 +49,45 @@ function registerIPCHandlers() {
   ipcMain.on('update-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
     updateConfig(newConfig, { screen, mainWindow });
-    
+
     // 同时更新窗口位置
-    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0 };
+    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0, size: 100 };
+    const scale = (transforms.size || 100) / 100;
     const displays = screen.getAllDisplays();
-    const targetDisplay = (transforms.display < displays.length) 
-      ? displays[transforms.display] 
+    const targetDisplay = (transforms.display < displays.length)
+      ? displays[transforms.display]
       : screen.getPrimaryDisplay();
     const screenBounds = targetDisplay.bounds;
-    
-    const yPos = Math.floor(screenBounds.y + transforms.posy - transforms.height / 2);
-    
+
+    // 采用与 useSidebarAnimation 一致的计算逻辑
+    const winW = Math.floor(20 * scale);
+    const winH = Math.ceil((transforms.height + 40) * scale);
+    const yPos = Math.floor(screenBounds.y + transforms.posy - winH / 2);
+
     // 调用窗口位置更新函数，传入配置对象
-    resizeMainWindow(20, transforms.height, yPos, newConfig);
+    resizeMainWindow(winW, winH, yPos, newConfig);
   });
 
   ipcMain.on('preview-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
     previewConfig(newConfig, { screen, mainWindow });
-    
+
     // 同时更新窗口位置
-    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0 };
+    const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0, size: 100 };
+    const scale = (transforms.size || 100) / 100;
     const displays = screen.getAllDisplays();
-    const targetDisplay = (transforms.display < displays.length) 
-      ? displays[transforms.display] 
+    const targetDisplay = (transforms.display < displays.length)
+      ? displays[transforms.display]
       : screen.getPrimaryDisplay();
     const screenBounds = targetDisplay.bounds;
-    
-    const yPos = Math.floor(screenBounds.y + transforms.posy - transforms.height / 2);
-    
+
+    // 采用与 useSidebarAnimation 一致的计算逻辑
+    const winW = Math.floor(20 * scale);
+    const winH = Math.ceil((transforms.height + 40) * scale);
+    const yPos = Math.floor(screenBounds.y + transforms.posy - winH / 2);
+
     // 调用窗口位置更新函数，传入配置对象
-    resizeMainWindow(20, transforms.height, yPos, newConfig);
+    resizeMainWindow(winW, winH, yPos, newConfig);
   });
 
   // ===== 显示器管理 =====
@@ -91,7 +99,7 @@ function registerIPCHandlers() {
   // ===== 系统功能 =====
 
   ipcMain.handle('get-volume', () => getVolume());
-  
+
   ipcMain.on('set-volume', (e, val) => {
     setVolume(val);
   });

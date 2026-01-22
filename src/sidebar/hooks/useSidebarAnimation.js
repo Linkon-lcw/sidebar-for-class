@@ -14,18 +14,18 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const calculateLayout = useCallback((progress, windowType = 'large') => {
         if (!config?.transforms || !config?.displayBounds) return null;
-        
+
         const { posy } = config.transforms;
         const { y: screenY, height: screenH } = config.displayBounds;
 
         const winW = (windowType === 'large')
-            ? Math.floor(TARGET_W * scale + 100)
+            ? Math.floor(panelWidth * scale + 100)
             : Math.floor(20 * scale);
         const winH = (windowType === 'large')
-            ? Math.ceil(TARGET_H * scale + 40)
+            ? Math.ceil(panelHeight * scale + 40)
             : Math.ceil((startH + 40) * scale);
 
-        const currentSidebarH = (startH + (TARGET_H - startH) * progress) * scale;
+        const currentSidebarH = (startH + (panelHeight - startH) * progress) * scale;
         const startCenterY = screenY + posy;
         const safeCenterY = Math.max(
             screenY + winH / 2,
@@ -44,7 +44,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
             safeCenterY,
             startCenterY
         };
-    }, [config, scale, startH, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, panelWidth, panelHeight]);
 
     const setWindowToLarge = useCallback(() => {
         if (!window.electronAPI) return;

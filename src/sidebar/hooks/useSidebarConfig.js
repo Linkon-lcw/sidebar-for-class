@@ -30,7 +30,10 @@ const useSidebarConfig = () => {
                 }
             }
         }
-        document.documentElement.style.setProperty('--sidebar-scale', String(c.transforms?.size / 100 || 1));
+        const scaleValue = (typeof c.transforms?.size === 'number' && c.transforms.size > 0)
+            ? c.transforms.size / 100
+            : 1;
+        document.documentElement.style.setProperty('--sidebar-scale', String(scaleValue));
     };
 
     useEffect(() => {
