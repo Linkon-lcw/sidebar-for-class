@@ -7,8 +7,8 @@ const { app } = require('electron');
 const { screen } = require('electron');
 const { getConfigSync, updateConfig, previewConfig } = require('./config');
 const { getAllDisplays } = require('./display');
-const { getMainWindow, createSettingsWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated } = require('./window');
-const { getVolume, setVolume, executeCommand, showDesktop, taskView } = require('./system');
+const { getMainWindow, createSettingsWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
+const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontWindow } = require('./system');
 const { launchApp, getFileIcon } = require('./launcher');
 const { getFilesInFolder } = require('./fileSystem');
 const { takeScreenshot } = require('./screenshot');
@@ -114,6 +114,15 @@ function registerIPCHandlers() {
 
   ipcMain.on('taskview', () => {
     taskView();
+  });
+
+  ipcMain.on('close-front-window', () => {
+    closeFrontWindow();
+  });
+
+  ipcMain.on('blur-and-close-front-window', () => {
+    blurMainWindow();
+    closeFrontWindow();
   });
 
   // ===== 应用启动 =====

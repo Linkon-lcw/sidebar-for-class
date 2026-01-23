@@ -223,6 +223,15 @@ function notifyDisplaysUpdated(displays) {
   }
 }
 
+/**
+ * 使主窗口失去焦点
+ */
+function blurMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.blur();
+  }
+}
+
 module.exports = {
   createWindow,
   createSettingsWindow,
@@ -231,5 +240,6 @@ module.exports = {
   setAlwaysOnTopFlag,
   resizeMainWindow,
   setIgnoreMouseEvents,
-  notifyDisplaysUpdated
+  notifyDisplaysUpdated,
+  blurMainWindow
 };

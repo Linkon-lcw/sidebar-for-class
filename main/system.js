@@ -77,6 +77,33 @@ function taskView() {
   }
 }
 
+/**
+ * 关闭前台窗口
+ * 优先关闭历史记录中非黑名单的最近激活窗口
+ * 只在 Windows 平台有效
+ */
+function closeFrontWindow() {
+  if (process.platform === 'win32') {
+    const windowHistoryModule = require('./window-history');
+    windowHistoryModule.closeLastActiveWindow().then(result => {
+      console.log('[System] Close window result:', result);
+      if (!result.success) {
+        console.log('[System] Falling back to Alt+F4 method');
+        const vbscript = 'Set objShell = CreateObject("WScript.Shell"): objShell.SendKeys "%{F4}"';
+        const tempFile = require('path').join(require('os').tmpdir(), 'close_window.vbs');
+        require('fs').writeFileSync(tempFile, vbscript);
+        exec(`wscript "${tempFile}"`);
+      }
+    }).catch(error => {
+      console.error('[System] Error closing window:', error);
+      const vbscript = 'Set objShell = CreateObject("WScript.Shell"): objShell.SendKeys "%{F4}"';
+      const tempFile = require('path').join(require('os').tmpdir(), 'close_window.vbs');
+      require('fs').writeFileSync(tempFile, vbscript);
+      exec(`wscript "${tempFile}"`);
+    });
+  }
+}
+
 module.exports = {
   getIsAdmin,
   resolveWindowsEnv,
@@ -84,5 +111,6 @@ module.exports = {
   setVolume,
   executeCommand,
   showDesktop,
-  taskView
+  taskView,
+  closeFrontWindow
 };

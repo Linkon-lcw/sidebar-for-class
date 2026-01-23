@@ -69,7 +69,8 @@
             "tools": [
                 "screenshot",
                 "show_desktop",
-                "taskview"
+                "taskview",
+                "close_front_window"
             ]
         }
     ]
