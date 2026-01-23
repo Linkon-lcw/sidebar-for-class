@@ -65,7 +65,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000/index.html');
   } else {
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
   // 事件监听
@@ -201,7 +201,7 @@ function createSettingsWindow() {
   if (isDev) {
     settingsWindow.loadURL('http://localhost:3000/settings.html');
   } else {
-    settingsWindow.loadFile('settings.html');
+    settingsWindow.loadFile(path.join(__dirname, '../dist/settings.html'));
   }
 
   // 窗口关闭时清理引用
