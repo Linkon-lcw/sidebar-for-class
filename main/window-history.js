@@ -9,8 +9,9 @@ let monitorInterval = null;
 let lastForegroundWindow = null;
 
 const DEFAULT_BLACKLIST = [
-  // 'sidebar-for-class',
-  '侧边栏工具'
+  'sidebar-for-class',
+  '侧边栏工具',
+  'InkCanvasforClass',
   // 'explorer',
   // 'progman',
   // 'shell_traywnd',

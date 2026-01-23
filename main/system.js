@@ -87,13 +87,13 @@ function closeFrontWindow() {
     const windowHistoryModule = require('./window-history');
     windowHistoryModule.closeLastActiveWindow().then(result => {
       console.log('[System] Close window result:', result);
-      if (!result.success) {
-        console.log('[System] Falling back to Alt+F4 method');
-        const vbscript = 'Set objShell = CreateObject("WScript.Shell"): objShell.SendKeys "%{F4}"';
-        const tempFile = require('path').join(require('os').tmpdir(), 'close_window.vbs');
-        require('fs').writeFileSync(tempFile, vbscript);
-        exec(`wscript "${tempFile}"`);
-      }
+      // if (!result.success) {
+      //   console.log('[System] Falling back to Alt+F4 method');
+      //   const vbscript = 'Set objShell = CreateObject("WScript.Shell"): objShell.SendKeys "%{F4}"';
+      //   const tempFile = require('path').join(require('os').tmpdir(), 'close_window.vbs');
+      //   require('fs').writeFileSync(tempFile, vbscript);
+      //   exec(`wscript "${tempFile}"`);
+      // }
     }).catch(error => {
       console.error('[System] Error closing window:', error);
       const vbscript = 'Set objShell = CreateObject("WScript.Shell"): objShell.SendKeys "%{F4}"';
