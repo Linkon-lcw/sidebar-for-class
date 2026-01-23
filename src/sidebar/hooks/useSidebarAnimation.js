@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 
 const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const currentWindowTypeRef = useRef('small');
 
     const { BASE_START_W, TARGET_W, TARGET_H } = constants;
 
@@ -13,18 +12,14 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         }
     };
 
-    const calculateLayout = useCallback((progress, windowType = 'large') => {
+    const calculateLayout = useCallback((progress) => {
         if (!config?.transforms || !config?.displayBounds) return null;
 
         const { posy } = config.transforms;
         const { y: screenY, height: screenH } = config.displayBounds;
 
-        const winW = (windowType === 'large')
-            ? Math.floor(panelWidth * scale + 100)
-            : Math.floor(20 * scale);
-        const winH = (windowType === 'large')
-            ? Math.ceil(panelHeight * scale + 40)
-            : Math.ceil((startH + 40) * scale);
+        const winW = Math.floor(panelWidth * scale + 100);
+        const winH = Math.ceil(panelHeight * scale + 40);
 
         const currentSidebarH = (startH + (panelHeight - startH) * progress) * scale;
         const startCenterY = screenY + posy;
@@ -49,8 +44,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const setWindowToLarge = useCallback(() => {
         if (!window.electronAPI) return;
-        currentWindowTypeRef.current = 'large';
-        const layout = calculateLayout(1, 'large');
+        const layout = calculateLayout(1);
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
         }
@@ -58,8 +52,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const setWindowToSmall = useCallback(() => {
         if (!window.electronAPI) return;
-        currentWindowTypeRef.current = 'small';
-        const layout = calculateLayout(0, 'small');
+        const layout = calculateLayout(0);
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
         }
@@ -80,7 +73,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
 
-        const layout = calculateLayout(progress, currentWindowTypeRef.current);
+        const layout = calculateLayout(progress);
         if (layout) {
             sidebarRef.current.style.transform = `scale(var(--sidebar-scale)) translateY(${layout.offsetY / scale}px)`;
         }

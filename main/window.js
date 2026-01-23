@@ -19,17 +19,22 @@ let topInterval = null;
  */
 function createWindow() {
   const config = getConfigSync();
-  const transforms = config.transforms || { display: 0, height: 64, posy: 0, size: 100 };
+  const transforms = config.transforms || {};
+  const panel = transforms.panel || {};
   const scale = (transforms.size || 100) / 100;
 
-  const targetDisplay = getTargetDisplay(transforms.display);
+  // 从配置中获取面板尺寸，如果未定义则使用默认值
+  const panelWidth = panel.width || 450;
+  const panelHeight = panel.height || 400;
+
+  const targetDisplay = getTargetDisplay(transforms.display || 0);
   const screenBounds = targetDisplay.bounds;
 
-  // 采用与 useSidebarAnimation 一致的初步计算逻辑
-  const initialWidth = Math.floor(20 * scale);
-  const initialHeight = Math.ceil((transforms.height + 40) * scale);
+  // 窗口尺寸始终为展开后的大小
+  const initialWidth = Math.floor(panelWidth * scale + 100);
+  const initialHeight = Math.ceil(panelHeight * scale + 40);
 
-  let yPos = screenBounds.y + transforms.posy - (initialHeight / 2);
+  let yPos = screenBounds.y + (transforms.posy || 0) - (initialHeight / 2);
   yPos = calculateWindowYPosition(yPos, initialHeight, screenBounds);
 
   const xPos = screenBounds.x;
