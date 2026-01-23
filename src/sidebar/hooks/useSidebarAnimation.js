@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const currentWindowTypeRef = useRef('small');
 
     const { BASE_START_W, TARGET_W, TARGET_H } = constants;
 
@@ -14,18 +15,18 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const calculateLayout = useCallback((progress, windowType = 'large') => {
         if (!config?.transforms || !config?.displayBounds) return null;
-        
+
         const { posy } = config.transforms;
         const { y: screenY, height: screenH } = config.displayBounds;
 
         const winW = (windowType === 'large')
-            ? Math.floor(TARGET_W * scale + 100)
+            ? Math.floor(panelWidth * scale + 100)
             : Math.floor(20 * scale);
         const winH = (windowType === 'large')
-            ? Math.ceil(TARGET_H * scale + 40)
+            ? Math.ceil(panelHeight * scale + 40)
             : Math.ceil((startH + 40) * scale);
 
-        const currentSidebarH = (startH + (TARGET_H - startH) * progress) * scale;
+        const currentSidebarH = (startH + (panelHeight - startH) * progress) * scale;
         const startCenterY = screenY + posy;
         const safeCenterY = Math.max(
             screenY + winH / 2,
@@ -44,10 +45,11 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
             safeCenterY,
             startCenterY
         };
-    }, [config, scale, startH, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, panelWidth, panelHeight]);
 
     const setWindowToLarge = useCallback(() => {
         if (!window.electronAPI) return;
+        currentWindowTypeRef.current = 'large';
         const layout = calculateLayout(1, 'large');
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
@@ -56,6 +58,7 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
 
     const setWindowToSmall = useCallback(() => {
         if (!window.electronAPI) return;
+        currentWindowTypeRef.current = 'small';
         const layout = calculateLayout(0, 'small');
         if (layout) {
             window.electronAPI.resizeWindow(layout.targetWinW, layout.targetWinH, layout.finalWindowY);
@@ -77,12 +80,17 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         sidebarRef.current.style.borderRadius = `${currentRadius}px`;
         sidebarRef.current.style.marginLeft = `${currentMargin}px`;
 
+        const layout = calculateLayout(progress, currentWindowTypeRef.current);
+        if (layout) {
+            sidebarRef.current.style.transform = `scale(var(--sidebar-scale)) translateY(${layout.offsetY / scale}px)`;
+        }
+
         const gray = Math.floor(156 + (255 - 156) * progress);
         const targetOpacity = config?.transforms?.panel?.opacity || 0.9;
         const startOpacity = 0.6;
         const currentOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
         sidebarRef.current.style.background = `rgba(${gray}, ${gray}, ${gray}, ${currentOpacity})`;
-    }, [config, scale, startH, panelWidth, panelHeight, sidebarRef, BASE_START_W, TARGET_W, TARGET_H]);
+    }, [config, scale, startH, panelWidth, panelHeight, sidebarRef, BASE_START_W, TARGET_W, TARGET_H, calculateLayout]);
 
     const stopAnimation = () => {
         if (animationIdRef.current) {
@@ -104,7 +112,8 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
         }
         if (sidebarRef.current) {
             sidebarRef.current.style.transition = '';
-            ['width', 'height', 'borderRadius', 'marginLeft', 'background', 'backgroundColor'].forEach(p => sidebarRef.current.style[p] = '');
+            ['width', 'height', 'borderRadius', 'marginLeft', 'background', 'backgroundColor', 'transform'].forEach(p => sidebarRef.current.style[p] = '');
+            updateSidebarStyles(0);
         }
     };
 

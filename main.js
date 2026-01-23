@@ -12,6 +12,9 @@ app.whenReady().then(() => {
   // 设置 AppUserModelId 以支持 Windows 通知
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.sidebar.class');
+    // 启动窗口历史监控
+    const { startMonitoring } = require('./main/window-history');
+    startMonitoring(1000);
   }
 
   // 创建主窗口

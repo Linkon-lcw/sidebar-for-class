@@ -209,6 +209,12 @@ export const useStyles = makeStyles({
         flexDirection: 'column',
         gap: '4px',
     },
+    // 开关行样式
+    switchRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
     // 标签样式
     label: {
         fontSize: '14px',

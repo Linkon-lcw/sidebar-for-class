@@ -58,7 +58,8 @@ const PreviewPanel = ({
         launcher: '启动器',
         volume_slider: '音量控制',
         files: '文件列表',
-        drag_to_launch: '拖放速启'
+        drag_to_launch: '拖放速启',
+        toolbar: '快捷工具栏'
     };
 
     // 包装指针抬起处理函数
@@ -144,7 +145,7 @@ const PreviewPanel = ({
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <div className={styles.widgetInfo}>
-                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
+                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : widget.type === 'toolbar' ? `${widget.tools?.length || 0} 个工具` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
                                     </div>
                                     <Button
                                         icon={<DeleteRegular />}

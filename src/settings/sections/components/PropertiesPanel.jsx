@@ -427,7 +427,8 @@ const PropertiesPanel = ({
                                         const toolOptions = [
                                             { id: 'screenshot', label: '截图' },
                                             { id: 'show_desktop', label: '显示桌面' },
-                                            { id: 'taskview', label: '任务视图' }
+                                            { id: 'taskview', label: '任务视图' },
+                                            { id: 'close_front_window', label: '关闭窗口' },
                                         ];
                                         const currentTool = toolOptions.find(t => t.id === toolId) || { id: toolId, label: toolId };
 

@@ -66,6 +66,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 截图
     screenshot: () => ipcRenderer.invoke('screenshot'),
 
+    // 关闭窗口
+    closeFrontWindow: () => ipcRenderer.send('close-front-window'),
+    
+    // 使侧边栏失去焦点并关闭前台窗口
+    blurAndCloseFrontWindow: () => ipcRenderer.send('blur-and-close-front-window'),
+
     // 窗口焦点事件
     onWindowBlur: (callback) => {
         const subscription = (event) => callback();

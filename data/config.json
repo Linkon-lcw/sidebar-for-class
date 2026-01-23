@@ -2,7 +2,7 @@
     "transforms": {
         "display": 0,
         "height": 64,
-        "posy": 507,
+        "posy": 472,
         "animation_speed": 1,
         "size": 140,
         "auto_hide": true,
@@ -69,14 +69,9 @@
             "tools": [
                 "screenshot",
                 "show_desktop",
-                "taskview"
+                "taskview",
+                "close_front_window"
             ]
         }
-    ],
-    "displayBounds": {
-        "x": 0,
-        "y": 0,
-        "width": 1920,
-        "height": 1080
-    }
+    ]
 }
