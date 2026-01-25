@@ -39,6 +39,8 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
             window.electronAPI.taskview();
         } else if (tool === 'close_front_window' && window.electronAPI && window.electronAPI.blurAndCloseFrontWindow) {
             window.electronAPI.blurAndCloseFrontWindow();
+        } else if (tool === 'timer' && window.electronAPI && window.electronAPI.openTimerWindow) {
+            window.electronAPI.openTimerWindow();
         } else {
             console.log(`工具按钮被点击: ${tool}`);
         }
@@ -55,6 +57,7 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
             'show_desktop': 'fa-desktop',
             'taskview': 'fa-columns',
             'close_front_window': 'fa-times',
+            'timer': 'fa-stopwatch',
         };
         return iconMap[tool] || 'fa-tools';
     };
@@ -70,6 +73,7 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
             'show_desktop': '显示桌面',
             'taskview': '任务视图',
             'close_front_window': '关闭窗口',
+            'timer': '计时器',
         };
         return nameMap[tool] || tool;
     };

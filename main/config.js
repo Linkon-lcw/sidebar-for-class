@@ -5,7 +5,21 @@
 const path = require('path');
 const fs = require('fs');
 
-const CONFIG_PATH = path.join(__dirname, '..', 'data', 'config.json');
+const { app } = require('electron');
+
+// 获取基础路径：开发环境下是项目根目录，生产环境下是可执行文件所在目录
+const isDev = !app.isPackaged;
+const basePath = isDev
+  ? path.join(__dirname, '..')
+  : (process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath));
+
+const DATA_DIR = path.join(basePath, 'data');
+const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
+
+// 确保数据目录存在
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 /**
  * 同步读取配置文件
@@ -31,14 +45,14 @@ function getConfigSync() {
  */
 function updateConfig(newConfig, dependencies = {}) {
   const { screen, mainWindow } = dependencies;
-  
+
   try {
     const { displayBounds, ...configToSave } = newConfig;
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(configToSave, null, 4), 'utf8');
-    
+
     const displays = screen.getAllDisplays();
-    const targetDisplay = (newConfig.transforms?.display < displays.length) 
-      ? displays[newConfig.transforms.display] 
+    const targetDisplay = (newConfig.transforms?.display < displays.length)
+      ? displays[newConfig.transforms.display]
       : screen.getPrimaryDisplay();
     const configWithBounds = { ...newConfig, displayBounds: targetDisplay.bounds };
 
@@ -61,7 +75,7 @@ function updateConfig(newConfig, dependencies = {}) {
  */
 function previewConfig(newConfig, dependencies = {}) {
   const { screen, mainWindow } = dependencies;
-  
+
   const baseConfig = getConfigSync();
   const mergedConfig = {
     ...baseConfig,
@@ -85,10 +99,10 @@ function previewConfig(newConfig, dependencies = {}) {
       }
     }
   };
-  
+
   const displays = screen.getAllDisplays();
-  const targetDisplay = (mergedConfig.transforms.display < displays.length) 
-    ? displays[mergedConfig.transforms.display] 
+  const targetDisplay = (mergedConfig.transforms.display < displays.length)
+    ? displays[mergedConfig.transforms.display]
     : screen.getPrimaryDisplay();
   const configWithBounds = { ...mergedConfig, displayBounds: targetDisplay.bounds };
 

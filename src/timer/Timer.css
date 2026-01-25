@@ -1,0 +1,184 @@
+/* src/timer/Timer.css */
+
+:root {
+    --bg-color-light: #ffffff;
+    --bg-color-app: #f8f9fa;
+    --text-color-dark: #2d2d2d;
+    --text-color-muted: #6c757d;
+    --button-bg: #f0f0f0;
+    --button-hover: #e2e2e2;
+    --accent-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--bg-color-app);
+    color: var(--text-color-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5vh;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-color-light);
+    transition: gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.timer-running #root {
+    gap: 2vh;
+}
+
+.time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* font-size: min(12vw, 35vh); */
+    font-size: min(30vw, 30vh);
+    font-weight: 700;
+    color: var(--text-color-dark);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    font-variant-numeric: tabular-nums;
+}
+
+.value {
+    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-block;
+    text-align: center;
+    min-width: 0.6em;
+    line-height: 1;
+    position: relative;
+    top: -0.06em;
+}
+
+.time-part.running .value {
+    font-size: min(22vw, 75vh);
+}
+
+.time-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1vh;
+}
+
+.time-separator {
+    margin: 0 0.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding-bottom: 2vh;
+    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1;
+    position: relative;
+    top: -0.09em;
+}
+
+body.timer-running .time-separator {
+    font-size: min(22vw, 75vh);
+}
+
+
+.adjustment-button-top,
+.adjustment-button-bottom {
+    background-color: var(--button-bg);
+    border: none;
+    color: var(--text-color-muted);
+    font-size: min(3vw, 4vh);
+    width: min(8vw, 10vh);
+    height: min(8vw, 10vh);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.time-part.running .adjustment-button-top,
+.time-part.running .adjustment-button-bottom {
+    opacity: 0;
+    transform: scale(0);
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+}
+
+.adjustment-button-top:hover,
+.adjustment-button-bottom:hover {
+    background-color: var(--button-hover);
+    color: var(--text-color-dark);
+}
+
+.adjustment-button-top:active,
+.adjustment-button-bottom:active {
+    transform: scale(0.9);
+}
+
+.control-buttons {
+    display: flex;
+    gap: 6vmin;
+    transition: opacity 0.5s ease;
+}
+
+body.timer-running .control-buttons {
+    opacity: 0.6;
+}
+
+body.timer-running .control-buttons:hover {
+    opacity: 1;
+}
+
+.control-buttons button {
+    width: min(15vw, 18vh);
+    height: min(15vw, 18vh);
+    font-size: min(5vw, 6vh);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.control-buttons button.start {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.control-buttons button.pause {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.control-buttons button.reset {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.control-buttons button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.control-buttons button:active {
+    transform: translateY(0);
+}

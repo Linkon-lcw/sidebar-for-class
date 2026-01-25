@@ -12,6 +12,8 @@ let mainWindow = null;
 let settingsWindow = null;
 let shouldAlwaysOnTop = true;
 let topInterval = null;
+let timerWindow = null;
+
 
 /**
  * 创建主窗口
@@ -19,17 +21,22 @@ let topInterval = null;
  */
 function createWindow() {
   const config = getConfigSync();
-  const transforms = config.transforms || { display: 0, height: 64, posy: 0, size: 100 };
+  const transforms = config.transforms || {};
+  const panel = transforms.panel || {};
   const scale = (transforms.size || 100) / 100;
 
-  const targetDisplay = getTargetDisplay(transforms.display);
+  // 从配置中获取面板尺寸，如果未定义则使用默认值
+  const panelWidth = panel.width || 450;
+  const panelHeight = panel.height || 400;
+
+  const targetDisplay = getTargetDisplay(transforms.display || 0);
   const screenBounds = targetDisplay.bounds;
 
-  // 采用与 useSidebarAnimation 一致的初步计算逻辑
-  const initialWidth = Math.floor(20 * scale);
-  const initialHeight = Math.ceil((transforms.height + 40) * scale);
+  // 窗口尺寸始终为展开后的大小
+  const initialWidth = Math.floor(panelWidth * scale + 100);
+  const initialHeight = Math.ceil(panelHeight * scale + 40);
 
-  let yPos = screenBounds.y + transforms.posy - (initialHeight / 2);
+  let yPos = screenBounds.y + (transforms.posy || 0) - (initialHeight / 2);
   yPos = calculateWindowYPosition(yPos, initialHeight, screenBounds);
 
   const xPos = screenBounds.x;
@@ -65,7 +72,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000/index.html');
   } else {
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
   // 事件监听
@@ -114,6 +121,15 @@ function getMainWindow() {
 function getSettingsWindow() {
   return settingsWindow;
 }
+
+/**
+ * 获取计时器窗口实例
+ * @returns {BrowserWindow|null} 计时器窗口实例
+ */
+function getTimerWindow() {
+  return timerWindow;
+}
+
 
 /**
  * 设置窗口是否保持置顶
@@ -201,7 +217,7 @@ function createSettingsWindow() {
   if (isDev) {
     settingsWindow.loadURL('http://localhost:3000/settings.html');
   } else {
-    settingsWindow.loadFile('settings.html');
+    settingsWindow.loadFile(path.join(__dirname, '../dist/settings.html'));
   }
 
   // 窗口关闭时清理引用
@@ -209,6 +225,50 @@ function createSettingsWindow() {
     settingsWindow = null;
   });
 }
+
+/**
+ * 创建计时器窗口
+ */
+function createTimerWindow() {
+  // 如果计时器窗口已经存在，则聚焦它
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.focus();
+    return;
+  }
+
+  timerWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    minWidth: 600,
+    minHeight: 400,
+    title: '计时器',
+    frame: true,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: false,
+    resizable: true,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, '..', 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    }
+  });
+  timerWindow.setAlwaysOnTop(true, 'screen-saver');
+
+  // 加载计时器页面
+  if (isDev) {
+    timerWindow.loadURL('http://localhost:3000/timer.html');
+  } else {
+    timerWindow.loadFile(path.join(__dirname, '../dist/timer.html'));
+  }
+
+  // 窗口关闭时清理引用
+  timerWindow.on('closed', () => {
+    timerWindow = null;
+  });
+}
+
 
 /**
  * 通知所有窗口显示器已更新
@@ -221,7 +281,11 @@ function notifyDisplaysUpdated(displays) {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.webContents.send('displays-updated', displays);
   }
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.webContents.send('displays-updated', displays);
+  }
 }
+
 
 /**
  * 使主窗口失去焦点
@@ -235,11 +299,15 @@ function blurMainWindow() {
 module.exports = {
   createWindow,
   createSettingsWindow,
+  createTimerWindow,
   getMainWindow,
   getSettingsWindow,
+  getTimerWindow,
   setAlwaysOnTopFlag,
+
   resizeMainWindow,
   setIgnoreMouseEvents,
   notifyDisplaysUpdated,
   blurMainWindow
 };
+

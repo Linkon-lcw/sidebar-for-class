@@ -7,7 +7,7 @@ const { app } = require('electron');
 const { screen } = require('electron');
 const { getConfigSync, updateConfig, previewConfig } = require('./config');
 const { getAllDisplays } = require('./display');
-const { getMainWindow, createSettingsWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
+const { getMainWindow, createSettingsWindow, createTimerWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
 const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontWindow } = require('./system');
 const { launchApp, getFileIcon } = require('./launcher');
 const { getFilesInFolder } = require('./fileSystem');
@@ -33,6 +33,10 @@ function registerIPCHandlers() {
 
   ipcMain.on('open-settings', () => {
     createSettingsWindow();
+  });
+
+  ipcMain.on('open-timer-window', () => {
+    createTimerWindow();
   });
 
   // ===== 配置管理 =====
