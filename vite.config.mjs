@@ -10,6 +10,7 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'index.html'),
                 settings: resolve(__dirname, 'settings.html'),
+                timer: resolve(__dirname, 'timer.html'),
             },
         },
     },

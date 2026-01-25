@@ -70,7 +70,8 @@
                 "screenshot",
                 "show_desktop",
                 "taskview",
-                "close_front_window"
+                "close_front_window",
+                "timer"
             ]
         }
     ]

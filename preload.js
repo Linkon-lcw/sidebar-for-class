@@ -48,6 +48,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 打开设置窗口
     openSettings: () => ipcRenderer.send('open-settings'),
 
+    // 打开计时器窗口
+    openTimerWindow: () => ipcRenderer.send('open-timer-window'),
+
     // 获取显示器信息
     getDisplays: () => ipcRenderer.invoke('get-displays'),
     // 监听显示器更新
