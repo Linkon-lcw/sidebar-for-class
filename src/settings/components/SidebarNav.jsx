@@ -13,11 +13,13 @@ import {
     AppsList24Regular,
     Desktop24Regular,
     PaintBrush24Regular,
+    Bot24Regular,
+    Database24Regular,
 } from "@fluentui/react-icons";
 
 const SidebarNav = ({ selectedTab, onTabSelect, styles }) => {
     // 标签页列表
-    const tabs = ['basic', 'window', 'style', 'components'];
+    const tabs = ['basic', 'window', 'style', 'components', 'automation', 'data'];
     // 当前选中标签页的索引，用于计算活动指示器的位置
     const selectedIndex = tabs.indexOf(selectedTab);
 
@@ -68,6 +70,22 @@ const SidebarNav = ({ selectedTab, onTabSelect, styles }) => {
                     indicator={null}
                 >
                     组件
+                </Tab>
+                <Tab
+                    value="automation"
+                    className={mergeClasses(styles.tab, selectedTab === 'automation' && styles.tabSelected)}
+                    icon={<Bot24Regular className={styles.tabIcon} />}
+                    indicator={null}
+                >
+                    自动化
+                </Tab>
+                <Tab
+                    value="data"
+                    className={mergeClasses(styles.tab, selectedTab === 'data' && styles.tabSelected)}
+                    icon={<Database24Regular className={styles.tabIcon} />}
+                    indicator={null}
+                >
+                    数据
                 </Tab>
 
             </TabList>

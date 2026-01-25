@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 获取文件夹下的文件
     getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount),
 
+    // 读写文件
+    readFile: (path) => ipcRenderer.invoke('read-file', path),
+    writeFile: (path, content) => ipcRenderer.invoke('write-file', path, content),
+    deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
+    renameFile: (oldPath, newPath) => ipcRenderer.invoke('rename-file', oldPath, newPath),
+
     // 执行任意命令
     executeCommand: (command) => ipcRenderer.send('execute-command', command),
 

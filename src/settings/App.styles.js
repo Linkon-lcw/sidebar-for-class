@@ -155,7 +155,7 @@ export const useStyles = makeStyles({
     main: {
         flexGrow: 1,
         ...shorthands.padding('32px', '24px'),
-        overflowY: 'hidden',
+        overflowY: 'auto',
     },
     // 分组样式：设置页面的各个分组
     section: {

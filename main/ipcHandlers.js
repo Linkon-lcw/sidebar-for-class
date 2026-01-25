@@ -10,7 +10,7 @@ const { getAllDisplays } = require('./display');
 const { getMainWindow, createSettingsWindow, createTimerWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
 const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontWindow } = require('./system');
 const { launchApp, getFileIcon } = require('./launcher');
-const { getFilesInFolder } = require('./fileSystem');
+const { getFilesInFolder, readFileContent, writeFileContent, deleteFile, renameFile } = require('./fileSystem');
 const { takeScreenshot } = require('./screenshot');
 
 /**
@@ -143,6 +143,22 @@ function registerIPCHandlers() {
 
   ipcMain.handle('get-files-in-folder', async (event, folderPath, maxCount) => {
     return await getFilesInFolder(folderPath, maxCount);
+  });
+
+  ipcMain.handle('read-file', async (event, filePath) => {
+    return await readFileContent(filePath);
+  });
+
+  ipcMain.handle('write-file', async (event, filePath, content) => {
+    return await writeFileContent(filePath, content);
+  });
+
+  ipcMain.handle('delete-file', async (event, filePath) => {
+    return await deleteFile(filePath);
+  });
+
+  ipcMain.handle('rename-file', async (event, oldPath, newPath) => {
+    return await renameFile(oldPath, newPath);
   });
 
   // ===== 截图 =====

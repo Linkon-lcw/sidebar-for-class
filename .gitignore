@@ -45,3 +45,7 @@ codebuddy/
 
 # electron-builder生成的文件
 release/
+
+
+// log文件
+*.log
