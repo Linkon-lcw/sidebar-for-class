@@ -71,6 +71,7 @@
     "wait-on": "^9.0.3"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "canvas": "^3.2.1",
     "loudness": "^0.4.2",
     "screenshot-desktop": "^1.15.3",
