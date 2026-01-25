@@ -6,6 +6,7 @@ const { app } = require('electron');
 const { createWindow } = require('./main/window');
 const { registerIPCHandlers, registerDisplayEventListeners } = require('./main/ipcHandlers');
 const { createTray } = require('./main/tray');
+const { runStartupScripts } = require('./main/automation');
 
 // 应用就绪后执行
 app.whenReady().then(() => {
@@ -28,6 +29,9 @@ app.whenReady().then(() => {
 
   // 注册显示器事件监听器
   registerDisplayEventListeners();
+
+  // 运行启动脚本
+  runStartupScripts();
 });
 
 // 所有窗口关闭时退出应用（macOS 除外）

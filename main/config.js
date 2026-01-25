@@ -113,8 +113,17 @@ function previewConfig(newConfig, dependencies = {}) {
   return configWithBounds;
 }
 
+/**
+ * 获取数据目录路径
+ * @returns {string} 数据目录路径
+ */
+function getDataDir() {
+  return DATA_DIR;
+}
+
 module.exports = {
   getConfigSync,
   updateConfig,
-  previewConfig
+  previewConfig,
+  getDataDir
 };

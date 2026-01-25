@@ -67,12 +67,32 @@
         {
             "type": "toolbar",
             "tools": [
+                "timer",
                 "screenshot",
                 "show_desktop",
                 "taskview",
-                "close_front_window",
-                "timer"
+                "close_front_window"
             ]
+        },
+        {
+            "type": "launcher",
+            "layout": "vertical",
+            "targets": [
+                {
+                    "name": "切换  SecRandom 浮窗显示状态",
+                    "target": "secrandom://tray/float",
+                    "args": []
+                }
+            ]
+        }
+    ],
+    "automatic": [
+        {
+            "on": [
+                "startup"
+            ],
+            "script": "test.bat",
+            "args": []
         }
     ]
 }
