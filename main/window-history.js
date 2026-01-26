@@ -261,6 +261,72 @@ async function closeCurrentWindow() {
   return { success: false, message: '关闭窗口失败' };
 }
 
+/**
+ * 根据标题关键字查找所有匹配的窗口句柄
+ * @param {Array<string>} keywords 关键字列表
+ * @returns {Promise<Array<string>>} 句柄列表
+ */
+function findWindowsByTitleKeywords(keywords) {
+  return new Promise((resolve) => {
+    const keywordsJson = JSON.stringify(keywords);
+    const script = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$code = @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+public class WindowFinder {
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    public static List<string> FindMatchingWindows(string[] keywords, uint ownPid) {
+        List<string> hwnds = new List<string>();
+        EnumWindows((hWnd, lParam) => {
+            uint pid;
+            GetWindowThreadProcessId(hWnd, out pid);
+            if (pid == ownPid) return true;
+
+            StringBuilder sb = new StringBuilder(256);
+            GetWindowText(hWnd, sb, 256);
+            string title = sb.ToString();
+
+            if (!string.IsNullOrEmpty(title)) {
+                foreach (string keyword in keywords) {
+                    if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
+                        hwnds.Add(hWnd.ToString());
+                        break;
+                    }
+                }
+            }
+            return true;
+        }, IntPtr.Zero);
+        return hwnds;
+    }
+}
+'@
+Add-Type -TypeDefinition $code -Language CSharp
+$keywords = '${keywordsJson}' | ConvertFrom-Json
+$ownPid = ${process.pid}
+$res = [WindowFinder]::FindMatchingWindows($keywords, $ownPid)
+if ($res) { $res -join "," }
+`;
+    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
+    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
+      if (error || !stdout.trim()) {
+        resolve([]);
+        return;
+      }
+      resolve(stdout.trim().split(','));
+    });
+  });
+}
+
 module.exports = {
   startMonitoring,
   stopMonitoring,
@@ -272,5 +338,7 @@ module.exports = {
   closeLastActiveWindow,
   closeCurrentWindow,
   getCurrentForegroundWindow,
+  closeWindowByHwnd,
+  findWindowsByTitleKeywords,
   isMonitoring: () => isMonitoring
 };
