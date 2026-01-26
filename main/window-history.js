@@ -264,9 +264,10 @@ async function closeCurrentWindow() {
 /**
  * 根据标题关键字查找所有匹配的窗口句柄
  * @param {Array<string>} keywords 关键字列表
- * @returns {Promise<Array<string>>} 句柄列表
+ * @param {boolean} exactMatch 是否精确匹配标题
+ * @returns {Promise<Array<string>>} 句柄列表 (格式 HWND:PID)
  */
-function findWindowsByTitleKeywords(keywords) {
+function findWindowsByTitleKeywords(keywords, exactMatch = false) {
   return new Promise((resolve) => {
     const keywordsJson = JSON.stringify(keywords);
     const script = `
@@ -285,7 +286,7 @@ public class WindowFinder {
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-    public static List<string> FindMatchingWindows(string[] keywords, uint ownPid) {
+    public static List<string> FindMatchingWindows(string[] keywords, uint ownPid, bool exact) {
         List<string> results = new List<string>();
         EnumWindows((hWnd, lParam) => {
             uint pid;
@@ -298,7 +299,11 @@ public class WindowFinder {
 
             if (!string.IsNullOrEmpty(title)) {
                 foreach (string keyword in keywords) {
-                    if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
+                    bool isMatch = exact ? 
+                        string.Equals(title, keyword, StringComparison.OrdinalIgnoreCase) :
+                        title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (isMatch) {
                         Console.WriteLine("MATCH: Found window '" + title + "' (HWND: " + hWnd + ", PID: " + pid + ")");
                         results.Add(hWnd.ToString() + ":" + pid.ToString());
                         break;
@@ -314,7 +319,8 @@ public class WindowFinder {
 Add-Type -TypeDefinition $code -Language CSharp
 $keywords = '${keywordsJson}' | ConvertFrom-Json
 $ownPid = ${process.pid}
-$res = [WindowFinder]::FindMatchingWindows($keywords, $ownPid)
+$exact = ${exactMatch ? '$true' : '$false'}
+$res = [WindowFinder]::FindMatchingWindows($keywords, $ownPid, $exact)
 if ($res) { 
     $joined = $res -join ","
     Write-Host "RESULT:$joined"

@@ -5,9 +5,14 @@
 const { getConfigSync } = require('./config');
 const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid } = require('./window-history');
 
-// 需要查杀的窗口标题关键字列表
-const TARGET_TITLE_KEYWORDS = [
-    'EasiSideBar'
+// 需要强行结束进程 (taskkill) 的窗口标题列表 (精确匹配)
+const FORCE_KILL_TITLES = [
+    'EasiSideBar',
+];
+
+// 需要普通关闭窗口 (WM_CLOSE) 的窗口标题列表 (精确匹配)
+const NORMAL_CLOSE_TITLES = [
+    
 ];
 
 let checkInterval = null;
@@ -24,23 +29,32 @@ async function performKill() {
             return;
         }
 
-        console.log(`[Killer] 正在扫描以下窗口: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
-
-        // 查找匹配的窗口句柄和 PID
-        const items = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
-        
-        if (items && items.length > 0) {
-            console.log(`[Killer] Found ${items.length} matching windows. Force closing processes...`);
-            const killedPids = new Set();
-            for (const item of items) {
-                const [hwnd, pid] = item.split(':');
-                if (pid && !killedPids.has(pid)) {
-                    console.log(`[Killer] Force killing process ${pid} (Window HWND: ${hwnd})`);
-                    await killProcessByPid(pid);
-                    killedPids.add(pid);
+        // 1. 处理强制结束列表
+        if (FORCE_KILL_TITLES.length > 0) {
+            const forceItems = await findWindowsByTitleKeywords(FORCE_KILL_TITLES, true);
+            if (forceItems.length > 0) {
+                const killedPids = new Set();
+                for (const item of forceItems) {
+                    const [hwnd, pid] = item.split(':');
+                    if (pid && !killedPids.has(pid)) {
+                        console.log(`[Killer] Force killing process ${pid} because of exact window title match.`);
+                        await killProcessByPid(pid);
+                        killedPids.add(pid);
+                    }
                 }
             }
         }
+
+        // 2. 处理普通关闭列表
+        if (NORMAL_CLOSE_TITLES.length > 0) {
+            const normalItems = await findWindowsByTitleKeywords(NORMAL_CLOSE_TITLES, true);
+            for (const item of normalItems) {
+                const [hwnd, pid] = item.split(':');
+                console.log(`[Killer] Sending WM_CLOSE to window HWND: ${hwnd} (Title match).`);
+                await closeWindowByHwnd(hwnd);
+            }
+        }
+
     } catch (err) {
         console.error('[Killer] Error during performKill:', err);
     }
@@ -57,7 +71,9 @@ function startKiller(intervalMs = 5000) {
         clearInterval(checkInterval);
     }
     
-    console.log('[Killer] Auto-kill service started with keywords:', TARGET_TITLE_KEYWORDS);
+    console.log('[Killer] Auto-kill service started.');
+    console.log('[Killer] Force Kill List:', FORCE_KILL_TITLES);
+    console.log('[Killer] Normal Close List:', NORMAL_CLOSE_TITLES);
     
     // 立即执行一次
     performKill();
