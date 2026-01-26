@@ -300,7 +300,7 @@ public class WindowFinder {
                 bool matched = false;
                 foreach (string keyword in keywords) {
                     if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
-                        Write-Host "MATCH: Found window '$title' matching keyword '$keyword' (HWND: $hWnd)"
+                        Console.WriteLine("MATCH: Found window '" + title + "' matching keyword '" + keyword + "' (HWND: " + hWnd + ")");
                         hwnds.Add(hWnd.ToString());
                         matched = true;
                         break;
@@ -308,7 +308,7 @@ public class WindowFinder {
                 }
                 if (!matched && title.Length > 2) {
                     // 只记录长度大于 2 的标题，减少噪音
-                    Write-Host "SCAN: Skipping window '$title' (HWND: $hWnd)"
+                    Console.WriteLine("SCAN: Skipping window '" + title + "' (HWND: " + hWnd + ")");
                 }
             }
             return true;
