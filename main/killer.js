@@ -62,7 +62,7 @@ Get-Process | Where-Object { $_.MainWindowTitle -and $_.Id -ne $ownPid } | ForEa
     const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
     exec(`powershell -EncodedCommand ${encodedCommand}`, (error, stdout, stderr) => {
         if (error) {
-            // console.error('[Killer] Execution error:', error);
+            console.error('[Killer] Execution error:', error);
             return;
         }
         if (stdout.trim()) {
