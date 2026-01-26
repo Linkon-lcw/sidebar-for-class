@@ -3,7 +3,7 @@
  * 负责定期检查并关闭特定的同类软件窗口
  */
 const { getConfigSync } = require('./config');
-const { findWindowsByTitleKeywords, closeWindowByHwnd } = require('./window-history');
+const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid } = require('./window-history');
 
 // 需要查杀的窗口标题关键字列表
 const TARGET_TITLE_KEYWORDS = [
@@ -26,18 +26,18 @@ async function performKill() {
 
         console.log(`[Killer] 正在扫描以下窗口: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
 
-        // 查找匹配的窗口句柄
-        const hwnds = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
+        // 查找匹配的窗口句柄和 PID
+        const items = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
         
-        if (hwnds && hwnds.length > 0) {
-            console.log(`[Killer] Found ${hwnds.length} matching windows:`, hwnds);
-            for (const hwnd of hwnds) {
-                console.log(`[Killer] Attempting to close window with HWND: ${hwnd}`);
-                const success = await closeWindowByHwnd(hwnd);
-                if (success) {
-                    console.log(`[Killer] Successfully sent WM_CLOSE to HWND: ${hwnd}`);
-                } else {
-                    console.warn(`[Killer] Failed to send WM_CLOSE to HWND: ${hwnd}.`);
+        if (items && items.length > 0) {
+            console.log(`[Killer] Found ${items.length} matching windows. Force closing processes...`);
+            const killedPids = new Set();
+            for (const item of items) {
+                const [hwnd, pid] = item.split(':');
+                if (pid && !killedPids.has(pid)) {
+                    console.log(`[Killer] Force killing process ${pid} (Window HWND: ${hwnd})`);
+                    await killProcessByPid(pid);
+                    killedPids.add(pid);
                 }
             }
         }

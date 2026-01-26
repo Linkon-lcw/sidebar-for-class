@@ -286,7 +286,7 @@ public class WindowFinder {
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     public static List<string> FindMatchingWindows(string[] keywords, uint ownPid) {
-        List<string> hwnds = new List<string>();
+        List<string> results = new List<string>();
         EnumWindows((hWnd, lParam) => {
             uint pid;
             GetWindowThreadProcessId(hWnd, out pid);
@@ -297,23 +297,17 @@ public class WindowFinder {
             string title = sb.ToString();
 
             if (!string.IsNullOrEmpty(title)) {
-                bool matched = false;
                 foreach (string keyword in keywords) {
                     if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
-                        Console.WriteLine("MATCH: Found window '" + title + "' matching keyword '" + keyword + "' (HWND: " + hWnd + ")");
-                        hwnds.Add(hWnd.ToString());
-                        matched = true;
+                        Console.WriteLine("MATCH: Found window '" + title + "' (HWND: " + hWnd + ", PID: " + pid + ")");
+                        results.Add(hWnd.ToString() + ":" + pid.ToString());
                         break;
                     }
-                }
-                if (!matched && title.Length > 2) {
-                    // 只记录长度大于 2 的标题，减少噪音
-                    Console.WriteLine("SCAN: Skipping window '" + title + "' (HWND: " + hWnd + ")");
                 }
             }
             return true;
         }, IntPtr.Zero);
-        return hwnds;
+        return results;
     }
 }
 '@
@@ -335,20 +329,35 @@ if ($res) {
       }
       
       const lines = stdout.trim().split(/\r?\n/);
-      let foundHwnds = [];
+      let foundItems = [];
       
       lines.forEach(line => {
         if (line.startsWith('MATCH:')) {
           console.log('[Window History] ' + line);
-        } else if (line.startsWith('SCAN:')) {
-          // 开启详细扫描日志，查看它到底看到了什么
-          console.log('[Window History] ' + line);
         } else if (line.startsWith('RESULT:')) {
-          foundHwnds = line.substring(7).split(',');
+          foundItems = line.substring(7).split(',');
         }
       });
       
-      resolve(foundHwnds);
+      resolve(foundItems);
+    });
+  });
+}
+
+/**
+ * 强行结束指定 PID 的进程
+ * @param {number|string} pid 进程 ID
+ */
+function killProcessByPid(pid) {
+  return new Promise((resolve) => {
+    exec(`taskkill /F /PID ${pid}`, (error, stdout, stderr) => {
+      if (error) {
+        console.warn(`[Window History] Failed to kill process ${pid}:`, stderr.trim());
+        resolve(false);
+      } else {
+        console.log(`[Window History] Force killed process ${pid}`);
+        resolve(true);
+      }
     });
   });
 }
@@ -366,5 +375,6 @@ module.exports = {
   getCurrentForegroundWindow,
   closeWindowByHwnd,
   findWindowsByTitleKeywords,
+  killProcessByPid,
   isMonitoring: () => isMonitoring
 };
