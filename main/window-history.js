@@ -297,8 +297,10 @@ public class WindowFinder {
             string title = sb.ToString();
 
             if (!string.IsNullOrEmpty(title)) {
+                // Write-Host "DEBUG: Checking window: $title"
                 foreach (string keyword in keywords) {
                     if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
+                        Write-Host "MATCH: Found window '$title' matching keyword '$keyword' (HWND: $hWnd)"
                         hwnds.Add(hWnd.ToString());
                         break;
                     }
@@ -314,15 +316,33 @@ Add-Type -TypeDefinition $code -Language CSharp
 $keywords = '${keywordsJson}' | ConvertFrom-Json
 $ownPid = ${process.pid}
 $res = [WindowFinder]::FindMatchingWindows($keywords, $ownPid)
-if ($res) { $res -join "," }
+if ($res) { 
+    $joined = $res -join ","
+    Write-Host "RESULT:$joined"
+}
 `;
     const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
     exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
-      if (error || !stdout.trim()) {
+      if (error) {
+        console.error('[Window History] findWindowsByTitleKeywords error:', error);
         resolve([]);
         return;
       }
-      resolve(stdout.trim().split(','));
+      
+      const lines = stdout.trim().split(/\r?\n/);
+      let foundHwnds = [];
+      
+      lines.forEach(line => {
+        if (line.startsWith('MATCH:')) {
+          console.log('[Window History] ' + line);
+        } else if (line.startsWith('RESULT:')) {
+          foundHwnds = line.substring(7).split(',');
+        } else if (line.trim()) {
+          // console.log('[Window History] PS Debug: ' + line);
+        }
+      });
+      
+      resolve(foundHwnds);
     });
   });
 }

@@ -24,16 +24,21 @@ async function performKill() {
             return;
         }
 
+        // console.log(`[Killer] Checking for windows matching: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
+
         // 查找匹配的窗口句柄
         const hwnds = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
         
         if (hwnds && hwnds.length > 0) {
-            console.log(`[Killer] Found ${hwnds.length} matching windows. Closing...`);
+            console.log(`[Killer] Found ${hwnds.length} matching windows:`, hwnds);
             for (const hwnd of hwnds) {
+                console.log(`[Killer] Attempting to close window with HWND: ${hwnd}`);
                 // 使用 window-history 中经过验证的关闭逻辑
                 const success = await closeWindowByHwnd(hwnd);
                 if (success) {
-                    console.log(`[Killer] Successfully sent close signal to window (HWND: ${hwnd})`);
+                    console.log(`[Killer] Successfully sent WM_CLOSE to HWND: ${hwnd}`);
+                } else {
+                    console.warn(`[Killer] Failed to send WM_CLOSE to HWND: ${hwnd}. It might be a higher-privileged window.`);
                 }
             }
         }
@@ -53,7 +58,7 @@ function startKiller(intervalMs = 5000) {
         clearInterval(checkInterval);
     }
     
-    console.log('[Killer] Auto-kill service started.');
+    console.log('[Killer] Auto-kill service started with keywords:', TARGET_TITLE_KEYWORDS);
     
     // 立即执行一次
     performKill();
