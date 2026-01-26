@@ -3,7 +3,7 @@
  * 负责定期检查并关闭特定的同类软件窗口
  */
 const { getConfigSync } = require('./config');
-const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid } = require('./window-history');
+const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid, findProcessesByImageNames } = require('./window-history');
 
 // 需要强行结束进程 (taskkill) 的窗口标题列表 (精确匹配)
 const FORCE_KILL_TITLES = [
@@ -12,7 +12,12 @@ const FORCE_KILL_TITLES = [
 
 // 需要普通关闭窗口 (WM_CLOSE) 的窗口标题列表 (精确匹配)
 const NORMAL_CLOSE_TITLES = [
-    
+    // '计时'
+];
+
+// 计时器软件进程镜像名列表
+const TIMER_PROCESS_NAMES = [
+    'DesktopTimer.exe'
 ];
 
 let checkInterval = null;
@@ -24,34 +29,51 @@ async function performKill() {
     try {
         const config = getConfigSync();
         
-        // 检查配置是否开启
-        if (!config.helper_tools?.auto_kill_similar) {
-            return;
-        }
-
-        // 1. 处理强制结束列表
-        if (FORCE_KILL_TITLES.length > 0) {
-            const forceItems = await findWindowsByTitleKeywords(FORCE_KILL_TITLES, true);
-            if (forceItems.length > 0) {
-                const killedPids = new Set();
-                for (const item of forceItems) {
-                    const [hwnd, pid] = item.split(':');
-                    if (pid && !killedPids.has(pid)) {
-                        console.log(`[Killer] Force killing process ${pid} because of exact window title match.`);
-                        await killProcessByPid(pid);
-                        killedPids.add(pid);
+        // 1. 处理通用同类软件查杀
+        if (config.helper_tools?.auto_kill_similar) {
+            // 1.1 处理强制结束列表
+            if (FORCE_KILL_TITLES.length > 0) {
+                const forceItems = await findWindowsByTitleKeywords(FORCE_KILL_TITLES, true);
+                if (forceItems.length > 0) {
+                    const killedPids = new Set();
+                    for (const item of forceItems) {
+                        const [hwnd, pid] = item.split(':');
+                        if (pid && !killedPids.has(pid)) {
+                            console.log(`[Killer] Force killing process ${pid} because of exact window title match.`);
+                            await killProcessByPid(pid);
+                            killedPids.add(pid);
+                        }
                     }
+                }
+            }
+
+            // 1.2 处理普通关闭列表
+            if (NORMAL_CLOSE_TITLES.length > 0) {
+                const normalItems = await findWindowsByTitleKeywords(NORMAL_CLOSE_TITLES, true);
+                for (const item of normalItems) {
+                    const [hwnd, pid] = item.split(':');
+                    console.log(`[Killer] Sending WM_CLOSE to window HWND: ${hwnd} (Title match).`);
+                    await closeWindowByHwnd(hwnd);
                 }
             }
         }
 
-        // 2. 处理普通关闭列表
-        if (NORMAL_CLOSE_TITLES.length > 0) {
-            const normalItems = await findWindowsByTitleKeywords(NORMAL_CLOSE_TITLES, true);
-            for (const item of normalItems) {
-                const [hwnd, pid] = item.split(':');
-                console.log(`[Killer] Sending WM_CLOSE to window HWND: ${hwnd} (Title match).`);
-                await closeWindowByHwnd(hwnd);
+        // 2. 处理计时器软件查杀
+        if (config.helper_tools?.auto_kill_timer) {
+            const timerPids = await findProcessesByImageNames(TIMER_PROCESS_NAMES);
+            if (timerPids.length > 0) {
+                console.log(`[Killer] Found similar timer processes: ${timerPids.join(', ')}`);
+                let killedAny = false;
+                for (const pid of timerPids) {
+                    const success = await killProcessByPid(pid);
+                    if (success) killedAny = true;
+                }
+                
+                if (killedAny) {
+                    console.log('[Killer] Killed similar timer, opening our timer.');
+                    const { createTimerWindow } = require('./window');
+                    createTimerWindow();
+                }
             }
         }
 

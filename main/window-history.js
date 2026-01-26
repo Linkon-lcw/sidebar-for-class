@@ -368,6 +368,42 @@ function killProcessByPid(pid) {
   });
 }
 
+/**
+ * 根据进程镜像名查找所有匹配的 PID
+ * @param {Array<string>} imageNames 镜像名列表 (如 ['Timer.exe', 'EasiTimer.exe'])
+ * @returns {Promise<Array<number>>} PID 列表
+ */
+function findProcessesByImageNames(imageNames) {
+  return new Promise((resolve) => {
+    const namesJson = JSON.stringify(imageNames);
+    const script = `
+$names = '${namesJson}' | ConvertFrom-Json
+$procs = Get-Process | Where-Object { $names -contains $_.ProcessName -or $names -contains ($_.ProcessName + ".exe") }
+if ($procs) {
+    $pids = $procs | Select-Object -ExpandProperty Id
+    $joined = $pids -join ","
+    Write-Host "RESULT:$joined"
+}
+`;
+    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
+    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        console.error('[Window History] findProcessesByImageNames error:', error);
+        resolve([]);
+        return;
+      }
+      const lines = stdout.trim().split(/\r?\n/);
+      let foundPids = [];
+      lines.forEach(line => {
+        if (line.startsWith('RESULT:')) {
+          foundPids = line.substring(7).split(',').map(pid => parseInt(pid.trim()));
+        }
+      });
+      resolve(foundPids);
+    });
+  });
+}
+
 module.exports = {
   startMonitoring,
   stopMonitoring,
@@ -381,6 +417,7 @@ module.exports = {
   getCurrentForegroundWindow,
   closeWindowByHwnd,
   findWindowsByTitleKeywords,
+  findProcessesByImageNames,
   killProcessByPid,
   isMonitoring: () => isMonitoring
 };
