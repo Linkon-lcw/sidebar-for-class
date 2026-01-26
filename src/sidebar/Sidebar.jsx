@@ -96,14 +96,31 @@ const Sidebar = () => {
 
     const initializeCrop = () => {
         if (!imgRef.current || !containerRef.current) return;
-        const imgRect = imgRef.current.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
+        const img = imgRef.current;
+        const container = containerRef.current;
         
+        // 使用 clientWidth/Height 获取稳定的容器尺寸
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+
+        if (!naturalWidth || !naturalHeight || !containerWidth || !containerHeight) return;
+
+        // 计算图片在 object-fit: contain 下的实际显示比例和尺寸
+        const ratio = Math.min(containerWidth / naturalWidth, containerHeight / naturalHeight);
+        const displayedWidth = naturalWidth * ratio;
+        const displayedHeight = naturalHeight * ratio;
+
+        // 计算四周的边距百分比（图片在容器中居中）
+        const hMargin = ((containerWidth - displayedWidth) / 2 / containerWidth) * 100;
+        const vMargin = ((containerHeight - displayedHeight) / 2 / containerHeight) * 100;
+
         setCrop({
-            top: Math.max(0, ((imgRect.top - containerRect.top) / containerRect.height) * 100),
-            left: Math.max(0, ((imgRect.left - containerRect.left) / containerRect.width) * 100),
-            bottom: Math.max(0, ((containerRect.bottom - imgRect.bottom) / containerRect.height) * 100),
-            right: Math.max(0, ((containerRect.right - imgRect.right) / containerRect.width) * 100)
+            top: vMargin,
+            left: hMargin,
+            right: hMargin,
+            bottom: vMargin
         });
         setIsCropModified(false);
     };
@@ -130,7 +147,8 @@ const Sidebar = () => {
         }
         
         // 4. 显式触发裁剪角重新初始化
-        setTimeout(initializeCrop, 100);
+        // 稍微延迟以等待 DOM 状态同步
+        setTimeout(initializeCrop, 50);
     };
 
     const handleDrawStart = (e) => {
@@ -471,8 +489,8 @@ const Sidebar = () => {
 
                             {isCropModified ? (
                                 <button className="overlay-btn-small crop-confirm" onClick={applyCrop}>
-                                    <i className="fas fa-crop-alt"></i>
-                                    <span>确认裁剪</span>
+                                    <i className="fas fa-check"></i>
+                                    <span>保存更改</span>
                                 </button>
                             ) : (
                                 <button 
