@@ -163,7 +163,7 @@ const AutomationSettings = ({ config, updateConfig, styles }) => {
                                 <Input
                                     value={task.name || ''}
                                     onChange={(e) => handleUpdateTask(index, 'name', e.target.value)}
-                                    placeholder="例如：启动自备工具"
+                                    // placeholder="例如：启动自备工具"
                                 />
                             </Field>
 

@@ -88,12 +88,11 @@
     ],
     "automatic": [
         {
+            "name": "",
             "on": [
                 "startup"
             ],
-            "script": "helloworld.bat",
-            "args": [],
-            "name": "测试任务"
+            "script": ""
         }
     ]
 }

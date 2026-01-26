@@ -1,8 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+const RollingDigit = ({ value }) => {
+  const [prevValue, setPrevValue] = useState(value);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (value !== prevValue) {
+      setIsAnimating(true);
+    }
+  }, [value, prevValue]);
+
+  const handleTransitionEnd = (e) => {
+    if (e.propertyName === 'transform') {
+      setIsAnimating(false);
+      setPrevValue(value);
+    }
+  };
+
+  return (
+    <div className="digit-container">
+      <div 
+        className="digit-strip" 
+        onTransitionEnd={handleTransitionEnd}
+        style={{ 
+          transform: isAnimating ? 'translateY(-50%)' : 'translateY(0)',
+          transition: isAnimating ? 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'
+        }}
+      >
+        <span className="value">{prevValue}</span>
+        <span className="value">{value}</span>
+      </div>
+    </div>
+  );
+};
+
 const Timer = () => {
-  const initialTimeInSeconds = 5 * 60; // 00:05:00 in seconds
-  const [timeInSeconds, setTimeInSeconds] = useState(initialTimeInSeconds);
+  const [initialTime, setInitialTime] = useState(5 * 60);
+  const [timeInSeconds, setTimeInSeconds] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
   const timerRef = useRef(null);
 
@@ -51,7 +85,7 @@ const Timer = () => {
   const handleReset = () => {
     clearInterval(timerRef.current);
     setIsRunning(false);
-    setTimeInSeconds(initialTimeInSeconds);
+    setTimeInSeconds(initialTime);
   };
 
   const adjustDigit = (digitType, amount) => {
@@ -99,7 +133,9 @@ const Timer = () => {
 
 
       const newTotalSeconds = hours * 3600 + minutes * 60 + seconds;
-      return Math.max(0, newTotalSeconds); // Ensure time doesn't go below zero
+      const finalTime = Math.max(0, newTotalSeconds);
+      setInitialTime(finalTime);
+      return finalTime; // Ensure time doesn't go below zero
     });
   };
 
@@ -110,7 +146,7 @@ const Timer = () => {
       <button className="adjustment-button-top" onClick={() => adjustDigit(digitType, 1)}>
         <i className="fa-solid fa-plus"></i>
       </button>
-      <span className="value">{digitValue}</span>
+      <RollingDigit value={parseInt(digitValue, 10)} />
       <button className="adjustment-button-bottom" onClick={() => adjustDigit(digitType, -1)}>
         <i className="fa-solid fa-minus"></i>
       </button>

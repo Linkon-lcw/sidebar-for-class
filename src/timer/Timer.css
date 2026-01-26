@@ -53,14 +53,37 @@ body.timer-running #root {
     font-variant-numeric: tabular-nums;
 }
 
+.digit-container {
+    height: 1em;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0.7em;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.digit-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
 .value {
     transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
     text-align: center;
-    min-width: 0.6em;
+    min-width: 100%;
     line-height: 1;
     position: relative;
     top: -0.06em;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
 .time-part.running .value {
