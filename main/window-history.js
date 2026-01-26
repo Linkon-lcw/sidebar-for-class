@@ -341,7 +341,7 @@ if ($res) {
         if (line.startsWith('MATCH:')) {
           console.log('[Window History] ' + line);
         } else if (line.startsWith('SCAN:')) {
-          // 开启详细扫描日志，帮助排查为什么没匹配到
+          // 开启详细扫描日志，查看它到底看到了什么
           console.log('[Window History] ' + line);
         } else if (line.startsWith('RESULT:')) {
           foundHwnds = line.substring(7).split(',');
