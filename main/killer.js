@@ -24,7 +24,7 @@ async function performKill() {
             return;
         }
 
-        // console.log(`[Killer] Checking for windows matching: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
+        console.log(`[Killer] Checking for windows matching: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
 
         // 查找匹配的窗口句柄
         const hwnds = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
@@ -33,12 +33,11 @@ async function performKill() {
             console.log(`[Killer] Found ${hwnds.length} matching windows:`, hwnds);
             for (const hwnd of hwnds) {
                 console.log(`[Killer] Attempting to close window with HWND: ${hwnd}`);
-                // 使用 window-history 中经过验证的关闭逻辑
                 const success = await closeWindowByHwnd(hwnd);
                 if (success) {
                     console.log(`[Killer] Successfully sent WM_CLOSE to HWND: ${hwnd}`);
                 } else {
-                    console.warn(`[Killer] Failed to send WM_CLOSE to HWND: ${hwnd}. It might be a higher-privileged window.`);
+                    console.warn(`[Killer] Failed to send WM_CLOSE to HWND: ${hwnd}.`);
                 }
             }
         }

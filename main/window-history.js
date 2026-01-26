@@ -297,13 +297,18 @@ public class WindowFinder {
             string title = sb.ToString();
 
             if (!string.IsNullOrEmpty(title)) {
-                // Write-Host "DEBUG: Checking window: $title"
+                bool matched = false;
                 foreach (string keyword in keywords) {
                     if (title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0) {
                         Write-Host "MATCH: Found window '$title' matching keyword '$keyword' (HWND: $hWnd)"
                         hwnds.Add(hWnd.ToString());
+                        matched = true;
                         break;
                     }
+                }
+                if (!matched && title.Length > 2) {
+                    // 只记录长度大于 2 的标题，减少噪音
+                    Write-Host "SCAN: Skipping window '$title' (HWND: $hWnd)"
                 }
             }
             return true;
@@ -335,10 +340,11 @@ if ($res) {
       lines.forEach(line => {
         if (line.startsWith('MATCH:')) {
           console.log('[Window History] ' + line);
+        } else if (line.startsWith('SCAN:')) {
+          // 如果你需要调试所有窗口，可以取消下面这一行的注释
+          // console.log('[Window History] ' + line);
         } else if (line.startsWith('RESULT:')) {
           foundHwnds = line.substring(7).split(',');
-        } else if (line.trim()) {
-          // console.log('[Window History] PS Debug: ' + line);
         }
       });
       
