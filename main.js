@@ -63,8 +63,8 @@ app.whenReady().then(() => {
   // 创建系统托盘
   createTray();
 
-  // 启动自动查杀同类软件窗口
-  startKiller();
+  // 启动自动查杀服务
+startKiller(100);
 
   // 注册所有 IPC 处理器
   registerIPCHandlers();
