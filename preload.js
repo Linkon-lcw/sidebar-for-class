@@ -81,6 +81,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 使侧边栏失去焦点并关闭前台窗口
     blurAndCloseFrontWindow: () => ipcRenderer.send('blur-and-close-front-window'),
 
+    // 打开文件/文件夹
+    openFile: (path) => ipcRenderer.send('open-file', path),
+    openFolder: (path) => ipcRenderer.send('open-folder', path),
+    copyImage: (path) => ipcRenderer.send('copy-image', path),
+    saveEditedImage: (path, data) => ipcRenderer.send('save-edited-image', path, data),
+
     // 窗口焦点事件
     onWindowBlur: (callback) => {
         const subscription = (event) => callback();

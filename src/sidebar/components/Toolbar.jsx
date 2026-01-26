@@ -7,10 +7,7 @@
  */
 import { useState } from 'react';
 
-const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
-
+const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false, onScreenshot }) => {
     /**
      * 处理工具按钮点击事件
      * @param {string} tool - 工具名称
@@ -19,19 +16,23 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false }) => {
         if (isPreview) return;
         
         // 根据不同的工具执行不同的操作
-        if (tool === 'screenshot' && window.electronAPI && window.electronAPI.screenshot) {
-            try {
-                // 如果侧边栏是展开的，先收起并等待动画完成
-                if (isExpanded && collapse) {
-                    collapse();
-                    // 等待收起动画完成（默认300ms，加上一些缓冲时间）
-                    await new Promise(resolve => setTimeout(resolve, 400));
-                }
+        if (tool === 'screenshot') {
+            if (onScreenshot) {
+                onScreenshot();
+            } else if (window.electronAPI && window.electronAPI.screenshot) {
+                try {
+                    // 如果侧边栏是展开的，先收起并等待动画完成
+                    if (isExpanded && collapse) {
+                        collapse();
+                        // 等待收起动画完成（默认300ms，加上一些缓冲时间）
+                        await new Promise(resolve => setTimeout(resolve, 400));
+                    }
 
-                // 执行截图
-                await window.electronAPI.screenshot();
-            } catch (error) {
-                console.error('Screenshot failed:', error);
+                    // 执行截图
+                    await window.electronAPI.screenshot();
+                } catch (error) {
+                    console.error('Screenshot failed:', error);
+                }
             }
         } else if (tool === 'show_desktop' && window.electronAPI && window.electronAPI.showDesktop) {
             window.electronAPI.showDesktop();

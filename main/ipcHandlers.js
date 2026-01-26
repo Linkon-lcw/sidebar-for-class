@@ -8,7 +8,7 @@ const { screen } = require('electron');
 const { getConfigSync, updateConfig, previewConfig } = require('./config');
 const { getAllDisplays } = require('./display');
 const { getMainWindow, createSettingsWindow, createTimerWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
-const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontWindow } = require('./system');
+const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontWindow, openFile, openFolder, copyImageToClipboard, saveEditedImage } = require('./system');
 const { launchApp, getFileIcon } = require('./launcher');
 const { getFilesInFolder, readFileContent, writeFileContent, deleteFile, renameFile } = require('./fileSystem');
 const { takeScreenshot } = require('./screenshot');
@@ -127,6 +127,22 @@ function registerIPCHandlers() {
   ipcMain.on('blur-and-close-front-window', () => {
     blurMainWindow();
     closeFrontWindow();
+  });
+
+  ipcMain.on('open-file', (event, filePath) => {
+    openFile(filePath);
+  });
+
+  ipcMain.on('open-folder', (event, filePath) => {
+    openFolder(filePath);
+  });
+
+  ipcMain.on('copy-image', (event, filePath) => {
+    copyImageToClipboard(filePath);
+  });
+
+  ipcMain.on('save-edited-image', (event, filePath, base64Data) => {
+    saveEditedImage(filePath, base64Data);
   });
 
   // ===== 应用启动 =====

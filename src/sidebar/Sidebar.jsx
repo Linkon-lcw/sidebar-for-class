@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import LauncherItem from './components/LauncherItem';
 import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
@@ -13,49 +13,308 @@ import useExternalDrag from './hooks/useExternalDrag';
 import useGlobalEvents from './hooks/useGlobalEvents';
 
 const Sidebar = () => {
+    // 1. 基础 Refs 和配置
     const { sidebarRef, wrapperRef, animationIdRef, draggingState, constants } = useSidebarRefs();
     const { config, scale, startH, panelWidth, panelHeight } = useSidebarConfig();
+    
+    // 2. 所有的 useState 定义
+    const [screenshotPath, setScreenshotPath] = useState(null);
+    const [originalScreenshot, setOriginalScreenshot] = useState(null);
+    const [isCopied, setIsCopied] = useState(false);
+    const [isCropModified, setIsCropModified] = useState(false);
+    const [isAnnotating, setIsAnnotating] = useState(false);
+    const [imgScale, setImgScale] = useState(1);
+    const [imgOffset, setImgOffset] = useState({ x: 0, y: 0 });
+    const [crop, setCrop] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
+
+    // 3. 所有的 useRef 定义
+    const imgDragRef = useRef({ isDragging: false, lastX: 0, lastY: 0 });
+    const cropDragRef = useRef({ activeHandle: null, startX: 0, startY: 0, startCrop: null });
+    const drawRef = useRef({ isDrawing: false, lastX: 0, lastY: 0 });
+    const imgRef = useRef(null);
+    const containerRef = useRef(null);
+    const annotationCanvasRef = useRef(null);
+
+    // 4. 钩子函数调用 (获取控制状态)
     const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse, setWindowToLarge } = useSidebarAnimation(config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
-    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge);
+    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge, screenshotPath);
+    
+    // 5. 其他辅助钩子
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
     useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config);
     useGlobalEvents(handleMove, handleEnd, draggingState);
 
+    // 6. useEffect 逻辑
+
+    // 当侧边栏收起时，自动清除所有状态
     useEffect(() => {
-        if (!window.electronAPI) {
-            console.log('Not in Electron environment, auto-hide functionality disabled');
-            return;
+        if (!isExpanded) {
+            setScreenshotPath(null);
+            setOriginalScreenshot(null);
+            setIsCopied(false);
+            setIsCropModified(false);
+            setImgScale(1);
+            setImgOffset({ x: 0, y: 0 });
+            setCrop({ top: 0, left: 0, right: 0, bottom: 0 });
         }
+    }, [isExpanded]);
 
+    useEffect(() => {
+        if (!window.electronAPI) return;
         const handleWindowBlur = () => {
-            console.log('Auto-hide debug:', {
-                autoHideEnabled: config?.transforms?.auto_hide,
-                isExpanded: isExpanded,
-                event: 'window-blur'
-            });
-
             if (config?.transforms?.auto_hide && isExpanded) {
-                console.log('Collapsing sidebar due to window focus loss');
                 collapse();
             }
         };
-
-        console.log('Adding window blur listener');
         const unsubscribe = window.electronAPI.onWindowBlur(handleWindowBlur);
-
-        return () => {
-            console.log('Removing window blur listener');
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        };
+        return () => { if (unsubscribe) unsubscribe(); };
     }, [config, isExpanded, collapse]);
+
+    // 7. 事件处理函数
 
     const handleSettingsClick = (e) => {
         e.stopPropagation();
         window.electronAPI.openSettings();
     };
 
+    const handleScreenshot = async () => {
+        try {
+            if (isExpanded) {
+                collapse();
+                await new Promise(resolve => setTimeout(resolve, 400));
+            }
+            const result = await window.electronAPI.screenshot();
+            if (result) {
+                setScreenshotPath(result);
+                setOriginalScreenshot({ ...result });
+                expand();
+            }
+        } catch (error) {
+            console.error('Screenshot failed:', error);
+        }
+    };
+
+    const initializeCrop = () => {
+        if (!imgRef.current || !containerRef.current) return;
+        const imgRect = imgRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        setCrop({
+            top: Math.max(0, ((imgRect.top - containerRect.top) / containerRect.height) * 100),
+            left: Math.max(0, ((imgRect.left - containerRect.left) / containerRect.width) * 100),
+            bottom: Math.max(0, ((containerRect.bottom - imgRect.bottom) / containerRect.height) * 100),
+            right: Math.max(0, ((containerRect.right - imgRect.right) / containerRect.width) * 100)
+        });
+        setIsCropModified(false);
+    };
+
+    const handleReset = (e) => {
+        if (e) e.stopPropagation();
+        
+        // 1. 重置变换状态
+        setImgScale(1);
+        setImgOffset({ x: 0, y: 0 });
+        setIsCropModified(false);
+        setIsAnnotating(false);
+        
+        // 2. 如果有原始备份，还原图片内容
+        if (originalScreenshot) {
+            setScreenshotPath(originalScreenshot);
+            window.electronAPI.saveEditedImage(originalScreenshot.path, originalScreenshot.preview);
+        }
+
+        // 3. 清空画布
+        if (annotationCanvasRef.current) {
+            const ctx = annotationCanvasRef.current.getContext('2d');
+            ctx.clearRect(0, 0, annotationCanvasRef.current.width, annotationCanvasRef.current.height);
+        }
+        
+        // 4. 显式触发裁剪角重新初始化
+        setTimeout(initializeCrop, 100);
+    };
+
+    const handleDrawStart = (e) => {
+        if (!isAnnotating || !annotationCanvasRef.current) return;
+        e.stopPropagation();
+        const rect = annotationCanvasRef.current.getBoundingClientRect();
+        const scaleX = annotationCanvasRef.current.width / rect.width;
+        const scaleY = annotationCanvasRef.current.height / rect.height;
+        
+        drawRef.current = {
+            isDrawing: true,
+            lastX: (e.clientX - rect.left) * scaleX,
+            lastY: (e.clientY - rect.top) * scaleY
+        };
+        
+        const ctx = annotationCanvasRef.current.getContext('2d');
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // 点击时画一个点
+        ctx.beginPath();
+        ctx.moveTo(drawRef.current.lastX, drawRef.current.lastY);
+        ctx.lineTo(drawRef.current.lastX, drawRef.current.lastY);
+        ctx.stroke();
+    };
+
+    const handleDrawMove = (e) => {
+        if (!drawRef.current.isDrawing || !annotationCanvasRef.current) return;
+        e.stopPropagation();
+        const rect = annotationCanvasRef.current.getBoundingClientRect();
+        const scaleX = annotationCanvasRef.current.width / rect.width;
+        const scaleY = annotationCanvasRef.current.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+        
+        const ctx = annotationCanvasRef.current.getContext('2d');
+        ctx.beginPath();
+        ctx.moveTo(drawRef.current.lastX, drawRef.current.lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        
+        drawRef.current.lastX = x;
+        drawRef.current.lastY = y;
+        setIsCropModified(true); // 借用此状态来显示保存按钮
+    };
+
+    const handleDrawEnd = () => {
+        drawRef.current.isDrawing = false;
+    };
+
+    const applyCrop = async () => {
+        if (!imgRef.current || !containerRef.current) return;
+        
+        const img = imgRef.current;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const imgRect = img.getBoundingClientRect();
+
+        // 1. 获取裁剪框在容器中的像素位置
+        const cropLeftPx = (crop.left / 100) * containerRect.width;
+        const cropTopPx = (crop.top / 100) * containerRect.height;
+        const cropRightPx = containerRect.width - (crop.right / 100) * containerRect.width;
+        const cropBottomPx = containerRect.height - (crop.bottom / 100) * containerRect.height;
+
+        // 2. 转换为屏幕绝对坐标
+        const cropAbsLeft = containerRect.left + cropLeftPx;
+        const cropAbsTop = containerRect.top + cropTopPx;
+        const cropAbsRight = containerRect.left + cropRightPx;
+        const cropAbsBottom = containerRect.top + cropBottomPx;
+
+        // 3. 计算裁剪框与图片的交集（在屏幕坐标系中）
+        const intersectLeft = Math.max(cropAbsLeft, imgRect.left);
+        const intersectTop = Math.max(cropAbsTop, imgRect.top);
+        const intersectRight = Math.min(cropAbsRight, imgRect.right);
+        const intersectBottom = Math.min(cropAbsBottom, imgRect.bottom);
+
+        const intersectWidth = intersectRight - intersectLeft;
+        const intersectHeight = intersectBottom - intersectTop;
+
+        if (intersectWidth <= 0 || intersectHeight <= 0) return;
+
+        // 4. 映射到图片原始像素
+        const scaleX = img.naturalWidth / imgRect.width;
+        const scaleY = img.naturalHeight / imgRect.height;
+
+        const realLeft = (intersectLeft - imgRect.left) * scaleX;
+        const realTop = (intersectTop - imgRect.top) * scaleY;
+        const realWidth = intersectWidth * scaleX;
+        const realHeight = intersectHeight * scaleY;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = realWidth;
+        canvas.height = realHeight;
+        const ctx = canvas.getContext('2d');
+        
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            // 绘制底图
+            ctx.drawImage(tempImg, realLeft, realTop, realWidth, realHeight, 0, 0, realWidth, realHeight);
+            
+            // 绘制标注层
+            if (annotationCanvasRef.current) {
+                ctx.drawImage(annotationCanvasRef.current, realLeft, realTop, realWidth, realHeight, 0, 0, realWidth, realHeight);
+            }
+
+            const newBase64 = canvas.toDataURL('image/png');
+            setScreenshotPath(prev => ({ ...prev, preview: newBase64 }));
+            window.electronAPI.saveEditedImage(screenshotPath.path, newBase64);
+            setImgScale(1);
+            setImgOffset({ x: 0, y: 0 });
+            // 状态更新后，img 的 onLoad 会重新触发 initializeCrop
+        };
+        tempImg.src = screenshotPath.preview;
+    };
+
+    const handleCropStart = (e, handle) => {
+        e.stopPropagation();
+        cropDragRef.current = {
+            activeHandle: handle,
+            startX: e.clientX,
+            startY: e.clientY,
+            startCrop: { ...crop }
+        };
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handleCropMove = (e) => {
+        const { activeHandle, startX, startY, startCrop } = cropDragRef.current;
+        if (!activeHandle) return;
+        e.stopPropagation();
+        const container = e.currentTarget.closest('.screenshot-preview-container');
+        const rect = container.getBoundingClientRect();
+        const moveX = ((e.clientX - startX) / rect.width) * 100;
+        const moveY = ((e.clientY - startY) / rect.height) * 100;
+        const newCrop = { ...startCrop };
+        if (activeHandle.includes('top')) newCrop.top = Math.max(0, Math.min(100 - startCrop.bottom - 5, startCrop.top + moveY));
+        if (activeHandle.includes('bottom')) newCrop.bottom = Math.max(0, Math.min(100 - startCrop.top - 5, startCrop.bottom - moveY));
+        if (activeHandle.includes('left')) newCrop.left = Math.max(0, Math.min(100 - startCrop.right - 5, startCrop.left + moveX));
+        if (activeHandle.includes('right')) newCrop.right = Math.max(0, Math.min(100 - startCrop.left - 5, startCrop.right - moveX));
+        setCrop(newCrop);
+        setIsCropModified(true);
+    };
+
+    const handleCropUp = (e) => {
+        cropDragRef.current.activeHandle = null;
+        if (e.currentTarget.releasePointerCapture) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+    };
+
+    const handleImgWheel = (e) => {
+        e.stopPropagation();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.max(0.5, Math.min(10, imgScale * delta));
+        setImgScale(newScale);
+    };
+
+    const handleImgPointerDown = (e) => {
+        e.stopPropagation();
+        imgDragRef.current.isDragging = true;
+        imgDragRef.current.lastX = e.clientX;
+        imgDragRef.current.lastY = e.clientY;
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handleImgPointerMove = (e) => {
+        if (!imgDragRef.current.isDragging) return;
+        e.stopPropagation();
+        const deltaX = e.clientX - imgDragRef.current.lastX;
+        const deltaY = e.clientY - imgDragRef.current.lastY;
+        setImgOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+        imgDragRef.current.lastX = e.clientX;
+        imgDragRef.current.lastY = e.clientY;
+    };
+
+    const handleImgPointerUp = (e) => {
+        imgDragRef.current.isDragging = false;
+        if (e.currentTarget.releasePointerCapture) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+    };
+
+    // 8. 渲染
     return (
         <div id="sidebar-wrapper"
             ref={wrapperRef}
@@ -89,12 +348,167 @@ const Sidebar = () => {
                                 return <DragToLaunchWidget key={index} {...widget} />;
                             }
                             else if (widget.type === 'toolbar') {
-                                return <Toolbar key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;
+                                return <Toolbar 
+                                    key={index} 
+                                    {...widget} 
+                                    isExpanded={isExpanded} 
+                                    collapse={collapse} 
+                                    onScreenshot={handleScreenshot}
+                                />;
                             }
                             return null;
                         })}
                     </div>
                 </div>
+
+                {screenshotPath && (
+                    <div className="screenshot-overlay">
+                        <button 
+                            className="overlay-close" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setScreenshotPath(null);
+                                setIsCopied(false);
+                            }}
+                        >
+                            <i className="fas fa-times"></i>
+                        </button>
+
+                        <div className="screenshot-overlay-header">
+                            <i className="fas fa-check-circle success-icon"></i>
+                            <span className="success-text">截图成功</span>
+                        </div>
+
+                        <div className="screenshot-preview-container" 
+                             ref={containerRef}
+                             onWheel={handleImgWheel}
+                             onPointerDown={(e) => {
+                                 if (isAnnotating) handleDrawStart(e);
+                                 else handleImgPointerDown(e);
+                             }}
+                             onPointerMove={(e) => {
+                                 if (isAnnotating) handleDrawMove(e);
+                                 else if (cropDragRef.current.activeHandle) handleCropMove(e);
+                                 else handleImgPointerMove(e);
+                             }}
+                             onPointerUp={(e) => {
+                                 if (isAnnotating) handleDrawEnd();
+                                 else if (cropDragRef.current.activeHandle) handleCropUp(e);
+                                 else handleImgPointerUp(e);
+                             }}
+                             onPointerCancel={(e) => {
+                                 if (isAnnotating) handleDrawEnd();
+                                 else if (cropDragRef.current.activeHandle) handleCropUp(e);
+                                 else handleImgPointerUp(e);
+                             }}
+                             style={{ touchAction: 'none' }}
+                        >
+                            <div className="crop-wrapper" style={{ 
+                                transform: `translate(${imgOffset.x}px, ${imgOffset.y}px) scale(${imgScale})`,
+                                transition: (imgDragRef.current.isDragging || cropDragRef.current.activeHandle || drawRef.current.isDrawing) ? 'none' : 'transform 0.1s ease-out'
+                            }}>
+                                <img 
+                                    ref={imgRef}
+                                    src={screenshotPath.preview} 
+                                    alt="Screenshot Preview" 
+                                    className="screenshot-preview-img"
+                                    draggable="false"
+                                    onLoad={(e) => {
+                                        const img = e.currentTarget;
+                                        if (annotationCanvasRef.current) {
+                                            annotationCanvasRef.current.width = img.naturalWidth;
+                                            annotationCanvasRef.current.height = img.naturalHeight;
+                                        }
+                                        setTimeout(initializeCrop, 0);
+                                    }}
+                                />
+                                <canvas
+                                    ref={annotationCanvasRef}
+                                    className="annotation-canvas"
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        pointerEvents: isAnnotating ? 'auto' : 'none',
+                                        zIndex: 8
+                                    }}
+                                />
+                            </div>
+                            
+                            <div className="crop-overlay-mask" style={{ top: 0, left: 0, right: 0, height: `${crop.top}%` }}></div>
+                            <div className="crop-overlay-mask" style={{ bottom: 0, left: 0, right: 0, height: `${crop.bottom}%` }}></div>
+                            <div className="crop-overlay-mask" style={{ top: `${crop.top}%`, left: 0, width: `${crop.left}%`, bottom: `${crop.bottom}%` }}></div>
+                            <div className="crop-overlay-mask" style={{ top: `${crop.top}%`, right: 0, width: `${crop.right}%`, bottom: `${crop.bottom}%` }}></div>
+
+                            <div className="crop-selection-area" style={{ 
+                                top: `${crop.top}%`, 
+                                left: `${crop.left}%`, 
+                                right: `${crop.right}%`, 
+                                bottom: `${crop.bottom}%` 
+                            }}>
+                                <div className="crop-handle handle-tl" onPointerDown={(e) => handleCropStart(e, 'top-left')}></div>
+                                <div className="crop-handle handle-tr" onPointerDown={(e) => handleCropStart(e, 'top-right')}></div>
+                                <div className="crop-handle handle-bl" onPointerDown={(e) => handleCropStart(e, 'bottom-left')}></div>
+                                <div className="crop-handle handle-br" onPointerDown={(e) => handleCropStart(e, 'bottom-right')}></div>
+                                <div className="crop-edge edge-t" onPointerDown={(e) => handleCropStart(e, 'top')}></div>
+                                <div className="crop-edge edge-b" onPointerDown={(e) => handleCropStart(e, 'bottom')}></div>
+                                <div className="crop-edge edge-l" onPointerDown={(e) => handleCropStart(e, 'left')}></div>
+                                <div className="crop-edge edge-r" onPointerDown={(e) => handleCropStart(e, 'right')}></div>
+                            </div>
+                        </div>
+
+                        <div className="overlay-actions-horizontal">
+                            <button 
+                                className={`overlay-btn-small ${isAnnotating ? 'active' : ''}`} 
+                                onClick={() => setIsAnnotating(!isAnnotating)}
+                                style={{ backgroundColor: isAnnotating ? 'rgba(239, 68, 68, 0.1)' : '' }}
+                            >
+                                <i className="fas fa-pen" style={{ color: isAnnotating ? '#ef4444' : '' }}></i>
+                                <span>{isAnnotating ? '正在标注' : '标注'}</span>
+                            </button>
+
+                            {isCropModified ? (
+                                <button className="overlay-btn-small crop-confirm" onClick={applyCrop}>
+                                    <i className="fas fa-crop-alt"></i>
+                                    <span>确认裁剪</span>
+                                </button>
+                            ) : (
+                                <button 
+                                    className="overlay-btn-small" 
+                                    title="复制图片"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.electronAPI.copyImage(screenshotPath.path);
+                                        setIsCopied(true);
+                                        setTimeout(() => setIsCopied(false), 2000);
+                                    }}
+                                >
+                                    <i className={`fas ${isCopied ? 'fa-check' : 'fa-copy'}`}></i>
+                                    <span>{isCopied ? '已复制' : '复制'}</span>
+                                </button>
+                            )}
+                            
+                            <button className="overlay-btn-small" onClick={handleReset}>
+                                <i className="fas fa-undo"></i>
+                                <span>重置</span>
+                            </button>
+
+                            <button 
+                                className="overlay-btn-small" 
+                                title="所在文件夹"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.electronAPI.openFolder(screenshotPath.path);
+                                }}
+                            >
+                                <i className="fas fa-folder-open"></i>
+                                <span>文件</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -5,7 +5,6 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { Notification } = require('electron');
 const screenshot = require('screenshot-desktop');
 const sharp = require('sharp');
 
@@ -57,17 +56,25 @@ async function takeScreenshot() {
       const stats = fs.statSync(filepath);
       console.log('Screenshot saved to:', filepath, 'Size:', stats.size, 'bytes');
 
-      // 显示 Windows 系统通知
-      showNotification('截图成功', `已保存到: ${filename}`);
+      // 使用 sharp 生成高质量预览图
+      // 1. 适度锐化让文字更清晰 2. 使用 WebP 格式提高加载性能
+      const previewBuffer = await sharp(filepath)
+        .sharpen({ sigma: 1, m1: 2, m2: 20 }) // 适度锐化，突出细节
+        .webp({ quality: 90 })               // 高质量 WebP
+        .toBuffer();
+      
+      const base64Data = previewBuffer.toString('base64');
+      const dataUrl = `data:image/webp;base64,${base64Data}`;
 
-      return filepath;
+      return {
+        path: filepath,
+        preview: dataUrl
+      };
     } else {
       throw new Error('Screenshot file not created');
     }
   } catch (err) {
     console.error('Screenshot error:', err);
-    // 截图失败时也显示通知
-    showNotification('截图失败', err.message || '截图过程中发生错误');
     throw err;
   }
 }
@@ -124,30 +131,13 @@ async function mergeScreenshots(images, displays, bounds, totalWidth, totalHeigh
     create: {
       width: totalWidth,
       height: totalHeight,
-      channels: 3,
-      background: { r: 0, g: 0, b: 0 }
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 1 }
     }
   })
     .composite(compositeOperations)
     .png()
     .toFile(filepath);
-}
-
-/**
- * 显示系统通知
- * @param {string} title - 通知标题
- * @param {string} message - 通知内容
- */
-function showNotification(title, message) {
-  if (Notification.isSupported()) {
-    new Notification({
-      title,
-      body: message,
-      silent: false
-    }).show();
-  } else {
-    console.log(`Notification: [${title}] ${message}`);
-  }
 }
 
 module.exports = {

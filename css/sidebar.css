@@ -82,3 +82,217 @@
     opacity: 1;
     pointer-events: auto;
 }
+
+/* 截图成功遮罩 */
+.screenshot-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    box-sizing: border-box;
+    animation: fadeInOverlay 0.3s ease;
+    border-radius: inherit;
+}
+
+.screenshot-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
+.success-icon {
+    font-size: 20px;
+    color: #10b981;
+}
+
+.success-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.screenshot-preview-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    position: relative;
+    user-select: none;
+    touch-action: none;
+}
+
+.screenshot-preview-img {
+    max-width: 95%;
+    max-height: 95%;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    will-change: transform;
+    /* 优化缩放时的清晰度 */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: high-quality;
+}
+
+.overlay-actions-horizontal {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+}
+
+.overlay-btn-small {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border: none;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.overlay-btn-small i {
+    font-size: 18px;
+    color: #3b82f6;
+    transition: transform 0.2s;
+}
+
+.overlay-btn-small:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.overlay-btn-small:hover i {
+    transform: scale(1.1);
+}
+
+.overlay-btn-small:active {
+    background-color: rgba(0, 0, 0, 0.15);
+    transform: scale(0.95);
+}
+
+.overlay-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+    transition: color 0.2s;
+    z-index: 101;
+}
+
+.overlay-close:hover {
+    color: #ef4444;
+}
+
+.crop-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 95%;
+    height: 95%;
+}
+
+.screenshot-preview-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    will-change: transform;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: high-quality;
+}
+
+/* 裁剪遮罩 */
+.crop-overlay-mask {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.crop-selection-area {
+    position: absolute;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* 裁剪手柄 - 角 */
+.crop-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: #fff;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    pointer-events: auto;
+    z-index: 15;
+}
+
+.handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
+.handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
+.handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+/* 裁剪手柄 - 边 */
+.crop-edge {
+    position: absolute;
+    pointer-events: auto;
+    z-index: 12;
+}
+
+.edge-t { top: -10px; left: 10px; right: 10px; height: 20px; cursor: ns-resize; }
+.edge-b { bottom: -10px; left: 10px; right: 10px; height: 20px; cursor: ns-resize; }
+.edge-l { left: -10px; top: 10px; bottom: 10px; width: 20px; cursor: ew-resize; }
+.edge-r { right: -10px; top: 10px; bottom: 10px; width: 20px; cursor: ew-resize; }
+
+.overlay-btn-small.crop-confirm {
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.overlay-btn-small.crop-confirm i {
+    color: #10b981;
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
