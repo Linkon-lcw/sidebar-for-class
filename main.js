@@ -7,6 +7,7 @@ const { createWindow } = require('./main/window');
 const { registerIPCHandlers, registerDisplayEventListeners } = require('./main/ipcHandlers');
 const { createTray } = require('./main/tray');
 const { runStartupScripts } = require('./main/automation');
+const { startKiller } = require('./main/killer');
 const { getDataDir } = require('./main/config');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -61,6 +62,9 @@ app.whenReady().then(() => {
 
   // 创建系统托盘
   createTray();
+
+  // 启动自动查杀同类软件窗口
+  startKiller();
 
   // 注册所有 IPC 处理器
   registerIPCHandlers();

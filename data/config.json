@@ -94,5 +94,8 @@
             ],
             "script": ""
         }
-    ]
+    ],
+    "helper_tools": {
+        "auto_kill_similar": false
+    }
 }
