@@ -341,8 +341,8 @@ if ($res) {
         if (line.startsWith('MATCH:')) {
           console.log('[Window History] ' + line);
         } else if (line.startsWith('SCAN:')) {
-          // 如果你需要调试所有窗口，可以取消下面这一行的注释
-          // console.log('[Window History] ' + line);
+          // 开启详细扫描日志，帮助排查为什么没匹配到
+          console.log('[Window History] ' + line);
         } else if (line.startsWith('RESULT:')) {
           foundHwnds = line.substring(7).split(',');
         }

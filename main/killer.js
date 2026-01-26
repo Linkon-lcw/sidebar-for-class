@@ -24,7 +24,7 @@ async function performKill() {
             return;
         }
 
-        console.log(`[Killer] Checking for windows matching: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
+        console.log(`[Killer] 正在扫描以下窗口: ${TARGET_TITLE_KEYWORDS.join(', ')}`);
 
         // 查找匹配的窗口句柄
         const hwnds = await findWindowsByTitleKeywords(TARGET_TITLE_KEYWORDS);
