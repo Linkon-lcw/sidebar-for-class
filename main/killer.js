@@ -12,20 +12,27 @@ const FORCE_KILL_TITLES = [
 
 // 需要普通关闭窗口 (WM_CLOSE) 的窗口标题列表 (精确匹配)
 const NORMAL_CLOSE_TITLES = [
-    // '计时'
+    
 ];
 
 // 计时器软件进程镜像名列表
 const TIMER_PROCESS_NAMES = [
-    'DesktopTimer.exe'
+    'EasiTimer',
+    '希沃计时器',
+    'Timer',
+    'ClassCareTimer'
 ];
 
-let checkInterval = null;
+let checkTimeout = null;
+let isPerformingKill = false;
 
 /**
  * 执行查杀逻辑
  */
 async function performKill() {
+    if (isPerformingKill) return;
+    isPerformingKill = true;
+
     try {
         const config = getConfigSync();
         
@@ -79,38 +86,41 @@ async function performKill() {
 
     } catch (err) {
         console.error('[Killer] Error during performKill:', err);
+    } finally {
+        isPerformingKill = false;
     }
 }
 
 /**
  * 启动自动查杀
- * @param {number} intervalMs 检查间隔，默认 5 秒
+ * @param {number} intervalMs 检查间隔
  */
 function startKiller(intervalMs = 5000) {
     if (process.platform !== 'win32') return;
     
-    if (checkInterval) {
-        clearInterval(checkInterval);
+    if (checkTimeout) {
+        clearTimeout(checkTimeout);
     }
     
-    console.log('[Killer] Auto-kill service started.');
-    console.log('[Killer] Force Kill List:', FORCE_KILL_TITLES);
-    console.log('[Killer] Normal Close List:', NORMAL_CLOSE_TITLES);
+    console.log(`[Killer] Auto-kill service started. Interval: ${intervalMs}ms`);
     
-    // 立即执行一次
-    performKill();
+    const scheduleNext = () => {
+        checkTimeout = setTimeout(async () => {
+            await performKill();
+            scheduleNext();
+        }, intervalMs);
+    };
     
-    // 开启定时任务
-    checkInterval = setInterval(performKill, intervalMs);
+    scheduleNext();
 }
 
 /**
  * 停止自动查杀
  */
 function stopKiller() {
-    if (checkInterval) {
-        clearInterval(checkInterval);
-        checkInterval = null;
+    if (checkTimeout) {
+        clearTimeout(checkTimeout);
+        checkTimeout = null;
         console.log('[Killer] Auto-kill service stopped.');
     }
 }
