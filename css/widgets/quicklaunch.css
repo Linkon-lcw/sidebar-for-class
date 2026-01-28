@@ -1,0 +1,355 @@
+/**
+ * 快速启动组件样式
+ */
+
+/* 入口按钮 */
+.quick-launch-widget {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.quick-launch-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.quick-launch-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.quick-launch-button:active {
+    transform: translateY(0);
+}
+
+.quick-launch-button i {
+    font-size: 16px;
+}
+
+/* 快速启动覆盖层 */
+.quick-launch-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 快速启动面板 */
+.quick-launch-panel {
+    background: var(--panel-bg, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 标题栏 */
+.quick-launch-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.quick-launch-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+}
+
+.quick-launch-close {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    color: var(--text-secondary, #6b7280);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-launch-close:hover {
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-primary, #1f2937);
+}
+
+.quick-launch-close i {
+    font-size: 16px;
+}
+
+/* 搜索框 */
+.quick-launch-search {
+    position: relative;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    display: flex;
+    align-items: center;
+}
+
+.quick-launch-search .search-icon {
+    position: absolute;
+    left: 32px;
+    color: var(--text-secondary, #9ca3af);
+    font-size: 14px;
+}
+
+.quick-launch-search input {
+    width: 100%;
+    padding: 10px 36px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--bg-input, #f9fafb);
+    color: var(--text-primary, #1f2937);
+    transition: all 0.2s ease;
+}
+
+.quick-launch-search input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: var(--panel-bg, #ffffff);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.quick-launch-search input::placeholder {
+    color: var(--text-placeholder, #9ca3af);
+}
+
+.quick-launch-search .clear-search {
+    position: absolute;
+    right: 32px;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-secondary, #9ca3af);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.quick-launch-search .clear-search:hover {
+    color: var(--text-primary, #1f2937);
+}
+
+/* 应用列表容器 */
+.quick-launch-apps {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    max-height: 400px;
+}
+
+/* 网格布局 */
+.quick-launch-apps.layout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 16px;
+}
+
+/* 列表布局 */
+.quick-launch-apps.layout-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quick-launch-apps.layout-list .quick-launch-app-item {
+    flex-direction: row;
+    padding: 12px;
+    gap: 12px;
+}
+
+.quick-launch-apps.layout-list .quick-launch-app-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.quick-launch-apps.layout-list .quick-launch-app-name {
+    font-size: 14px;
+    text-align: left;
+}
+
+/* 应用项 */
+.quick-launch-app-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-launch-app-item:hover {
+    background: var(--bg-hover, #f3f4f6);
+    transform: translateY(-2px);
+}
+
+.quick-launch-app-item:active {
+    transform: translateY(0);
+}
+
+/* 应用图标 */
+.quick-launch-app-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-icon, #f3f4f6);
+}
+
+.quick-launch-app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.quick-launch-icon-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #9ca3af);
+}
+
+.quick-launch-icon-placeholder i {
+    font-size: 20px;
+}
+
+/* 应用名称 */
+.quick-launch-app-name {
+    font-size: 12px;
+    color: var(--text-primary, #1f2937);
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 加载状态 */
+.quick-launch-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    color: var(--text-secondary, #6b7280);
+    grid-column: 1 / -1;
+}
+
+.quick-launch-loading i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+/* 空状态 */
+.quick-launch-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    color: var(--text-secondary, #6b7280);
+    grid-column: 1 / -1;
+}
+
+.quick-launch-empty i {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+/* 底部信息 */
+.quick-launch-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    text-align: center;
+}
+
+/* 滚动条样式 */
+.quick-launch-apps::-webkit-scrollbar {
+    width: 6px;
+}
+
+.quick-launch-apps::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.quick-launch-apps::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #d1d5db);
+    border-radius: 3px;
+}
+
+.quick-launch-apps::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, #9ca3af);
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+    .quick-launch-panel {
+        --panel-bg: #1f2937;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --bg-hover: #374151;
+        --bg-input: #111827;
+        --bg-icon: #374151;
+        --scrollbar-thumb: #4b5563;
+        --scrollbar-thumb-hover: #6b7280;
+    }
+}

@@ -93,6 +93,9 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
             newWidget.layout = 'vertical';
         } else if (type === 'toolbar') {
             newWidget.tools = ['screenshot', 'show_desktop', 'taskview'];
+        } else if (type === 'quick_launch') {
+            newWidget.layout = 'grid';
+            newWidget.maxItems = 50;
         }
 
         return newWidget;

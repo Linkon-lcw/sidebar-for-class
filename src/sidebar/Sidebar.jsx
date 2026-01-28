@@ -4,6 +4,7 @@ import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
 import DragToLaunchWidget from './components/DragToLaunchWidget';
 import Toolbar from './components/Toolbar';
+import QuickLaunchWidget from './components/QuickLaunchWidget';
 import useSidebarRefs from './hooks/useSidebarRefs';
 import useSidebarConfig from './hooks/useSidebarConfig';
 import useSidebarAnimation from './hooks/useSidebarAnimation';
@@ -78,18 +79,21 @@ const Sidebar = () => {
                                         ))}
                                     </div>
                                 );
-                            } 
+                            }
                             else if (widget.type === 'volume_slider') {
                                 return <VolumeWidget key={index} />;
-                            } 
+                            }
                             else if (widget.type === 'files') {
                                 return <FilesWidget key={index} {...widget} />;
-                            } 
+                            }
                             else if (widget.type === 'drag_to_launch') {
                                 return <DragToLaunchWidget key={index} {...widget} />;
                             }
                             else if (widget.type === 'toolbar') {
                                 return <Toolbar key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;
+                            }
+                            else if (widget.type === 'quick_launch') {
+                                return <QuickLaunchWidget key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;
                             }
                             return null;
                         })}

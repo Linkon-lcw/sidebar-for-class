@@ -68,7 +68,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // 关闭窗口
     closeFrontWindow: () => ipcRenderer.send('close-front-window'),
-    
+
     // 使侧边栏失去焦点并关闭前台窗口
     blurAndCloseFrontWindow: () => ipcRenderer.send('blur-and-close-front-window'),
 
@@ -78,5 +78,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('window-blur', subscription);
         return () => ipcRenderer.removeListener('window-blur', subscription);
     },
+
+    // 快速启动
+    getStartMenuItems: () => ipcRenderer.invoke('get-start-menu-items'),
+    launchStartMenuItem: (appInfo) => ipcRenderer.send('launch-start-menu-item', appInfo),
 });
 
