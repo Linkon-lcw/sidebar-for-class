@@ -93,6 +93,9 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
             newWidget.layout = 'vertical';
         } else if (type === 'toolbar') {
             newWidget.tools = ['screenshot', 'show_desktop', 'taskview'];
+        } else if (type === 'quick_launch') {
+            newWidget.icon_size = 48;
+            newWidget.show_recent = true;
         }
 
         return newWidget;
@@ -133,7 +136,8 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
         VolumeWidgetPreview,
         FilesWidgetPreview,
         DragToLaunchWidgetPreview,
-        ToolbarWidgetPreview
+        ToolbarWidgetPreview,
+        QuickLaunchWidgetPreview
     } = useWidgetPreviews();
 
     // 获取当前选中的组件

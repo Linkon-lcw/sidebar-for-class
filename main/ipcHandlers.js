@@ -12,6 +12,7 @@ const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontW
 const { launchApp, getFileIcon } = require('./launcher');
 const { getFilesInFolder } = require('./fileSystem');
 const { takeScreenshot } = require('./screenshot');
+const { getStartMenuShortcuts } = require('./startMenu');
 
 /**
  * 注册所有 IPC 处理器
@@ -145,6 +146,12 @@ function registerIPCHandlers() {
 
   ipcMain.handle('screenshot', async () => {
     return await takeScreenshot();
+  });
+
+  // ===== 开始菜单快捷方式 =====
+
+  ipcMain.handle('get-start-menu-shortcuts', async () => {
+    return await getStartMenuShortcuts();
   });
 }
 

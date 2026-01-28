@@ -51,7 +51,8 @@ const PreviewPanel = ({
     VolumeWidgetPreview,
     FilesWidgetPreview,
     DragToLaunchWidgetPreview,
-    ToolbarWidgetPreview
+    ToolbarWidgetPreview,
+    QuickLaunchWidgetPreview
 }) => {
     // 组件类型名称映射
     const WIDGET_TYPE_NAMES = {
@@ -59,7 +60,8 @@ const PreviewPanel = ({
         volume_slider: '音量控制',
         files: '文件列表',
         drag_to_launch: '拖放速启',
-        toolbar: '快捷工具栏'
+        toolbar: '快捷工具栏',
+        quick_launch: '快速启动'
     };
 
     // 包装指针抬起处理函数
@@ -129,6 +131,7 @@ const PreviewPanel = ({
                                 </div>
                             )}
                             {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
+                            {widget.type === 'quick_launch' && <QuickLaunchWidgetPreview {...widget} />}
                         </div>
 
                         {/* 选中时显示组件信息 */}
@@ -221,6 +224,7 @@ const PreviewPanel = ({
                                     <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
                                 )}
                                 {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
+                                {widget.type === 'quick_launch' && <QuickLaunchWidgetPreview {...widget} />}
                             </div>
                         );
                     })()}

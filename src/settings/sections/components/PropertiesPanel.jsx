@@ -35,7 +35,8 @@ import {
     ArrowImportRegular,
     FolderRegular,
     WrenchRegular,
-    LineHorizontal3Regular
+    LineHorizontal3Regular,
+    AppsListRegular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
@@ -504,6 +505,32 @@ const PropertiesPanel = ({
                             </div>
                         </div>
                     )}
+                    {/* 快速启动组件的属性 */}
+                    {selectedWidget.type === 'quick_launch' && (
+                        <div className={styles.propertySection}>
+                            <Field label="图标大小">
+                                <Slider
+                                    min={32}
+                                    max={64}
+                                    step={4}
+                                    value={selectedWidget.icon_size || 48}
+                                    onChange={(_, data) => updateWidgetProperty('icon_size', data.value)}
+                                />
+                                <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '-8px', marginBottom: '16px' }}>
+                                    当前大小: {selectedWidget.icon_size || 48}px
+                                </div>
+                            </Field>
+                            <Field label="显示最近使用">
+                                <Switch
+                                    checked={selectedWidget.show_recent !== false}
+                                    onChange={(_, data) => updateWidgetProperty('show_recent', data.checked)}
+                                />
+                            </Field>
+                            <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '-8px', marginBottom: '16px' }}>
+                                开启后，将显示最近使用的应用
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -599,6 +626,24 @@ const PropertiesPanel = ({
                             <div className={styles.libraryItemContent}>
                                 <span className={styles.libraryItemTitle}>工具栏</span>
                                 <span className={styles.libraryItemDesc}>包含截图、显示桌面等工具</span>
+                            </div>
+                        </div>
+
+                        {/* 快速启动组件 */}
+                        <div
+                            className={styles.libraryItem}
+                            onClick={() => onAddComponent('quick_launch')}
+                            draggable
+                            onDragStart={(e) => handleLibraryDragStart(e, 'quick_launch')}
+                            onDragEnd={onDragEnd}
+                            style={{ cursor: 'grab' }}
+                        >
+                            <div className={styles.libraryItemIcon}>
+                                <AppsListRegular />
+                            </div>
+                            <div className={styles.libraryItemContent}>
+                                <span className={styles.libraryItemTitle}>快速启动</span>
+                                <span className={styles.libraryItemDesc}>从开始菜单快速启动应用</span>
                             </div>
                         </div>
                     </div>

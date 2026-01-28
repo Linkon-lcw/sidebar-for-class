@@ -33,6 +33,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 获取文件夹下的文件
     getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount),
 
+    // 获取开始菜单快捷方式
+    getStartMenuShortcuts: () => ipcRenderer.invoke('get-start-menu-shortcuts'),
+
     // 执行任意命令
     executeCommand: (command) => ipcRenderer.send('execute-command', command),
 
