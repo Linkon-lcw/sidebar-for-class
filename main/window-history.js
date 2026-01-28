@@ -1,6 +1,11 @@
-const { exec } = require('child_process');
+const koffi = require('koffi');
+const path = require('path');
 
 const WINDOW_HISTORY_MAX_LENGTH = 50;
+const WM_CLOSE = 0x0010;
+const PROCESS_QUERY_INFORMATION = 0x0400;
+const PROCESS_VM_READ = 0x0010;
+const MAX_PATH = 260;
 
 let windowHistory = [];
 
@@ -20,6 +25,19 @@ const DEFAULT_BLACKLIST = [
 ];
 
 let blacklist = [...DEFAULT_BLACKLIST];
+
+const user32 = koffi.load('user32.dll');
+const psapi = koffi.load('psapi.dll');
+const kernel32 = koffi.load('kernel32.dll');
+
+const GetForegroundWindow = user32.func('GetForegroundWindow', 'uint64', []);
+const GetWindowTextLengthW = user32.func('GetWindowTextLengthW', 'int32', ['uint64']);
+const GetWindowTextW = user32.func('GetWindowTextW', 'int32', ['uint64', 'char*', 'int32']);
+const GetWindowThreadProcessId = user32.func('GetWindowThreadProcessId', 'uint32', ['uint64', 'uint32*']);
+const PostMessageW = user32.func('PostMessageW', 'int32', ['uint64', 'uint32', 'uint64', 'int64']);
+const OpenProcess = kernel32.func('OpenProcess', 'void*', ['uint32', 'uint32', 'uint32']);
+const CloseHandle = kernel32.func('CloseHandle', 'int32', ['void*']);
+const GetModuleFileNameExW = psapi.func('GetModuleFileNameExW', 'uint32', ['void*', 'void*', 'char*', 'uint32']);
 
 function parseWindowInfo(output) {
   if (!output || typeof output !== 'string') return null;
@@ -44,116 +62,102 @@ function isWindowValid(windowInfo) {
   });
 }
 
+function getProcessName(pid) {
+  return new Promise((resolve) => {
+    if (!pid || pid <= 0) {
+      resolve('');
+      return;
+    }
+    try {
+      const processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
+      if (!processHandle) {
+        resolve('');
+        return;
+      }
+      
+      const buffer = Buffer.alloc(MAX_PATH * 2);
+      const length = GetModuleFileNameExW(processHandle, 0, buffer, MAX_PATH);
+      
+      CloseHandle(processHandle);
+      
+      if (length > 0) {
+        const exePath = buffer.toString('ucs2', 0, length * 2).replace(/\0/g, '');
+        const processName = path.basename(exePath, '.exe').toLowerCase();
+        resolve(processName);
+      } else {
+        resolve('');
+      }
+    } catch (error) {
+      console.error('[Window History] 获取进程名失败:', error);
+      resolve('');
+    }
+  });
+}
+
 function getCurrentForegroundWindow() {
   return new Promise((resolve) => {
-    const rawPowershellScript = `
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$code = @'
-using System;
-using System.Runtime.InteropServices;
-using System.Text;
-public class UserWindows {
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
-    [DllImport("user32.dll")]
-    public static extern int GetWindowTextLength(IntPtr hWnd);
-    [DllImport("user32.dll")]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-}
-'@
-Add-Type -TypeDefinition $code -Language CSharp
-
-$hwnd = [UserWindows]::GetForegroundWindow()
-if ($hwnd -ne 0) {
-    $len = [UserWindows]::GetWindowTextLength($hwnd)
-    $sb = New-Object System.Text.StringBuilder ($len + 1)
-    [UserWindows]::GetWindowText($hwnd, $sb, $sb.Capacity) | Out-Null
-    $title = $sb.ToString()
-    
-    $pidOut = 0
-    [UserWindows]::GetWindowThreadProcessId($hwnd, [ref]$pidOut) | Out-Null
-    
-    $procName = ""
     try {
-        $p = Get-Process -Id $pidOut -ErrorAction SilentlyContinue
-        if ($p) { $procName = $p.ProcessName }
-    } catch {}
-    
-    Write-Host "$hwnd|$title|$procName"
-}
-`;
-
-    const encodedCommand = Buffer.from(rawPowershellScript, 'utf16le').toString('base64');
-    const command = `powershell -EncodedCommand ${encodedCommand}`;
-    exec(command, { encoding: 'utf8' }, (error, stdout) => {
-      if (error) {
-        console.error('[Window History] 获取前台窗口失败:', error);
-        console.error('[Window History] PowerShell stdout:', stdout);
+      const hwnd = GetForegroundWindow();
+      if (hwnd === 0) {
+        console.log('[Window History] 未找到前台窗口');
         resolve(null);
         return;
       }
-      const windowInfo = parseWindowInfo(stdout);
-      if (windowInfo) {
-        console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
-      } else {
-        console.log('[Window History] 未获取到有效的窗口信息, 原始输出:', stdout);
+
+      const length = GetWindowTextLengthW(hwnd);
+      
+      let title = '';
+      if (length > 0) {
+        const buffer = Buffer.alloc((length + 1) * 2);
+        GetWindowTextW(hwnd, buffer, length + 1);
+        title = buffer.toString('ucs2', 0, length * 2).replace(/\0/g, '');
       }
-      resolve(windowInfo);
-    });
+
+      const pidPtr = Buffer.alloc(4);
+      GetWindowThreadProcessId(hwnd, pidPtr);
+      const processId = pidPtr.readUInt32LE(0);
+
+      getProcessName(processId).then(processName => {
+        const windowInfo = {
+          hwnd: hwnd.toString(),
+          title: title || '',
+          processName: processName || ''
+        };
+
+        if (windowInfo.title || windowInfo.processName) {
+          console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
+          resolve(windowInfo);
+        } else {
+          console.log('[Window History] 未获取到有效的窗口信息');
+          resolve(null);
+        }
+      });
+    } catch (error) {
+      console.error('[Window History] 获取前台窗口失败:', error);
+      resolve(null);
+    }
   });
 }
 
 function closeWindowByHwnd(hwnd) {
   return new Promise((resolve) => {
-    const script = `
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class WindowUtils {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool IsWindow(IntPtr hWnd);
-    public const uint WM_CLOSE = 0x0010;
-}
-"@
-try {
-    $hWnd = [IntPtr]::new(${hwnd})
-    if ([WindowUtils]::IsWindow($hWnd)) {
-        $result = [WindowUtils]::PostMessage($hWnd, [WindowUtils]::WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
-        Write-Host "RESULT:$result"
-    } else {
-        Write-Host "INVALID_WINDOW"
-    }
-} catch {
-    Write-Host "ERROR:$($_.Exception.Message)"
-}
-`;
-    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
-    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
-      if (error) {
-        console.log('[Window History] 关闭窗口执行错误:', error.message);
-      }
-      const output = stdout.trim();
-      console.log('[Window History] 关闭窗口原始输出:', output);
-      
-      if (output.startsWith('RESULT:')) {
-        const success = output === 'RESULT:True';
-        console.log('[Window History] 关闭窗口结果:', success);
-        resolve(success);
-      } else if (output === 'INVALID_WINDOW') {
+    try {
+      const hwndValue = parseInt(hwnd);
+      if (!hwndValue || hwndValue <= 0) {
         console.log('[Window History] 窗口句柄无效');
         resolve(false);
-      } else if (output.startsWith('ERROR:')) {
-        console.log('[Window History] 关闭窗口错误:', output);
-        resolve(false);
-      } else {
-        console.log('[Window History] 关闭窗口未知状态');
-        resolve(false);
+        return;
       }
-    });
+
+      const result = PostMessageW(hwndValue, WM_CLOSE, 0, 0);
+      const success = result !== 0;
+      
+      console.log('[Window History] 关闭窗口结果:', success);
+      resolve(success);
+    } catch (error) {
+      console.log('[Window History] 关闭窗口执行错误:', error.message);
+      resolve(false);
+    }
   });
 }
 

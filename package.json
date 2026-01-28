@@ -6,7 +6,7 @@
   "scripts": {
     "start": "vite",
     "electron": "wait-on http://localhost:3000 && electron .",
-    "dev": "concurrently \"npm run start\" \"npm run electron\"",
+    "dev": "vite",
     "build": "vite build",
     "build:win": "npm run build && electron-builder --win",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -72,8 +72,12 @@
   },
   "dependencies": {
     "canvas": "^3.2.1",
+    "koffi": "^2.14.1",
     "loudness": "^0.4.2",
+    "node-window-manager": "^2.2.4",
+    "ref-napi": "^3.0.3",
     "screenshot-desktop": "^1.15.3",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "win32-api": "^26.1.2"
   }
 }
