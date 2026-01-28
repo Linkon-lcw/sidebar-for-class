@@ -78,9 +78,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('window-blur', subscription);
         return () => ipcRenderer.removeListener('window-blur', subscription);
     },
-
-    // 快速启动
-    getStartMenuItems: () => ipcRenderer.invoke('get-start-menu-items'),
-    launchStartMenuItem: (appInfo) => ipcRenderer.send('launch-start-menu-item', appInfo),
 });
 

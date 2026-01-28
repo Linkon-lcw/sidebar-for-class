@@ -35,8 +35,7 @@ import {
     ArrowImportRegular,
     FolderRegular,
     WrenchRegular,
-    LineHorizontal3Regular,
-    FlashRegular
+    LineHorizontal3Regular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
@@ -505,34 +504,6 @@ const PropertiesPanel = ({
                             </div>
                         </div>
                     )}
-
-                    {/* 快速启动组件的属性 */}
-                    {selectedWidget.type === 'quick_launch' && (
-                        <div className={styles.propertySection}>
-                            <Field label="布局方式">
-                                <Dropdown
-                                    value={{
-                                        'grid': '网格',
-                                        'list': '列表'
-                                    }[selectedWidget.layout || 'grid'] || '网格'}
-                                    selectedOptions={[selectedWidget.layout || 'grid']}
-                                    onOptionSelect={(_, data) => updateWidgetProperty('layout', data.optionValue)}
-                                >
-                                    <Option value="grid">网格</Option>
-                                    <Option value="list">列表</Option>
-                                </Dropdown>
-                            </Field>
-                            <Field label="最大显示数量">
-                                <Input
-                                    type="number"
-                                    min={10}
-                                    max={200}
-                                    value={selectedWidget.maxItems || 50}
-                                    onChange={(_, data) => updateWidgetProperty('maxItems', parseInt(data.value) || 50)}
-                                />
-                            </Field>
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -628,24 +599,6 @@ const PropertiesPanel = ({
                             <div className={styles.libraryItemContent}>
                                 <span className={styles.libraryItemTitle}>工具栏</span>
                                 <span className={styles.libraryItemDesc}>包含截图、显示桌面等工具</span>
-                            </div>
-                        </div>
-
-                        {/* 快速启动组件 */}
-                        <div
-                            className={styles.libraryItem}
-                            onClick={() => onAddComponent('quick_launch')}
-                            draggable
-                            onDragStart={(e) => handleLibraryDragStart(e, 'quick_launch')}
-                            onDragEnd={onDragEnd}
-                            style={{ cursor: 'grab' }}
-                        >
-                            <div className={styles.libraryItemIcon}>
-                                <FlashRegular />
-                            </div>
-                            <div className={styles.libraryItemContent}>
-                                <span className={styles.libraryItemTitle}>快速启动</span>
-                                <span className={styles.libraryItemDesc}>从开始菜单快速启动应用</span>
                             </div>
                         </div>
                     </div>
