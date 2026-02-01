@@ -36,6 +36,8 @@ async function takeScreenshot() {
       throw new Error('No screenshots captured');
     }
 
+    const previews = [];
+
     // 如果只有一个显示器，直接保存
     if (images.length === 1) {
       fs.writeFileSync(filepath, images[0]);
@@ -56,19 +58,35 @@ async function takeScreenshot() {
       const stats = fs.statSync(filepath);
       console.log('Screenshot saved to:', filepath, 'Size:', stats.size, 'bytes');
 
-      // 使用 sharp 生成高质量预览图
-      // 1. 适度锐化让文字更清晰 2. 使用 WebP 格式提高加载性能
-      const previewBuffer = await sharp(filepath)
-        .sharpen({ sigma: 1, m1: 2, m2: 20 }) // 适度锐化，突出细节
-        .webp({ quality: 90 })               // 高质量 WebP
+      // 1. 处理合并后的全屏预览
+      const totalPreviewBuffer = await sharp(filepath)
+        .sharpen({ sigma: 1, m1: 2, m2: 20 })
+        .webp({ quality: 90 })
         .toBuffer();
       
-      const base64Data = previewBuffer.toString('base64');
-      const dataUrl = `data:image/webp;base64,${base64Data}`;
+      previews.push({
+        label: '全部显示器',
+        preview: `data:image/webp;base64,${totalPreviewBuffer.toString('base64')}`
+      });
+
+      // 2. 如果有多个显示器，处理每个显示器的预览
+      if (images.length > 1) {
+        for (let i = 0; i < images.length; i++) {
+          const displayPreviewBuffer = await sharp(images[i])
+            .sharpen({ sigma: 1, m1: 2, m2: 20 })
+            .webp({ quality: 90 })
+            .toBuffer();
+          
+          previews.push({
+            label: `显示器 ${i + 1}`,
+            preview: `data:image/webp;base64,${displayPreviewBuffer.toString('base64')}`
+          });
+        }
+      }
 
       return {
         path: filepath,
-        preview: dataUrl
+        previews: previews
       };
     } else {
       throw new Error('Screenshot file not created');

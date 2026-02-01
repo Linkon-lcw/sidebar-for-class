@@ -104,15 +104,46 @@
 .screenshot-overlay-header {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    margin-top: 4px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.display-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px;
+    border-radius: 6px;
+    margin-left: auto;
+}
+
+.display-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.display-tab-btn:hover {
+    background: rgba(0, 0, 0, 0.03);
+    color: #333;
+}
+
+.display-tab-btn.active {
+    background: #fff;
+    color: #2196F3;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .success-icon {
-    font-size: 20px;
     color: #10b981;
+    font-size: 18px;
 }
 
 .success-text {
