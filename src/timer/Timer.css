@@ -33,8 +33,7 @@ body {
     gap: 5vh;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(255, 255, 255, 0.6);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: rgba(255, 255, 255, 0.5);
     position: relative;
     /* 让整个窗口可拖拽 */
     -webkit-app-region: drag;
@@ -60,27 +59,56 @@ body {
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    transition: all 0.2s ease;
     z-index: 100;
     -webkit-app-region: no-drag;
 }
 
-.close-window-button:hover {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: var(--danger-color);
+.mini-mode-button {
+    position: absolute;
+    top: 15px;
+    right: 55px; /* 在关闭按钮左侧 */
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    z-index: 100;
+    -webkit-app-region: no-drag;
 }
 
-.close-window-button:active {
+.mini-mode-button:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: var(--accent-color);
+}
+
+.mini-mode-button:active {
     transform: scale(0.9);
 }
 
 .timer-tabs,
 .control-buttons,
 .close-window-button,
+.mini-mode-button,
 .adjustment-button-top,
 .adjustment-button-bottom {
     /* 确保交互元素不可拖拽，以便响应点击 */
     -webkit-app-region: no-drag;
+}
+
+/* 迷你模式样式 */
+#root.mini-mode {
+    gap: 0;
+}
+
+#root.mini-mode .time-display {
+    font-size: min(22vw, 60vh);
+    margin-top: 10px;
 }
 
 /* Removed: body.timer-running #root { gap: 2vh; } */
@@ -90,7 +118,6 @@ body {
     top: 8vh;
     display: flex;
     gap: 20px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
 }
 
@@ -109,7 +136,6 @@ body {
     cursor: pointer;
     padding: 8px 20px;
     border-radius: 20px;
-    transition: all 0.3s ease;
 }
 
 .tab-button:hover {
@@ -136,6 +162,7 @@ body {
     font-variant-numeric: tabular-nums;
     margin: 0;
     user-select: none;
+    flex: 1; /* 占据剩余空间 */
 }
 
 body.timer-running .time-display {
@@ -149,7 +176,6 @@ body.timer-running .time-display {
     justify-content: center;
     align-items: center;
     min-width: 0.6em;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
@@ -165,7 +191,7 @@ body.timer-running .time-display {
 
 .digit-inner.animating {
     transform: translateY(-1.1em);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .digit-item {
@@ -195,8 +221,8 @@ body.timer-running .time-display {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .time-separator {
@@ -204,10 +230,10 @@ body.timer-running .time-display {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     line-height: 1;
     font-size: 0.8em;
     opacity: 0.8;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.timer-running .time-separator {
@@ -224,13 +250,14 @@ body.timer-running .time-separator {
     height: min(7vw, 9vh);
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     justify-content: center;
     align-items: center;
     opacity: 1;
     transform: scale(1);
     margin: 1vh 0;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
 .time-part.hide-controls .adjustment-button-top,
@@ -240,12 +267,12 @@ body.timer-running .time-separator {
     pointer-events: none;
     margin: 0;
     height: 0;
+    width: 0;
 }
 
 .control-buttons {
     display: flex;
     gap: 6vmin;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: absolute;
     bottom: 5vh; /* 移到更靠下的位置 */
 }
@@ -265,7 +292,6 @@ body.timer-running .control-buttons:hover {
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     justify-content: center;
     align-items: center;

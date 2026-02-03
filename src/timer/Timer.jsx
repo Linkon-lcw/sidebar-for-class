@@ -18,7 +18,7 @@ const AnimatedDigit = ({ value }) => {
         setNextValue(null);
         setIsAnimating(false);
         timeoutRef.current = null;
-      }, 400);
+      }, 500);
     }
   }, [value, displayValue, isAnimating]);
 
@@ -41,6 +41,7 @@ const Timer = () => {
   const [timeInSeconds, setTimeInSeconds] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState('countdown');
+  const [isMiniMode, setIsMiniMode] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -71,6 +72,34 @@ const Timer = () => {
       document.body.classList.remove('timer-running');
     }
   }, [isRunning]);
+
+  const toggleMiniMode = () => {
+    const nextMiniMode = !isMiniMode;
+    setIsMiniMode(nextMiniMode);
+    
+    if (window.electronAPI && window.electronAPI.resizeWindow) {
+      // 获取当前窗口高度，计算新的 Y 坐标以保持视觉平衡
+      const currentHeight = nextMiniMode ? 400 : 200;
+      const targetHeight = nextMiniMode ? 200 : 400;
+      
+      // 简单地让窗口在高度变化时，Y 坐标偏移一半的差值，
+      // 这样窗口看起来是往中心缩小的，而不是往下长或者往上缩
+      // 注意：这里的 y 坐标处理依赖于 ipcHandlers 中对 y 的处理逻辑
+      // 我们暂且让它保持顶部对齐或者传入一个计算后的 y
+      window.electronAPI.resizeWindow(600, targetHeight);
+    }
+  };
+
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (root) {
+      if (isMiniMode) {
+        root.classList.add('mini-mode');
+      } else {
+        root.classList.remove('mini-mode');
+      }
+    }
+  }, [isMiniMode]);
 
   const formatTimeDigits = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -164,20 +193,31 @@ const Timer = () => {
       <button className="close-window-button" onClick={handleClose}>
         <i className="fa-solid fa-xmark"></i>
       </button>
-      <div className={`timer-tabs ${isRunning ? 'hidden' : ''}`}>
+      {isRunning && (
         <button 
-          className={`tab-button ${mode === 'countdown' ? 'active' : ''}`}
-          onClick={() => handleModeChange('countdown')}
+          className="mini-mode-button" 
+          onClick={toggleMiniMode}
+          title={isMiniMode ? "退出迷你模式" : "进入迷你模式"}
         >
-          倒计时
+          <i className={`fa-solid ${isMiniMode ? 'fa-expand' : 'fa-compress'}`}></i>
         </button>
-        <button 
-          className={`tab-button ${mode === 'countup' ? 'active' : ''}`}
-          onClick={() => handleModeChange('countup')}
-        >
-          正计时
-        </button>
-      </div>
+      )}
+      {!isMiniMode && (
+        <div className={`timer-tabs ${isRunning ? 'hidden' : ''}`}>
+          <button 
+            className={`tab-button ${mode === 'countdown' ? 'active' : ''}`}
+            onClick={() => handleModeChange('countdown')}
+          >
+            倒计时
+          </button>
+          <button 
+            className={`tab-button ${mode === 'countup' ? 'active' : ''}`}
+            onClick={() => handleModeChange('countup')}
+          >
+            正计时
+          </button>
+        </div>
+      )}
       <div className="time-display">
         {renderDigit(h1, 'h', 10)}
         {renderDigit(h2, 'h', 1)}
@@ -188,14 +228,16 @@ const Timer = () => {
         {renderDigit(s1, 's', 10)}
         {renderDigit(s2, 's', 1)}
       </div>
-      <div className="control-buttons">
-        <button onClick={handleStartPause} className={isRunning ? 'pause' : 'start'}>
-          {isRunning ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
-        </button>
-        <button onClick={handleReset} className="reset">
-          <i className="fa-solid fa-rotate-left"></i>
-        </button>
-      </div>
+      {!isMiniMode && (
+        <div className="control-buttons">
+          <button onClick={handleStartPause} className={isRunning ? 'pause' : 'start'}>
+            {isRunning ? <i className="fa-solid fa-pause"></i> : <i className="fa-solid fa-play"></i>}
+          </button>
+          <button onClick={handleReset} className="reset">
+            <i className="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      )}
     </>
   );
 };

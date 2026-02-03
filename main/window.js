@@ -239,8 +239,8 @@ function createTimerWindow() {
   timerWindow = new BrowserWindow({
     width: 600,
     height: 400,
-    minWidth: 600,
-    minHeight: 400,
+    minWidth: 300,
+    minHeight: 150,
     title: '计时器',
     frame: true,
     transparent: false,

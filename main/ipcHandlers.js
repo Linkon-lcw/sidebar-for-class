@@ -2,9 +2,7 @@
  * IPC 处理器注册模块
  * 集中注册所有 IPC 处理器
  */
-const { ipcMain } = require('electron');
-const { app } = require('electron');
-const { screen } = require('electron');
+const { ipcMain, app, screen, BrowserWindow } = require('electron');
 const { getConfigSync, updateConfig, previewConfig } = require('./config');
 const { getAllDisplays } = require('./display');
 const { getMainWindow, createSettingsWindow, createTimerWindow, setAlwaysOnTopFlag, resizeMainWindow, setIgnoreMouseEvents, notifyDisplaysUpdated, blurMainWindow } = require('./window');
@@ -20,7 +18,55 @@ function registerIPCHandlers() {
   // ===== 窗口管理 =====
 
   ipcMain.on('resize-window', (event, width, height, y) => {
-    resizeMainWindow(width, height, y);
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+
+    if (win === getMainWindow()) {
+      resizeMainWindow(width, height, y);
+    } else {
+      // 停止之前可能存在的动画（如果有的话，简单处理可跳过）
+      win.setMinimumSize(0, 0);
+      win.setMaximumSize(10000, 10000);
+      
+      const startBounds = win.getBounds();
+      const targetBounds = {
+        width: Math.floor(width),
+        height: Math.floor(height),
+        x: startBounds.x,
+        y: typeof y === 'number' ? Math.floor(y) : startBounds.y
+      };
+
+      // 动画参数
+      const duration = 500; // 与 CSS transition 0.5s 保持一致
+      const startTime = Date.now();
+      
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // 使用 EaseOutCubic 缓动函数: f(t) = 1 - (1-t)^3
+        const ease = 1 - Math.pow(1 - progress, 3);
+        
+        const currentBounds = {
+          x: Math.floor(startBounds.x + (targetBounds.x - startBounds.x) * ease),
+          y: Math.floor(startBounds.y + (targetBounds.y - startBounds.y) * ease),
+          width: Math.floor(startBounds.width + (targetBounds.width - startBounds.width) * ease),
+          height: Math.floor(startBounds.height + (targetBounds.height - startBounds.height) * ease)
+        };
+
+        if (!win.isDestroyed()) {
+          win.setBounds(currentBounds);
+          
+          if (progress < 1) {
+            // 使用 setTimeout 模拟 60fps
+            setTimeout(animate, 16);
+          }
+        }
+      };
+
+      animate();
+    }
   });
 
   ipcMain.on('set-ignore-mouse', (event, ignore, forward) => {
