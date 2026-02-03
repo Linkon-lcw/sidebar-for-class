@@ -44,10 +44,28 @@ const Timer = () => {
   const [isMiniMode, setIsMiniMode] = useState(false);
   const timerRef = useRef(null);
 
+  const toggleMiniMode = () => {
+    const nextMiniMode = !isMiniMode;
+    setIsMiniMode(nextMiniMode);
+    
+    if (window.electronAPI && window.electronAPI.resizeWindow) {
+      // 获取当前窗口高度，计算新的 Y 坐标以保持视觉平衡
+      const targetHeight = nextMiniMode ? 200 : 400;
+      
+      // 简单地让窗口在高度变化时，Y 坐标偏移一半的差值，
+      // 这样窗口看起来是往中心缩小的，而不是往下长或者往上缩
+      window.electronAPI.resizeWindow(600, targetHeight);
+    }
+  };
+
   useEffect(() => {
     if (isRunning) {
       if (mode === 'countdown' && timeInSeconds <= 0) {
         setIsRunning(false);
+        // 倒计时结束，如果处于迷你模式则自动退出
+        if (isMiniMode) {
+          toggleMiniMode();
+        }
         return;
       }
 
@@ -63,7 +81,7 @@ const Timer = () => {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isRunning, mode, timeInSeconds]);
+  }, [isRunning, mode, timeInSeconds, isMiniMode]);
 
   useEffect(() => {
     if (isRunning) {
@@ -72,23 +90,6 @@ const Timer = () => {
       document.body.classList.remove('timer-running');
     }
   }, [isRunning]);
-
-  const toggleMiniMode = () => {
-    const nextMiniMode = !isMiniMode;
-    setIsMiniMode(nextMiniMode);
-    
-    if (window.electronAPI && window.electronAPI.resizeWindow) {
-      // 获取当前窗口高度，计算新的 Y 坐标以保持视觉平衡
-      const currentHeight = nextMiniMode ? 400 : 200;
-      const targetHeight = nextMiniMode ? 200 : 400;
-      
-      // 简单地让窗口在高度变化时，Y 坐标偏移一半的差值，
-      // 这样窗口看起来是往中心缩小的，而不是往下长或者往上缩
-      // 注意：这里的 y 坐标处理依赖于 ipcHandlers 中对 y 的处理逻辑
-      // 我们暂且让它保持顶部对齐或者传入一个计算后的 y
-      window.electronAPI.resizeWindow(600, targetHeight);
-    }
-  };
 
   useEffect(() => {
     const root = document.getElementById('root');

@@ -44,6 +44,11 @@ body {
     overflow: hidden; /* 确保内容不会超出圆角边界 */
 }
 
+button {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
 .close-window-button {
     position: absolute;
     top: 15px;
@@ -82,9 +87,27 @@ body {
     -webkit-app-region: no-drag;
 }
 
-.mini-mode-button:hover {
-    background-color: rgba(0, 123, 255, 0.1);
-    color: var(--accent-color);
+@media (hover: hover) {
+    .close-window-button:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--text-color-dark);
+    }
+    
+    .mini-mode-button:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+        color: var(--accent-color);
+    }
+
+    .tab-button:hover {
+        color: var(--text-color-dark);
+        background-color: var(--button-bg);
+    }
+
+    .adjustment-button-top:hover,
+    .adjustment-button-bottom:hover {
+        background-color: var(--button-hover);
+        color: var(--text-color-dark);
+    }
 }
 
 .mini-mode-button:active {
@@ -136,11 +159,6 @@ body {
     cursor: pointer;
     padding: 8px 20px;
     border-radius: 20px;
-}
-
-.tab-button:hover {
-    color: var(--text-color-dark);
-    background-color: var(--button-bg);
 }
 
 .tab-button.active {
@@ -278,46 +296,87 @@ body.timer-running .time-separator {
 }
 
 body.timer-running .control-buttons {
-    opacity: 0.6;
+
+    opacity: 1;
+
 }
 
-body.timer-running .control-buttons:hover {
-    opacity: 1;
-}
+
 
 .control-buttons button {
+
     width: min(12vw, 14vh); /* 稍微缩小尺寸以留出更多空间 */
+
     height: min(12vw, 14vh);
+
     font-size: min(4vw, 5vh);
+
     border: none;
+
     border-radius: 50%;
+
     cursor: pointer;
+
     display: flex;
+
     justify-content: center;
+
     align-items: center;
+
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+    transition: transform 0.1s ease; /* Faster transition for press effect */
+
 }
+
+
 
 .control-buttons button.start {
+
     background-color: var(--success-color);
+
     color: white;
+
 }
+
+
 
 .control-buttons button.pause {
+
     background-color: var(--warning-color);
+
     color: white;
+
 }
+
+
 
 .control-buttons button.reset {
+
+
+
     background-color: var(--danger-color);
+
+
+
     color: white;
+
+
+
 }
 
-.control-buttons button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
+
+
+
+
+
 
 .control-buttons button:active {
-    transform: translateY(0);
+
+
+
+
+
+    transform: scale(0.92); /* 按下时缩小一点点 */
+
 }
