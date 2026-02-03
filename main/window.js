@@ -248,6 +248,9 @@ function createTimerWindow() {
     skipTaskbar: false,
     resizable: true,
     autoHideMenuBar: true,
+    transparent: true,
+    frame: false,
+    backgroundMaterial: 'acrylic',
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,

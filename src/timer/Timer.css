@@ -19,7 +19,7 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    background-color: var(--bg-color-app);
+    background-color: transparent; /* 改为透明 */
     color: var(--text-color-dark);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overflow: hidden;
@@ -33,46 +33,151 @@ body {
     gap: 5vh;
     width: 100vw;
     height: 100vh;
-    background-color: var(--bg-color-light);
-    transition: gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: rgba(255, 255, 255, 0.6);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    /* 让整个窗口可拖拽 */
+    -webkit-app-region: drag;
+    /* 窗口边框与圆角 */
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    box-sizing: border-box;
+    overflow: hidden; /* 确保内容不会超出圆角边界 */
 }
 
-body.timer-running #root {
-    gap: 2vh;
+.close-window-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    z-index: 100;
+    -webkit-app-region: no-drag;
+}
+
+.close-window-button:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--danger-color);
+}
+
+.close-window-button:active {
+    transform: scale(0.9);
+}
+
+.timer-tabs,
+.control-buttons,
+.close-window-button,
+.adjustment-button-top,
+.adjustment-button-bottom {
+    /* 确保交互元素不可拖拽，以便响应点击 */
+    -webkit-app-region: no-drag;
+}
+
+/* Removed: body.timer-running #root { gap: 2vh; } */
+
+.timer-tabs {
+    position: absolute;
+    top: 8vh;
+    display: flex;
+    gap: 20px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+}
+
+.timer-tabs.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    color: var(--text-color-muted);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 20px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    color: var(--text-color-dark);
+    background-color: var(--button-bg);
+}
+
+.tab-button.active {
+    color: var(--accent-color);
+    background-color: rgba(0, 123, 255, 0.1);
 }
 
 .time-display {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* font-size: min(12vw, 35vh); */
-    font-size: min(30vw, 30vh);
+    width: 100%;
+    /* 使用等宽字体以获得更好的垂直和水平平衡 */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: min(22vw, 25vh);
     font-weight: 700;
     color: var(--text-color-dark);
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     font-variant-numeric: tabular-nums;
+    margin: 0;
+    user-select: none;
+}
+
+body.timer-running .time-display {
+    font-size: min(22vw, 75vh);
 }
 
 .digit-container {
-    height: 1em;
-    overflow: hidden;
+    height: 1.1em;
     position: relative;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    min-width: 0.7em;
-    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0.6em;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
-.digit-strip {
+.digit-inner {
     display: flex;
     flex-direction: column;
-    align-items: center;
     width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* No transition here */
+}
+
+.digit-inner.animating {
+    transform: translateY(-1.1em);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.digit-item {
+    height: 1.1em;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .value {
-    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -81,13 +186,8 @@ body.timer-running #root {
     min-width: 100%;
     line-height: 1;
     position: relative;
-    top: -0.06em;
     pointer-events: none;
-    flex-shrink: 0;
-}
-
-.time-part.running .value {
-    font-size: min(22vw, 75vh);
+    transform: translateY(0.02em); 
 }
 
 .time-part {
@@ -95,35 +195,33 @@ body.timer-running #root {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1vh;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
 .time-separator {
-    margin: 0 0.5vw;
+    margin: 0 0.2vw;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    padding-bottom: 2vh;
-    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     line-height: 1;
-    position: relative;
-    top: -0.09em;
+    font-size: 0.8em;
+    opacity: 0.8;
 }
 
 body.timer-running .time-separator {
-    font-size: min(22vw, 75vh);
+    font-size: 0.6em;
 }
-
 
 .adjustment-button-top,
 .adjustment-button-bottom {
     background-color: var(--button-bg);
     border: none;
     color: var(--text-color-muted);
-    font-size: min(3vw, 4vh);
-    width: min(8vw, 10vh);
-    height: min(8vw, 10vh);
+    font-size: min(2.5vw, 3.5vh);
+    width: min(7vw, 9vh);
+    height: min(7vw, 9vh);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -132,32 +230,24 @@ body.timer-running .time-separator {
     align-items: center;
     opacity: 1;
     transform: scale(1);
+    margin: 1vh 0;
 }
 
-.time-part.running .adjustment-button-top,
-.time-part.running .adjustment-button-bottom {
+.time-part.hide-controls .adjustment-button-top,
+.time-part.hide-controls .adjustment-button-bottom {
     opacity: 0;
-    transform: scale(0);
-    height: 0;
-    margin: 0;
+    transform: scale(0.5);
     pointer-events: none;
-}
-
-.adjustment-button-top:hover,
-.adjustment-button-bottom:hover {
-    background-color: var(--button-hover);
-    color: var(--text-color-dark);
-}
-
-.adjustment-button-top:active,
-.adjustment-button-bottom:active {
-    transform: scale(0.9);
+    margin: 0;
+    height: 0;
 }
 
 .control-buttons {
     display: flex;
     gap: 6vmin;
-    transition: opacity 0.5s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute;
+    bottom: 5vh; /* 移到更靠下的位置 */
 }
 
 body.timer-running .control-buttons {
@@ -169,9 +259,9 @@ body.timer-running .control-buttons:hover {
 }
 
 .control-buttons button {
-    width: min(15vw, 18vh);
-    height: min(15vw, 18vh);
-    font-size: min(5vw, 6vh);
+    width: min(12vw, 14vh); /* 稍微缩小尺寸以留出更多空间 */
+    height: min(12vw, 14vh);
+    font-size: min(4vw, 5vh);
     border: none;
     border-radius: 50%;
     cursor: pointer;

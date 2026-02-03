@@ -64,7 +64,7 @@ app.whenReady().then(() => {
   createTray();
 
   // 启动自动查杀服务
-startKiller(100);
+  startKiller();
 
   // 注册所有 IPC 处理器
   registerIPCHandlers();

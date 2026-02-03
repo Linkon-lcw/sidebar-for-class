@@ -4,6 +4,7 @@
  */
 const { getConfigSync } = require('./config');
 const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid, findProcessesByImageNames } = require('./window-history');
+const windowMonitor = require('./window-monitor');
 
 // 需要强行结束进程 (taskkill) 的窗口标题列表 (精确匹配)
 const FORCE_KILL_TITLES = [
@@ -17,17 +18,77 @@ const NORMAL_CLOSE_TITLES = [
 
 // 计时器软件进程镜像名列表
 const TIMER_PROCESS_NAMES = [
-    'EasiTimer',
-    '希沃计时器',
-    'Timer',
-    'ClassCareTimer'
+    'DesktopTimer.exe'
+];
+
+// 计时器软件窗口标题列表 (精确匹配)
+const TIMER_WINDOW_TITLES = [
+    '计时器',
+    '计时'
 ];
 
 let checkTimeout = null;
 let isPerformingKill = false;
 
 /**
- * 执行查杀逻辑
+ * 处理单个窗口事件
+ */
+async function handleWindowEvent(event) {
+    const config = getConfigSync();
+    const { title, hwnd, pid, type } = event;
+    
+    // 忽略标题为空的窗口
+    if (!title || title.trim() === '') return;
+
+    // 忽略我们自己的进程
+    if (pid === process.pid) return;
+
+    const titleLower = title.toLowerCase();
+
+    // 1. 处理通用同类软件查杀
+    if (config.helper_tools?.auto_kill_similar) {
+        // 1.1 强制结束列表
+        const forceMatch = FORCE_KILL_TITLES.find(t => titleLower === t.toLowerCase() || titleLower.includes(t.toLowerCase()));
+        if (forceMatch) {
+            console.log(`[Killer] [Event] Match found in FORCE_KILL: "${title}" (PID: ${pid}). Executing taskkill...`);
+            await killProcessByPid(pid);
+        }
+        
+        // 1.2 普通关闭列表
+        const normalMatch = NORMAL_CLOSE_TITLES.find(t => titleLower === t.toLowerCase() || titleLower.includes(t.toLowerCase()));
+        if (normalMatch) {
+            console.log(`[Killer] [Event] Match found in NORMAL_CLOSE: "${title}" (HWND: ${hwnd}). Sending WM_CLOSE...`);
+            await closeWindowByHwnd(hwnd);
+        }
+    }
+
+    // 2. 处理计时器软件查杀
+    if (config.helper_tools?.auto_kill_timer) {
+        const timerMatch = TIMER_WINDOW_TITLES.find(t => titleLower === t.toLowerCase() || titleLower.includes(t.toLowerCase()));
+        if (timerMatch) {
+            console.log(`[Killer] [Event] Match found in TIMER_KILL: "${title}" (HWND: ${hwnd}). Sending WM_CLOSE and opening our timer simultaneously.`);
+            
+            // 1. 立即尝试关闭窗口 (不使用 taskkill，并行执行)
+            closeWindowByHwnd(hwnd).catch(err => console.error('[Killer] Failed to close timer window:', err));
+
+            // 2. 立即打开我们的计时器
+            const { createTimerWindow } = require('./window');
+            createTimerWindow();
+        }
+    }
+}
+
+// 注册窗口事件监听
+windowMonitor.on('window-event', (event) => {
+    // 仅处理创建和显示事件
+    if (event.type === windowMonitor.constructor.EVENTS.OBJECT_CREATE || 
+        event.type === windowMonitor.constructor.EVENTS.OBJECT_SHOW) {
+        handleWindowEvent(event).catch(err => console.error('[Killer] Event handler error:', err));
+    }
+});
+
+/**
+ * 执行查杀逻辑 (轮询/初始化用)
  */
 async function performKill() {
     if (isPerformingKill) return;
@@ -67,20 +128,35 @@ async function performKill() {
 
         // 2. 处理计时器软件查杀
         if (config.helper_tools?.auto_kill_timer) {
+            let killedAny = false;
+
+            // 2.1 通过进程名查杀 (强制结束)
             const timerPids = await findProcessesByImageNames(TIMER_PROCESS_NAMES);
             if (timerPids.length > 0) {
-                console.log(`[Killer] Found similar timer processes: ${timerPids.join(', ')}`);
-                let killedAny = false;
+                console.log(`[Killer] Found similar timer processes by name: ${timerPids.join(', ')}`);
                 for (const pid of timerPids) {
                     const success = await killProcessByPid(pid);
                     if (success) killedAny = true;
                 }
-                
-                if (killedAny) {
-                    console.log('[Killer] Killed similar timer, opening our timer.');
-                    const { createTimerWindow } = require('./window');
-                    createTimerWindow();
+            }
+
+            // 2.2 通过窗口标题查杀 (普通关闭)
+            if (TIMER_WINDOW_TITLES.length > 0) {
+                const timerItems = await findWindowsByTitleKeywords(TIMER_WINDOW_TITLES, true);
+                if (timerItems.length > 0) {
+                    for (const item of timerItems) {
+                        const [hwnd, pid] = item.split(':');
+                        console.log(`[Killer] Sending WM_CLOSE to timer window HWND: ${hwnd} because of exact window title match.`);
+                        const success = await closeWindowByHwnd(hwnd);
+                        if (success) killedAny = true;
+                    }
                 }
+            }
+            
+            if (killedAny) {
+                console.log('[Killer] Killed similar timer, opening our timer.');
+                const { createTimerWindow } = require('./window');
+                createTimerWindow();
             }
         }
 
@@ -93,16 +169,19 @@ async function performKill() {
 
 /**
  * 启动自动查杀
- * @param {number} intervalMs 检查间隔
+ * @param {number} intervalMs 检查间隔 (由于有了事件监听，轮询可以放慢)
  */
-function startKiller(intervalMs = 5000) {
+function startKiller(intervalMs = 2000) {
     if (process.platform !== 'win32') return;
+    
+    // 启动窗口事件监听
+    windowMonitor.start();
     
     if (checkTimeout) {
         clearTimeout(checkTimeout);
     }
     
-    console.log(`[Killer] Auto-kill service started. Interval: ${intervalMs}ms`);
+    console.log(`[Killer] Auto-kill service started. Polling interval: ${intervalMs}ms, Event monitoring enabled.`);
     
     const scheduleNext = () => {
         checkTimeout = setTimeout(async () => {
@@ -118,6 +197,7 @@ function startKiller(intervalMs = 5000) {
  * 停止自动查杀
  */
 function stopKiller() {
+    windowMonitor.stop();
     if (checkTimeout) {
         clearTimeout(checkTimeout);
         checkTimeout = null;

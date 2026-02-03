@@ -7,6 +7,8 @@ let windowHistory = [];
 let isMonitoring = false;
 let monitorInterval = null;
 let lastForegroundWindow = null;
+let lastLogTime = 0;
+const LOG_INTERVAL = 5000;
 
 const DEFAULT_BLACKLIST = [
   // 'sidebar-for-class',
@@ -44,7 +46,7 @@ function isWindowValid(windowInfo) {
   });
 }
 
-function getCurrentForegroundWindow() {
+function getCurrentForegroundWindow(silent = false) {
   return new Promise((resolve) => {
     const rawPowershellScript = `
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -95,10 +97,12 @@ if ($hwnd -ne 0) {
         return;
       }
       const windowInfo = parseWindowInfo(stdout);
-      if (windowInfo) {
-        console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
-      } else {
-        console.log('[Window History] 未获取到有效的窗口信息, 原始输出:', stdout);
+      if (!silent) {
+        if (windowInfo) {
+          console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
+        } else {
+          console.log('[Window History] 未获取到有效的窗口信息, 原始输出:', stdout);
+        }
       }
       resolve(windowInfo);
     });
@@ -157,10 +161,10 @@ try {
   });
 }
 
-async function recordCurrentForegroundWindow() {
-  const windowInfo = await getCurrentForegroundWindow();
+async function recordCurrentForegroundWindow(silent = false) {
+  const windowInfo = await getCurrentForegroundWindow(silent);
   if (windowInfo && isWindowValid(windowInfo)) {
-    console.log('[Window History] 检测到前台窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
+    if (!silent) console.log('[Window History] 检测到前台窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
     const existingIndex = windowHistory.findIndex(w => w.hwnd === windowInfo.hwnd);
     if (existingIndex !== -1) {
       windowHistory.splice(existingIndex, 1);
@@ -170,9 +174,9 @@ async function recordCurrentForegroundWindow() {
       windowHistory.pop();
     }
     lastForegroundWindow = windowInfo.hwnd;
-    console.log('[Window History] 已添加到历史记录，历史长度:', windowHistory.length);
+    if (!silent) console.log('[Window History] 已添加到历史记录，历史长度:', windowHistory.length);
   } else {
-    console.log('[Window History] 未检测到前台窗口或窗口无效');
+    if (!silent) console.log('[Window History] 未检测到前台窗口或窗口无效');
   }
 }
 
@@ -182,9 +186,16 @@ function startMonitoring(intervalMs = 500) {
   console.log('[Window History] 开始监控窗口活动');
   recordCurrentForegroundWindow();
   monitorInterval = setInterval(async () => {
-    await recordCurrentForegroundWindow();
-    if (windowHistory.length > 0) {
-      console.log('[Window History] 最近窗口:', windowHistory[0].title, '(', windowHistory[0].processName, ')');
+    const now = Date.now();
+    const silent = now - lastLogTime < LOG_INTERVAL;
+    
+    await recordCurrentForegroundWindow(silent);
+    
+    if (!silent) {
+      if (windowHistory.length > 0) {
+        console.log('[Window History] 最近窗口:', windowHistory[0].title, '(', windowHistory[0].processName, ')');
+      }
+      lastLogTime = now;
     }
   }, intervalMs);
 }
