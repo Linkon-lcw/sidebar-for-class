@@ -22,6 +22,9 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
         };
 
         if (isExpanded && isInteractive(target)) return;
+        
+        // 当未展开时，因为 useSidebarMouseIgnore 已经限制了鼠标穿透区域（包含 4px 缓冲），
+        // 只要事件能到达这里，说明已经在触发范围内了。
 
         const ds = draggingState.current;
         ds.isDragging = true;
