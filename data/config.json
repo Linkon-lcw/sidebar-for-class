@@ -84,6 +84,16 @@
                     "args": []
                 }
             ]
+        },
+        {
+            "type": "iccce_control",
+            "functions": [
+                "randone",
+                "rand",
+                "timer",
+                "whiteboard",
+                "show"
+            ]
         }
     ],
     "automatic": [
@@ -97,6 +107,7 @@
     ],
     "helper_tools": {
         "auto_kill_similar": false,
-        "auto_kill_timer": true
+        "auto_kill_timer": true,
+        "icc_compatibility": true
     }
 }

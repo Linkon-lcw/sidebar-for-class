@@ -25,6 +25,14 @@ const HelperSettings = ({ config, updateConfig, styles }) => {
                 [key]: value
             }
         });
+
+        // 如果是 ICC-CE 兼容设置，立即执行对应的 URI
+        if (key === 'icc_compatibility') {
+            const uri = value ? 'icc://thoroughHideOn' : 'icc://thoroughHideOff';
+            if (window.electronAPI && window.electronAPI.launchApp) {
+                window.electronAPI.launchApp(uri);
+            }
+        }
     };
 
     return (
@@ -53,6 +61,15 @@ const HelperSettings = ({ config, updateConfig, styles }) => {
                     />
                 </div>
                 <div className={styles.helpText}>检测并关闭希沃计时器等同类软件，并自动启动本软件计时器</div>
+
+                <div className={styles.switchRow} style={{ marginTop: '16px' }}>
+                    <Label className={styles.label}>ICC-CE兼容</Label>
+                    <Switch
+                        checked={helperTools.icc_compatibility || false}
+                        onChange={(_, data) => handleToggle('icc_compatibility', data.checked)}
+                    />
+                </div>
+                <div className={styles.helpText}>启动后隐藏ICC-CE侧边栏来避免界面上的冲突</div>
             </Card>
         </div>
     );

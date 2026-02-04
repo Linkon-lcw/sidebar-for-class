@@ -31,7 +31,7 @@ async function executeTask(item, dataDir) {
         await shell.openExternal(scriptPath);
       } catch (e) {
         // Fallback to platform specific command
-        const command = process.platform === 'win32' ? 'start' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
+        const command = process.platform === 'win32' ? 'start ""' : (process.platform === 'darwin' ? 'open' : 'xdg-open');
         exec(`${command} "${scriptPath}"`);
       }
     } else {

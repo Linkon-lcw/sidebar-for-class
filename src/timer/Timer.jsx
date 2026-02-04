@@ -5,22 +5,49 @@ const AnimatedDigit = ({ value }) => {
   const [nextValue, setNextValue] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const timeoutRef = useRef(null);
+  const animationEndTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (value !== displayValue && !isAnimating) {
+    // If the target value is already what we're aiming for, do nothing
+    const currentTarget = nextValue !== null ? nextValue : displayValue;
+    if (value === currentTarget) return;
+
+    if (isAnimating) {
+      // INTERRUPT: Finish current animation immediately
+      if (animationEndTimeoutRef.current) clearTimeout(animationEndTimeoutRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      
+      setDisplayValue(nextValue);
+      setNextValue(value);
+      setIsAnimating(false);
+
+      // Re-trigger animation in next tick
+      timeoutRef.current = setTimeout(() => {
+        setIsAnimating(true);
+        animationEndTimeoutRef.current = setTimeout(() => {
+          setDisplayValue(value);
+          setNextValue(null);
+          setIsAnimating(false);
+        }, 300);
+      }, 20);
+    } else {
+      // START NEW: Normal animation flow
       setNextValue(value);
       setIsAnimating(true);
 
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-      timeoutRef.current = setTimeout(() => {
+      if (animationEndTimeoutRef.current) clearTimeout(animationEndTimeoutRef.current);
+      animationEndTimeoutRef.current = setTimeout(() => {
         setDisplayValue(value);
         setNextValue(null);
         setIsAnimating(false);
-        timeoutRef.current = null;
-      }, 500);
+      }, 300);
     }
-  }, [value, displayValue, isAnimating]);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (animationEndTimeoutRef.current) clearTimeout(animationEndTimeoutRef.current);
+    };
+  }, [value]);
 
   return (
     <div className="digit-container">

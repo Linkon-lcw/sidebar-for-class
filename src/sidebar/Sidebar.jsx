@@ -4,6 +4,7 @@ import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
 import DragToLaunchWidget from './components/DragToLaunchWidget';
 import Toolbar from './components/Toolbar';
+import ICCCeControl from './components/ICCCeControl';
 import ScreenshotOverlay from './components/ScreenshotOverlay';
 import useSidebarRefs from './hooks/useSidebarRefs';
 import useSidebarConfig from './hooks/useSidebarConfig';
@@ -113,6 +114,14 @@ const Sidebar = () => {
                                     isExpanded={isExpanded} 
                                     collapse={collapse} 
                                     onScreenshot={handleScreenshot}
+                                />;
+                            }
+                            else if (widget.type === 'iccce_control') {
+                                return <ICCCeControl 
+                                    key={index} 
+                                    {...widget} 
+                                    isExpanded={isExpanded}
+                                    collapse={collapse}
                                 />;
                             }
                             return null;

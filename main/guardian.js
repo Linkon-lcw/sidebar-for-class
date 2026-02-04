@@ -57,6 +57,12 @@ async function runShutdownTasks() {
     const automatic = config.automatic || [];
     const tasks = [];
 
+    // ICC-CE 兼容处理: 退出时恢复
+    if (config.helper_tools?.icc_compatibility) {
+      log('ICC Compatibility enabled. Restoring ICC-CE...');
+      tasks.push(executeTask({ script: 'icc://thoroughHideOff' }, dataDir));
+    }
+
     for (const item of automatic) {
       if (item.on && Array.isArray(item.on) && item.on.includes('shutdown')) {
         log(`Executing task: ${item.name || item.script}`);

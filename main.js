@@ -77,6 +77,15 @@ app.whenReady().then(() => {
 
   // 运行启动脚本
   runStartupScripts();
+
+  // 处理 ICC-CE 兼容
+  const { getConfigSync } = require('./main/config');
+  const config = getConfigSync();
+  if (config.helper_tools?.icc_compatibility) {
+    console.log('[Main] ICC Compatibility enabled. Hiding ICC-CE...');
+    const { executeTask } = require('./main/automation');
+    executeTask({ script: 'icc://thoroughHideOn' }, getDataDir());
+  }
 });
 
 // 处理退出前的标记
