@@ -153,6 +153,28 @@ function saveEditedImage(filePath, base64Data) {
   }
 }
 
+/**
+ * 检查指定进程是否正在运行
+ * @param {string} processName 进程镜像名 (例如 "InkCanvasForClass.exe")
+ * @returns {boolean} 是否正在运行
+ */
+function isProcessRunning(processName) {
+  if (process.platform !== 'win32') return false;
+  try {
+    // 移除 .exe 后缀进行比较，因为 Get-Process 返回的 ProcessName 通常不带后缀
+    const nameWithoutExe = processName.toLowerCase().endsWith('.exe') 
+      ? processName.slice(0, -4) 
+      : processName;
+    
+    // 使用 PowerShell 检查进程，这样比解析 tasklist 文本更可靠
+    const command = `powershell -Command "if (Get-Process -Name '${nameWithoutExe}' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"`;
+    execSync(command, { stdio: 'ignore' });
+    return true; // exit 0 表示找到进程
+  } catch (e) {
+    return false; // exit 1 表示未找到
+  }
+}
+
 module.exports = {
   getIsAdmin,
   resolveWindowsEnv,
@@ -165,5 +187,6 @@ module.exports = {
   openFile,
   openFolder,
   copyImageToClipboard,
-  saveEditedImage
+  saveEditedImage,
+  isProcessRunning
 };

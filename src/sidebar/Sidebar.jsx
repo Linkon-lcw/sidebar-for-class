@@ -21,17 +21,39 @@ const Sidebar = () => {
     
     // 2. 所有的 useState 定义
     const [screenshotPath, setScreenshotPath] = useState(null);
+    const [isIccRunning, setIsIccRunning] = useState(true);
+
+    // 检查 ICC-CE 是否运行
+    useEffect(() => {
+        if (!window.electronAPI) return;
+        const checkIccProcess = async () => {
+            const running = await window.electronAPI.isProcessRunning('InkCanvasForClass.exe');
+            setIsIccRunning(running);
+        };
+        
+        checkIccProcess();
+        // 缩短轮询间隔至 3 秒
+        const interval = setInterval(checkIccProcess, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     // 4. 钩子函数调用 (获取控制状态)
     const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse, setWindowToLarge } = useSidebarAnimation(config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
     const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge, screenshotPath);
-    
+
     // 5. 其他辅助钩子
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
     useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config);
     useGlobalEvents(handleMove, handleEnd, draggingState);
 
     // 6. useEffect 逻辑
+
+    // 当侧边栏展开时，立即重新检查一次进程状态，确保组件显隐实时准确
+    useEffect(() => {
+        if (isExpanded && window.electronAPI) {
+            window.electronAPI.isProcessRunning('InkCanvasForClass.exe').then(setIsIccRunning);
+        }
+    }, [isExpanded]);
 
     // 当侧边栏收起时，自动清除截图状态
     useEffect(() => {
@@ -117,6 +139,10 @@ const Sidebar = () => {
                                 />;
                             }
                             else if (widget.type === 'iccce_control') {
+                                // 检查是否开启了“仅在运行显示”且当前未运行
+                                if (widget.show_only_when_running !== false && !isIccRunning) {
+                                    return null;
+                                }
                                 return <ICCCeControl 
                                     key={index} 
                                     {...widget} 

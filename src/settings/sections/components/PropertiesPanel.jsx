@@ -592,9 +592,9 @@ const PropertiesPanel = ({
                                             { id: 'rand', label: '随机抽' },
                                             { id: 'timer', label: '计时器' },
                                             { id: 'whiteboard', label: '白板' },
-                                            { id: 'show', label: '显示工具栏' },
+                                            { id: 'toggle', label: '切换显隐' },
                                         ];
-                                        const currentFunc = funcOptions.find(f => f.id === funcId) || { id: funcId, label: funcId };
+                                        const currentFunc = funcOptions.find(f => f.id === funcId || (f.id === 'toggle' && funcId === 'show')) || { id: funcId, label: funcId };
 
                                         return (
                                             <div
@@ -664,6 +664,21 @@ const PropertiesPanel = ({
                                             暂无功能，点击上方按钮添加
                                         </div>
                                     )}
+                                </div>
+                            </div>
+
+                            <Divider style={{ margin: '20px 0' }} />
+
+                            <div className={styles.propertyGroup}>
+                                <div className={styles.switchRow}>
+                                    <span style={{ fontSize: '14px' }}>仅在 ICC-CE 运行时显示该组件</span>
+                                    <Switch
+                                        checked={selectedWidget.show_only_when_running !== false}
+                                        onChange={(_, data) => updateWidgetProperty('show_only_when_running', data.checked)}
+                                    />
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '4px' }}>
+                                    开启后，若未检测到 InkCanvasForClass.exe 进程，此组件将自动隐藏。
                                 </div>
                             </div>
 

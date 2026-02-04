@@ -98,7 +98,19 @@ function registerIPCHandlers() {
 
   ipcMain.on('update-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
+    const oldConfig = getConfigSync();
     updateConfig(newConfig, { screen, mainWindow });
+
+    // 处理 ICC-CE 兼容性的实时切换
+    if (newConfig.helper_tools?.icc_compatibility !== oldConfig.helper_tools?.icc_compatibility) {
+      const { isProcessRunning } = require('./system');
+      if (isProcessRunning('InkCanvasForClass.exe')) {
+        const { executeTask } = require('./automation');
+        const { getDataDir } = require('./config');
+        const uri = newConfig.helper_tools.icc_compatibility ? 'icc://thoroughHideOn' : 'icc://thoroughHideOff';
+        executeTask({ script: uri }, getDataDir());
+      }
+    }
 
     // 同时更新窗口位置
     const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0, size: 100 };
@@ -120,7 +132,19 @@ function registerIPCHandlers() {
 
   ipcMain.on('preview-config', (event, newConfig) => {
     const mainWindow = getMainWindow();
+    const oldConfig = getConfigSync();
     previewConfig(newConfig, { screen, mainWindow });
+
+    // 处理 ICC-CE 兼容性的实时切换 (预览模式)
+    if (newConfig.helper_tools?.icc_compatibility !== oldConfig.helper_tools?.icc_compatibility) {
+      const { isProcessRunning } = require('./system');
+      if (isProcessRunning('InkCanvasForClass.exe')) {
+        const { executeTask } = require('./automation');
+        const { getDataDir } = require('./config');
+        const uri = newConfig.helper_tools.icc_compatibility ? 'icc://thoroughHideOn' : 'icc://thoroughHideOff';
+        executeTask({ script: uri }, getDataDir());
+      }
+    }
 
     // 同时更新窗口位置
     const transforms = newConfig.transforms || { display: 0, height: 64, posy: 0, size: 100 };
@@ -149,6 +173,11 @@ function registerIPCHandlers() {
   // ===== 系统功能 =====
 
   ipcMain.handle('get-volume', () => getVolume());
+
+  ipcMain.handle('is-process-running', (event, processName) => {
+    const { isProcessRunning } = require('./system');
+    return isProcessRunning(processName);
+  });
 
   ipcMain.on('set-volume', (e, val) => {
     setVolume(val);

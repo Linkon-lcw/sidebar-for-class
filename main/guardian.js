@@ -42,6 +42,24 @@ function isParentAlive() {
 }
 
 /**
+ * 检查指定进程是否正在运行
+ */
+function isProcessRunning(processName) {
+  if (process.platform !== 'win32') return false;
+  try {
+    const { execSync } = require('child_process');
+    const nameWithoutExe = processName.toLowerCase().endsWith('.exe') 
+      ? processName.slice(0, -4) 
+      : processName;
+    const command = `powershell -Command "if (Get-Process -Name '${nameWithoutExe}' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"`;
+    execSync(command, { stdio: 'ignore' });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * 执行退出自动化任务
  */
 async function runShutdownTasks() {
@@ -59,8 +77,12 @@ async function runShutdownTasks() {
 
     // ICC-CE 兼容处理: 退出时恢复
     if (config.helper_tools?.icc_compatibility) {
-      log('ICC Compatibility enabled. Restoring ICC-CE...');
-      tasks.push(executeTask({ script: 'icc://thoroughHideOff' }, dataDir));
+      if (isProcessRunning('InkCanvasForClass.exe')) {
+        log('ICC Compatibility enabled and ICC-CE is running. Restoring ICC-CE...');
+        tasks.push(executeTask({ script: 'icc://thoroughHideOff' }, dataDir));
+      } else {
+        log('ICC Compatibility enabled but ICC-CE is not running. Skipping restore.');
+      }
     }
 
     for (const item of automatic) {

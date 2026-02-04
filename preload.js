@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getVolume: () => ipcRenderer.invoke('get-volume'),
     setVolume: (value) => ipcRenderer.send('set-volume', value),
 
+    // 检查进程是否正在运行
+    isProcessRunning: (processName) => ipcRenderer.invoke('is-process-running', processName),
+
     // 获取文件夹下的文件
     getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount),
 

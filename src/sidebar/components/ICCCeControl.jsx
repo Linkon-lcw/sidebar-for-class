@@ -21,7 +21,8 @@ const ICCCeControl = ({ functions = [], isExpanded, collapse, isPreview = false 
             'rand': 'icc://rand',
             'timer': 'icc://timer',
             'whiteboard': 'icc://whiteboard',
-            'show': 'icc://show',
+            'show': 'icc://toggle',
+            'toggle': 'icc://toggle',
         };
 
         const uri = uriMap[func];
@@ -65,7 +66,8 @@ const ICCCeControl = ({ functions = [], isExpanded, collapse, isPreview = false 
             'rand': '随机抽',
             'timer': '计时器',
             'whiteboard': '白板',
-            'show': '显示工具栏',
+            'show': '切换显隐',
+            'toggle': '切换显隐',
         };
         return nameMap[func] || func;
     };

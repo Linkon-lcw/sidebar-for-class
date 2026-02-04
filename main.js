@@ -82,9 +82,14 @@ app.whenReady().then(() => {
   const { getConfigSync } = require('./main/config');
   const config = getConfigSync();
   if (config.helper_tools?.icc_compatibility) {
-    console.log('[Main] ICC Compatibility enabled. Hiding ICC-CE...');
-    const { executeTask } = require('./main/automation');
-    executeTask({ script: 'icc://thoroughHideOn' }, getDataDir());
+    const { isProcessRunning } = require('./main/system');
+    if (isProcessRunning('InkCanvasForClass.exe')) {
+      console.log('[Main] ICC Compatibility enabled and ICC-CE is running. Hiding ICC-CE...');
+      const { executeTask } = require('./main/automation');
+      executeTask({ script: 'icc://thoroughHideOn' }, getDataDir());
+    } else {
+      console.log('[Main] ICC Compatibility enabled but ICC-CE is not running. Skipping hide.');
+    }
   }
 });
 

@@ -93,7 +93,8 @@
                 "timer",
                 "whiteboard",
                 "show"
-            ]
+            ],
+            "show_only_when_running": true
         }
     ],
     "automatic": [

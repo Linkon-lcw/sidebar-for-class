@@ -17,19 +17,32 @@ const HelperSettings = ({ config, updateConfig, styles }) => {
     // 确保 helper_tools 对象存在
     const helperTools = config.helper_tools || {};
 
-    const handleToggle = (key, value) => {
-        updateConfig({
+    const handleToggle = async (key, value) => {
+        const newConfig = {
             ...config,
             helper_tools: {
                 ...helperTools,
                 [key]: value
             }
-        });
+        };
+
+        // 立即更新 UI 状态和发送预览
+        updateConfig(newConfig);
 
         // 如果是 ICC-CE 兼容设置，立即执行对应的 URI
         if (key === 'icc_compatibility') {
             const uri = value ? 'icc://thoroughHideOn' : 'icc://thoroughHideOff';
-            if (window.electronAPI && window.electronAPI.launchApp) {
+            if (window.electronAPI && window.electronAPI.isProcessRunning) {
+                // 异步检查进程状态，避免阻塞 Switch 状态切换
+                const isRunning = await window.electronAPI.isProcessRunning('InkCanvasForClass.exe');
+                if (isRunning) {
+                    if (window.electronAPI.launchApp) {
+                        window.electronAPI.launchApp(uri);
+                    }
+                } else {
+                    console.log('[HelperSettings] InkCanvasForClass.exe not running, skipping URI launch.');
+                }
+            } else if (window.electronAPI && window.electronAPI.launchApp) {
                 window.electronAPI.launchApp(uri);
             }
         }
