@@ -232,8 +232,8 @@ const Timer = () => {
   };
 
   const handleClose = () => {
-    if (window.electronAPI && window.electronAPI.closeFrontWindow) {
-      window.electronAPI.closeFrontWindow();
+    if (window.electronAPI && window.electronAPI.closeWindow) {
+      window.electronAPI.closeWindow();
     } else {
       window.close();
     }

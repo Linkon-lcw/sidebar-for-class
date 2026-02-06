@@ -81,6 +81,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 截图
     screenshot: () => ipcRenderer.invoke('screenshot'),
 
+    // 关闭当前窗口
+    closeWindow: () => ipcRenderer.send('close-window'),
+
     // 关闭窗口
     closeFrontWindow: () => ipcRenderer.send('close-front-window'),
     

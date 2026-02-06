@@ -201,6 +201,11 @@ function registerIPCHandlers() {
     taskView();
   });
 
+  ipcMain.on('close-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();
+  });
+
   ipcMain.on('close-front-window', () => {
     closeFrontWindow();
   });
