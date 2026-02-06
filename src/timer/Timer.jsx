@@ -68,6 +68,9 @@ const Timer = () => {
   const [timeInSeconds, setTimeInSeconds] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState('countdown');
+  const [isMiniMode, setIsMiniMode] = useState(false);
+  const timerRef = useRef(null);
+
   useEffect(() => {
     const checkOS = async () => {
       if (window.electronAPI && window.electronAPI.getOSInfo) {
