@@ -496,6 +496,7 @@ const PropertiesPanel = ({
                                             { id: 'taskview', label: '任务视图' },
                                             { id: 'close_front_window', label: '关闭窗口' },
                                             { id: 'timer', label: '计时器' },
+                                            { id: 'touch_keyboard', label: '触摸键盘' },
                                         ];
                                         const currentTool = toolOptions.find(t => t.id === toolId) || { id: toolId, label: toolId };
 

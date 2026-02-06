@@ -42,6 +42,8 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false, onScreen
             window.electronAPI.blurAndCloseFrontWindow();
         } else if (tool === 'timer' && window.electronAPI && window.electronAPI.openTimerWindow) {
             window.electronAPI.openTimerWindow();
+        } else if (tool === 'touch_keyboard' && window.electronAPI && window.electronAPI.openFile) {
+            window.electronAPI.openFile('C:\\Program Files\\Common Files\\microsoft shared\\ink\\TabTip.exe');
         } else {
             console.log(`工具按钮被点击: ${tool}`);
         }
@@ -59,6 +61,7 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false, onScreen
             'taskview': 'fa-columns',
             'close_front_window': 'fa-times',
             'timer': 'fa-stopwatch',
+            'touch_keyboard': 'fa-keyboard',
         };
         return iconMap[tool] || 'fa-tools';
     };
@@ -75,6 +78,7 @@ const Toolbar = ({ tools = [], isExpanded, collapse, isPreview = false, onScreen
             'taskview': '任务视图',
             'close_front_window': '关闭窗口',
             'timer': '计时器',
+            'touch_keyboard': '触摸键盘',
         };
         return nameMap[tool] || tool;
     };

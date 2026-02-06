@@ -4,7 +4,7 @@
         "height": 64,
         "posy": 472,
         "animation_speed": 1,
-        "size": 100,
+        "size": 130,
         "auto_hide": true,
         "panel": {
             "opacity": 0.9,
@@ -69,6 +69,12 @@
             "tools": [
                 "timer",
                 "screenshot",
+                "touch_keyboard"
+            ]
+        },
+        {
+            "type": "toolbar",
+            "tools": [
                 "show_desktop",
                 "taskview",
                 "close_front_window"
