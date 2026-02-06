@@ -19,14 +19,14 @@ const NORMAL_CLOSE_TITLES = [
 
 // 计时器软件进程镜像名列表
 const TIMER_PROCESS_NAMES = [
-    'DesktopTimer.exe'
+    'DesktopTimer.exe',
+    'HiteClock.exe'
 ];
 
 // 计时器软件窗口标题列表 (精确匹配)
 const TIMER_WINDOW_TITLES = [
     '计时器',
-    '计时',
-    'HiteClock.exe'
+    '计时'
 ];
 
 let checkTimeout = null;
