@@ -20,7 +20,8 @@ const NORMAL_CLOSE_TITLES = [
 // 计时器软件进程镜像名列表
 const TIMER_PROCESS_NAMES = [
     'DesktopTimer.exe',
-    'HiteClock.exe'
+    'HiteClock.exe', // 鸿合白板软件
+    'GCTimer.exe' // 鸿合白板
 ];
 
 // 计时器软件窗口标题列表 (精确匹配)
