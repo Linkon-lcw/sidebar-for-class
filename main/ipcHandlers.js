@@ -170,7 +170,13 @@ function registerIPCHandlers() {
     return getAllDisplays();
   });
 
-  // ===== 系统功能 =====
+  ipcMain.handle('get-os-info', () => {
+    const os = require('os');
+    return {
+      platform: process.platform,
+      release: os.release(),
+    };
+  });
 
   ipcMain.handle('get-volume', () => getVolume());
 

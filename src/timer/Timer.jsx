@@ -68,8 +68,28 @@ const Timer = () => {
   const [timeInSeconds, setTimeInSeconds] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState('countdown');
-  const [isMiniMode, setIsMiniMode] = useState(false);
-  const timerRef = useRef(null);
+  useEffect(() => {
+    const checkOS = async () => {
+      if (window.electronAPI && window.electronAPI.getOSInfo) {
+        try {
+          const info = await window.electronAPI.getOSInfo();
+          // Windows 11 build number starts from 22000
+          const isWin11 = info.platform === 'win32' && parseInt(info.release.split('.')[2]) >= 22000;
+          
+          if (!isWin11) {
+            const root = document.getElementById('root');
+            if (root) {
+              // Increase background opacity for non-Win11 systems
+              root.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+            }
+          }
+        } catch (error) {
+          console.error('Failed to get OS info:', error);
+        }
+      }
+    };
+    checkOS();
+  }, []);
 
   const toggleMiniMode = () => {
     const nextMiniMode = !isMiniMode;

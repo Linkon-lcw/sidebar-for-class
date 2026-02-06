@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 设置窗口置顶状态
     setAlwaysOnTop: (flag) => ipcRenderer.send('set-always-on-top', flag),
 
+    // 系统信息
+    getOSInfo: () => ipcRenderer.invoke('get-os-info'),
+
     // 音量控制
     getVolume: () => ipcRenderer.invoke('get-volume'),
     setVolume: (value) => ipcRenderer.send('set-volume', value),
