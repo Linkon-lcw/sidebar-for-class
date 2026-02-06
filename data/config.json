@@ -4,12 +4,12 @@
         "height": 64,
         "posy": 472,
         "animation_speed": 1,
-        "size": 140,
+        "size": 100,
         "auto_hide": true,
         "panel": {
             "opacity": 0.9,
             "height": 450,
-            "width": 380
+            "width": 300
         }
     },
     "widgets": [
@@ -75,17 +75,6 @@
             ]
         },
         {
-            "type": "launcher",
-            "layout": "vertical",
-            "targets": [
-                {
-                    "name": "切换 SecRandom 浮窗显示状态",
-                    "target": "secrandom://tray/float",
-                    "args": []
-                }
-            ]
-        },
-        {
             "type": "iccce_control",
             "functions": [
                 "randone",
@@ -99,15 +88,22 @@
     ],
     "automatic": [
         {
-            "name": "",
+            "name": "测试一下",
             "on": [
                 "startup"
             ],
-            "script": ""
+            "script": "testps.ps1"
+        },
+        {
+            "name": "114514",
+            "on": [
+                "shutdown"
+            ],
+            "script": "helloworld.bat"
         }
     ],
     "helper_tools": {
-        "auto_kill_similar": false,
+        "auto_kill_similar": true,
         "auto_kill_timer": true,
         "icc_compatibility": true
     }

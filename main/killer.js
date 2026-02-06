@@ -2,6 +2,7 @@
  * 窗口杀手模块
  * 负责定期检查并关闭特定的同类软件窗口
  */
+const { app } = require('electron');
 const { getConfigSync } = require('./config');
 const { findWindowsByTitleKeywords, closeWindowByHwnd, killProcessByPid, findProcessesByImageNames } = require('./window-history');
 const windowMonitor = require('./window-monitor');
@@ -31,6 +32,14 @@ let checkTimeout = null;
 let isPerformingKill = false;
 
 /**
+ * 获取我们应用所有进程的 PID 集合
+ */
+function getOurPids() {
+    const metrics = app.getAppMetrics();
+    return new Set(metrics.map(m => m.pid));
+}
+
+/**
  * 处理单个窗口事件
  */
 async function handleWindowEvent(event) {
@@ -40,8 +49,9 @@ async function handleWindowEvent(event) {
     // 忽略标题为空的窗口
     if (!title || title.trim() === '') return;
 
-    // 忽略我们自己的进程
-    if (pid === process.pid) return;
+    // 忽略我们自己应用的所有进程 (包括主进程和所有渲染进程)
+    const ourPids = getOurPids();
+    if (ourPids.has(pid)) return;
 
     const titleLower = title.toLowerCase();
 
@@ -154,7 +164,7 @@ async function performKill() {
             }
             
             if (killedAny) {
-                console.log('[Killer] Killed similar timer, opening our timer.');
+                console.log('[Killer] Found similar timer, opening our timer.');
                 const { createTimerWindow } = require('./window');
                 createTimerWindow();
             }

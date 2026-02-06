@@ -1,9 +1,9 @@
 const { exec } = require('child_process');
+const windowMonitor = require('./window-monitor');
 
 const WINDOW_HISTORY_MAX_LENGTH = 50;
 
 let windowHistory = [];
-
 let isMonitoring = false;
 let monitorInterval = null;
 let lastForegroundWindow = null;
@@ -11,14 +11,8 @@ let lastLogTime = 0;
 const LOG_INTERVAL = 5000;
 
 const DEFAULT_BLACKLIST = [
-  // 'sidebar-for-class',
   '侧边栏工具',
   'InkCanvasforClass',
-  // 'explorer',
-  // 'progman',
-  // 'shell_traywnd',
-  // 'taskmgr',
-  // 'start'
 ];
 
 let blacklist = [...DEFAULT_BLACKLIST];
@@ -92,18 +86,10 @@ if ($hwnd -ne 0) {
     exec(command, { encoding: 'utf8' }, (error, stdout) => {
       if (error) {
         console.error('[Window History] 获取前台窗口失败:', error);
-        console.error('[Window History] PowerShell stdout:', stdout);
         resolve(null);
         return;
       }
       const windowInfo = parseWindowInfo(stdout);
-      if (!silent) {
-        if (windowInfo) {
-          console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
-        } else {
-          console.log('[Window History] 未获取到有效的窗口信息, 原始输出:', stdout);
-        }
-      }
       resolve(windowInfo);
     });
   });
@@ -141,70 +127,64 @@ try {
         console.log('[Window History] 关闭窗口执行错误:', error.message);
       }
       const output = stdout.trim();
-      console.log('[Window History] 关闭窗口原始输出:', output);
-      
       if (output.startsWith('RESULT:')) {
-        const success = output === 'RESULT:True';
-        console.log('[Window History] 关闭窗口结果:', success);
-        resolve(success);
-      } else if (output === 'INVALID_WINDOW') {
-        console.log('[Window History] 窗口句柄无效');
-        resolve(false);
-      } else if (output.startsWith('ERROR:')) {
-        console.log('[Window History] 关闭窗口错误:', output);
-        resolve(false);
+        resolve(output === 'RESULT:True');
       } else {
-        console.log('[Window History] 关闭窗口未知状态');
         resolve(false);
       }
     });
   });
 }
 
-async function recordCurrentForegroundWindow(silent = false) {
-  const windowInfo = await getCurrentForegroundWindow(silent);
-  if (windowInfo && isWindowValid(windowInfo)) {
-    if (!silent) console.log('[Window History] 检测到前台窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
-    const existingIndex = windowHistory.findIndex(w => w.hwnd === windowInfo.hwnd);
-    if (existingIndex !== -1) {
-      windowHistory.splice(existingIndex, 1);
-    }
-    windowHistory.unshift(windowInfo);
-    if (windowHistory.length > WINDOW_HISTORY_MAX_LENGTH) {
-      windowHistory.pop();
-    }
-    lastForegroundWindow = windowInfo.hwnd;
-    if (!silent) console.log('[Window History] 已添加到历史记录，历史长度:', windowHistory.length);
-  } else {
-    if (!silent) console.log('[Window History] 未检测到前台窗口或窗口无效');
+function updateHistory(windowInfo) {
+  const existingIndex = windowHistory.findIndex(w => w.hwnd === windowInfo.hwnd);
+  if (existingIndex !== -1) {
+    windowHistory.splice(existingIndex, 1);
   }
+  windowHistory.unshift(windowInfo);
+  if (windowHistory.length > WINDOW_HISTORY_MAX_LENGTH) {
+    windowHistory.pop();
+  }
+  lastForegroundWindow = windowInfo.hwnd;
 }
 
-function startMonitoring(intervalMs = 500) {
+function startMonitoring() {
   if (isMonitoring) return;
   isMonitoring = true;
-  console.log('[Window History] 开始监控窗口活动');
-  recordCurrentForegroundWindow();
-  monitorInterval = setInterval(async () => {
-    const now = Date.now();
-    const silent = now - lastLogTime < LOG_INTERVAL;
-    
-    await recordCurrentForegroundWindow(silent);
-    
-    if (!silent) {
-      if (windowHistory.length > 0) {
-        console.log('[Window History] 最近窗口:', windowHistory[0].title, '(', windowHistory[0].processName, ')');
-      }
-      lastLogTime = now;
+  console.log('[Window History] 开始监控窗口活动 (通过事件监听)');
+
+  // 记录当前窗口作为初始值
+  getCurrentForegroundWindow(true).then(windowInfo => {
+    if (windowInfo && isWindowValid(windowInfo)) {
+      updateHistory(windowInfo);
     }
-  }, intervalMs);
+  });
+
+  // 监听窗口切换事件
+  windowMonitor.on('window-event', (event) => {
+    // 0x0003 is EVENT_SYSTEM_FOREGROUND
+    if (event.type === 0x0003) {
+      const windowInfo = {
+        hwnd: event.hwnd,
+        title: event.title,
+        processName: event.processName || 'Unknown'
+      };
+      
+      const now = Date.now();
+      const silent = now - lastLogTime < LOG_INTERVAL;
+      
+      if (isWindowValid(windowInfo)) {
+        if (!silent) {
+          console.log('[Window History] 检测到前台窗口切换:', windowInfo.title, '(', windowInfo.processName, ')');
+          lastLogTime = now;
+        }
+        updateHistory(windowInfo);
+      }
+    }
+  });
 }
 
 function stopMonitoring() {
-  if (monitorInterval) {
-    clearInterval(monitorInterval);
-    monitorInterval = null;
-  }
   isMonitoring = false;
   console.log('[Window History] 停止监控窗口活动');
 }
@@ -222,40 +202,29 @@ function clearHistory() {
 function addToBlacklist(processNames) {
   if (Array.isArray(processNames)) {
     blacklist.push(...processNames);
-    console.log('[Window History] 添加到黑名单:', processNames);
   }
 }
 
 function removeFromBlacklist(processNames) {
   if (Array.isArray(processNames)) {
     blacklist = blacklist.filter(name => !processNames.includes(name));
-    console.log('[Window History] 从黑名单移除:', processNames);
   }
 }
 
 function setBlacklist(names) {
   blacklist = [...DEFAULT_BLACKLIST, ...names];
-  console.log('[Window History] 设置黑名单:', blacklist);
 }
 
 async function closeLastActiveWindow() {
-  console.log('[Window History] 尝试关闭最近活动窗口，历史记录长度:', windowHistory.length);
-  if (windowHistory.length === 0) {
-    console.log('[Window History] 窗口历史记录为空');
-    return { success: false, message: '窗口历史记录为空' };
-  }
+  if (windowHistory.length === 0) return { success: false, message: '窗口历史记录为空' };
   const windowInfo = windowHistory[0];
-  console.log('[Window History] 检查窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
   if (isWindowValid(windowInfo)) {
-    console.log('[Window History] 尝试关闭窗口:', windowInfo.title, '句柄:', windowInfo.hwnd);
     const closed = await closeWindowByHwnd(windowInfo.hwnd);
     if (closed) {
       windowHistory = windowHistory.filter(w => w.hwnd !== windowInfo.hwnd);
-      console.log('[Window History] 成功关闭窗口:', windowInfo.title);
       return { success: true, window: windowInfo };
     }
   }
-  console.log('[Window History] 最近的窗口无效或无法关闭');
   return { success: false, message: '最近的窗口无效或无法关闭' };
 }
 
@@ -272,12 +241,6 @@ async function closeCurrentWindow() {
   return { success: false, message: '关闭窗口失败' };
 }
 
-/**
- * 根据标题关键字查找所有匹配的窗口句柄
- * @param {Array<string>} keywords 关键字列表
- * @param {boolean} exactMatch 是否精确匹配标题
- * @returns {Promise<Array<string>>} 句柄列表 (格式 HWND:PID)
- */
 function findWindowsByTitleKeywords(keywords, exactMatch = false) {
   return new Promise((resolve) => {
     const keywordsJson = JSON.stringify(keywords);
@@ -315,7 +278,6 @@ public class WindowFinder {
                         title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
 
                     if (isMatch) {
-                        Console.WriteLine("MATCH: Found window '" + title + "' (HWND: " + hWnd + ", PID: " + pid + ")");
                         results.Add(hWnd.ToString() + ":" + pid.ToString());
                         break;
                     }
@@ -339,51 +301,27 @@ if ($res) {
 `;
     const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
     exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
-      if (error) {
-        console.error('[Window History] findWindowsByTitleKeywords error:', error);
-        resolve([]);
-        return;
-      }
-      
+      if (error) { resolve([]); return; }
       const lines = stdout.trim().split(/\r?\n/);
       let foundItems = [];
-      
       lines.forEach(line => {
-        if (line.startsWith('MATCH:')) {
-          console.log('[Window History] ' + line);
-        } else if (line.startsWith('RESULT:')) {
+        if (line.startsWith('RESULT:')) {
           foundItems = line.substring(7).split(',');
         }
       });
-      
       resolve(foundItems);
     });
   });
 }
 
-/**
- * 强行结束指定 PID 的进程
- * @param {number|string} pid 进程 ID
- */
 function killProcessByPid(pid) {
   return new Promise((resolve) => {
-    exec(`taskkill /F /PID ${pid}`, (error, stdout, stderr) => {
-      if (error) {
-        console.warn(`[Window History] Failed to kill process ${pid}:`, stderr.trim());
-        resolve(false);
-      } else {
-        console.log(`[Window History] Force killed process ${pid}`);
-        resolve(true);
-      }
+    exec(`taskkill /F /PID ${pid}`, (error) => {
+      resolve(!error);
     });
   });
 }
 
-/**
- * 根据进程镜像名查找所有匹配的 PID
- * @param {Array<string>} imageNames 镜像名列表 (如 ['Timer.exe', 'EasiTimer.exe'])
- * @returns {Promise<Array<number>>} PID 列表
- */
 function findProcessesByImageNames(imageNames) {
   return new Promise((resolve) => {
     const namesJson = JSON.stringify(imageNames);
@@ -398,11 +336,7 @@ if ($procs) {
 `;
     const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
     exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
-      if (error) {
-        console.error('[Window History] findProcessesByImageNames error:', error);
-        resolve([]);
-        return;
-      }
+      if (error) { resolve([]); return; }
       const lines = stdout.trim().split(/\r?\n/);
       let foundPids = [];
       lines.forEach(line => {

@@ -40,6 +40,18 @@ try {
         [DllImport("user32.dll")]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+
+        [DllImport("psapi.dll", CharSet = CharSet.Unicode)]
+        public static extern uint GetModuleBaseName(IntPtr hProcess, IntPtr hModule, StringBuilder lpBaseName, uint nSize);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool CloseHandle(IntPtr hObject);
+
+        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        private const uint PROCESS_VM_READ = 0x0010;
+
         private const uint EVENT_OBJECT_CREATE = 0x8000;
         private const uint EVENT_OBJECT_SHOW = 0x8002;
         private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
@@ -66,9 +78,21 @@ try {
             StringBuilder sb = new StringBuilder(512);
             GetWindowText(hwnd, sb, 512);
             string title = sb.ToString();
+            
             uint pid;
             GetWindowThreadProcessId(hwnd, out pid);
-            Console.WriteLine("EVENT|" + eventType + "|" + hwnd + "|" + pid + "|" + title);
+            
+            string processName = "Unknown";
+            IntPtr hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid);
+            if (hProcess != IntPtr.Zero) {
+                StringBuilder nameBuilder = new StringBuilder(260);
+                if (GetModuleBaseName(hProcess, IntPtr.Zero, nameBuilder, (uint)nameBuilder.Capacity) > 0) {
+                    processName = nameBuilder.ToString();
+                }
+                CloseHandle(hProcess);
+            }
+            
+            Console.WriteLine("EVENT|" + eventType + "|" + hwnd + "|" + pid + "|" + processName + "|" + title);
         }
     }
 "@
@@ -107,15 +131,16 @@ try {
                 if (!trimmed) continue;
 
                 if (trimmed.startsWith('EVENT|')) {
-                    const [, type, hwnd, pid, ...titleParts] = trimmed.split('|');
+                    const [, type, hwnd, pid, processName, ...titleParts] = trimmed.split('|');
                     const title = titleParts.join('|');
                     const eventData = {
                         type: parseInt(type),
                         hwnd,
                         pid: parseInt(pid),
+                        processName,
                         title
                     };
-                    console.log(`[Window Monitor] Received event: type=${type}, title="${title}", pid=${pid}, hwnd=${hwnd}`);
+                    console.log(`[Window Monitor] Received event: type=${type}, title="${title}", pid=${pid}, processName=${processName}, hwnd=${hwnd}`);
                     this.emit('window-event', eventData);
                 } else if (trimmed === 'PS_READY') {
                     console.log('[Window Monitor] PowerShell listener is ready.');
