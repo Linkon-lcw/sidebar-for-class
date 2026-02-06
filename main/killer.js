@@ -25,7 +25,8 @@ const TIMER_PROCESS_NAMES = [
 // 计时器软件窗口标题列表 (精确匹配)
 const TIMER_WINDOW_TITLES = [
     '计时器',
-    '计时'
+    '计时',
+    'HiteClock.exe'
 ];
 
 let checkTimeout = null;
