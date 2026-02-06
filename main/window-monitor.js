@@ -49,6 +49,17 @@ try {
         [DllImport("kernel32.dll")]
         public static extern bool CloseHandle(IntPtr hObject);
 
+        [DllImport("user32.dll")]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
         private const uint PROCESS_QUERY_INFORMATION = 0x0400;
         private const uint PROCESS_VM_READ = 0x0010;
 
@@ -91,8 +102,16 @@ try {
                 }
                 CloseHandle(hProcess);
             }
+
+            RECT rect;
+            int width = 0;
+            int height = 0;
+            if (GetWindowRect(hwnd, out rect)) {
+                width = rect.Right - rect.Left;
+                height = rect.Bottom - rect.Top;
+            }
             
-            Console.WriteLine("EVENT|" + eventType + "|" + hwnd + "|" + pid + "|" + processName + "|" + title);
+            Console.WriteLine("EVENT|" + eventType + "|" + hwnd + "|" + pid + "|" + processName + "|" + width + "|" + height + "|" + title);
         }
     }
 "@
@@ -131,16 +150,18 @@ try {
                 if (!trimmed) continue;
 
                 if (trimmed.startsWith('EVENT|')) {
-                    const [, type, hwnd, pid, processName, ...titleParts] = trimmed.split('|');
+                    const [, type, hwnd, pid, processName, width, height, ...titleParts] = trimmed.split('|');
                     const title = titleParts.join('|');
                     const eventData = {
                         type: parseInt(type),
                         hwnd,
                         pid: parseInt(pid),
                         processName,
+                        width: parseInt(width),
+                        height: parseInt(height),
                         title
                     };
-                    console.log(`[Window Monitor] Received event: type=${type}, title="${title}", pid=${pid}, processName=${processName}, hwnd=${hwnd}`);
+                    console.log(`[Window Monitor] Received event: type=${type}, title="${title}", pid=${pid}, processName=${processName}, hwnd=${hwnd}, size=${width}x${height}`);
                     this.emit('window-event', eventData);
                 } else if (trimmed === 'PS_READY') {
                     console.log('[Window Monitor] PowerShell listener is ready.');

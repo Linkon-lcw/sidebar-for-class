@@ -259,6 +259,16 @@ public class WindowFinder {
     public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
 
     public static List<string> FindMatchingWindows(string[] keywords, uint ownPid, bool exact) {
         List<string> results = new List<string>();
@@ -278,7 +288,14 @@ public class WindowFinder {
                         title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
 
                     if (isMatch) {
-                        results.Add(hWnd.ToString() + ":" + pid.ToString());
+                        RECT rect;
+                        int width = 0;
+                        int height = 0;
+                        if (GetWindowRect(hWnd, out rect)) {
+                            width = rect.Right - rect.Left;
+                            height = rect.Bottom - rect.Top;
+                        }
+                        results.Add(hWnd.ToString() + ":" + pid.ToString() + ":" + width.ToString() + ":" + height.ToString());
                         break;
                     }
                 }

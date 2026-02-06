@@ -44,7 +44,7 @@ function getOurPids() {
  */
 async function handleWindowEvent(event) {
     const config = getConfigSync();
-    const { title, hwnd, pid, type } = event;
+    const { title, hwnd, pid, width, height, type } = event;
     
     // 忽略标题为空的窗口
     if (!title || title.trim() === '') return;
@@ -74,8 +74,19 @@ async function handleWindowEvent(event) {
 
     // 2. 处理计时器软件查杀
     if (config.helper_tools?.auto_kill_timer) {
-        const timerMatch = TIMER_WINDOW_TITLES.find(t => titleLower === t.toLowerCase() || titleLower.includes(t.toLowerCase()));
-        if (timerMatch) {
+        let isTimerMatch = false;
+        
+        // 2.1 普通标题匹配
+        if (TIMER_WINDOW_TITLES.find(t => titleLower === t.toLowerCase() || titleLower.includes(t.toLowerCase()))) {
+            isTimerMatch = true;
+        } 
+        // 2.2 严格特殊判断规则 (班级优化大师计时器)
+        else if (title === '班级优化大师-抓住孩子的每一课闪光点' && width === 576 && height === 395) {
+            isTimerMatch = true;
+            console.log(`[Killer] [Event] Special strict match: Class Master timer detected (${width}x${height}).`);
+        }
+
+        if (isTimerMatch) {
             console.log(`[Killer] [Event] Match found in TIMER_KILL: "${title}" (HWND: ${hwnd}). Sending WM_CLOSE and opening our timer simultaneously.`);
             
             // 1. 立即尝试关闭窗口 (不使用 taskkill，并行执行)
@@ -160,6 +171,17 @@ async function performKill() {
                         const success = await closeWindowByHwnd(hwnd);
                         if (success) killedAny = true;
                     }
+                }
+            }
+
+            // 2.3 严格特殊判断规则 (班级优化大师计时器)
+            const specialItems = await findWindowsByTitleKeywords(['班级优化大师-抓住孩子的每一课闪光点'], true);
+            for (const item of specialItems) {
+                const [hwnd, pid, width, height] = item.split(':');
+                if (parseInt(width) === 576 && parseInt(height) === 395) {
+                    console.log(`[Killer] Special match found in performKill: "班级优化大师" (HWND: ${hwnd}) with size ${width}x${height}`);
+                    const success = await closeWindowByHwnd(hwnd);
+                    if (success) killedAny = true;
                 }
             }
             
