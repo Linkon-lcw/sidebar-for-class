@@ -294,10 +294,30 @@ const Timer = () => {
     }
   };
 
+  // 计算进度条百分比
+  const calculateProgress = () => {
+    if (mode === 'countdown') {
+      if (initialTime === 0) return 0;
+      return ((initialTime - timeInSeconds) / initialTime) * 100;
+    } else {
+      // 正计时模式：以60分钟为满进度，超过则保持100%
+      const maxTime = 60 * 60; // 60分钟
+      return Math.min((timeInSeconds / maxTime) * 100, 100);
+    }
+  };
+
   return (
     <div
       className={`timer-container ${isMiniMode ? 'mini-mode-container' : ''}`}
     >
+      {isRunning && (
+        <div className="timer-progress-bar">
+          <div
+            className="timer-progress-fill"
+            style={{ width: `${calculateProgress()}%` }}
+          />
+        </div>
+      )}
       <button className="close-window-button" onClick={(e) => {
         e.stopPropagation(); // 防止触发父级的点击恢复逻辑
         handleClose();
