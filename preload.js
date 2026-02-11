@@ -26,12 +26,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 设置窗口置顶状态
     setAlwaysOnTop: (flag) => ipcRenderer.send('set-always-on-top', flag),
 
+    // 系统信息
+    getOSInfo: () => ipcRenderer.invoke('get-os-info'),
+
     // 音量控制
     getVolume: () => ipcRenderer.invoke('get-volume'),
     setVolume: (value) => ipcRenderer.send('set-volume', value),
 
+    // 检查进程是否正在运行
+    isProcessRunning: (processName) => ipcRenderer.invoke('is-process-running', processName),
+
     // 获取文件夹下的文件
     getFilesInFolder: (path, maxCount) => ipcRenderer.invoke('get-files-in-folder', path, maxCount),
+
+    // 读写文件
+    readFile: (path) => ipcRenderer.invoke('read-file', path),
+    writeFile: (path, content) => ipcRenderer.invoke('write-file', path, content),
+    deleteFile: (path) => ipcRenderer.invoke('delete-file', path),
+    renameFile: (oldPath, newPath) => ipcRenderer.invoke('rename-file', oldPath, newPath),
 
     // 执行任意命令
     executeCommand: (command) => ipcRenderer.send('execute-command', command),
@@ -69,11 +81,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 截图
     screenshot: () => ipcRenderer.invoke('screenshot'),
 
+    // 关闭当前窗口
+    closeWindow: () => ipcRenderer.send('close-window'),
+
     // 关闭窗口
     closeFrontWindow: () => ipcRenderer.send('close-front-window'),
     
     // 使侧边栏失去焦点并关闭前台窗口
     blurAndCloseFrontWindow: () => ipcRenderer.send('blur-and-close-front-window'),
+
+    // 打开文件/文件夹
+    openFile: (path) => ipcRenderer.send('open-file', path),
+    openFolder: (path) => ipcRenderer.send('open-folder', path),
+    copyImage: (path) => ipcRenderer.send('copy-image', path),
+    saveEditedImage: (path, data) => ipcRenderer.send('save-edited-image', path, data),
 
     // 窗口焦点事件
     onWindowBlur: (callback) => {

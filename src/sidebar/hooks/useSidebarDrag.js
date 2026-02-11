@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge) => {
+const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge, screenshotPath) => {
     const { BASE_START_W, VELOCITY_THRESHOLD } = constants;
 
     const activateDragVisuals = () => {
@@ -10,6 +10,9 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
     };
 
     const handleStart = (currentX, target) => {
+        // 如果正在显示截图预览遮罩，禁用侧边栏拖拽收起功能
+        if (screenshotPath) return;
+
         const isInteractive = (el) => {
             return el.tagName === 'INPUT' ||
                 el.tagName === 'BUTTON' ||
@@ -19,6 +22,9 @@ const useSidebarDrag = (isExpanded, updateSidebarStyles, expand, collapse, stopA
         };
 
         if (isExpanded && isInteractive(target)) return;
+        
+        // 当未展开时，因为 useSidebarMouseIgnore 已经限制了鼠标穿透区域（包含 4px 缓冲），
+        // 只要事件能到达这里，说明已经在触发范围内了。
 
         const ds = draggingState.current;
         ds.isDragging = true;

@@ -10,6 +10,15 @@ const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreM
                 dragLeaveTimer = null;
             }
             if (draggingState.current.isDragging || isExpanded) return;
+
+            // 检查是否在侧边栏及其 6px 缓冲区内
+            if (sidebarRef.current) {
+                const rect = sidebarRef.current.getBoundingClientRect();
+                if (e.clientX < rect.left - 6 || e.clientX > rect.right + 6 || e.clientY < rect.top || e.clientY > rect.bottom) {
+                    return;
+                }
+            }
+
             if (e.dataTransfer && e.dataTransfer.types.length > 0) {
                 window.electronAPI.setAlwaysOnTop(false);
                 expand();
@@ -18,6 +27,16 @@ const useExternalDrag = (isExpanded, expand, collapse, draggingState, setIgnoreM
 
         const onDragOver = (e) => {
             e.preventDefault();
+            
+            // 检查是否在侧边栏及其 6px 缓冲区内
+            if (!isExpanded && sidebarRef.current) {
+                const rect = sidebarRef.current.getBoundingClientRect();
+                if (e.clientX < rect.left - 6 || e.clientX > rect.right + 6 || e.clientY < rect.top || e.clientY > rect.bottom) {
+                    setIgnoreMouse(true);
+                    return;
+                }
+            }
+
             setIgnoreMouse(false);
             if (dragLeaveTimer) {
                 clearTimeout(dragLeaveTimer);

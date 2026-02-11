@@ -2,8 +2,41 @@
  * 系统功能模块
  * 提供系统级功能，如音量控制、显示桌面、任务视图等
  */
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
+const fs = require('fs');
+const { shell, nativeImage, clipboard } = require('electron');
 const { getSystemVolume, setSystemVolume } = require('../main-utils');
+
+/**
+ * 将图片文件复制到剪贴板
+ * @param {string} filePath - 图片文件路径
+ */
+function copyImageToClipboard(filePath) {
+  if (filePath) {
+    const image = nativeImage.createFromPath(filePath);
+    clipboard.writeImage(image);
+  }
+}
+
+/**
+ * 在系统中打开指定路径的文件
+ * @param {string} filePath - 文件路径
+ */
+function openFile(filePath) {
+  if (filePath) {
+    shell.openPath(filePath);
+  }
+}
+
+/**
+ * 在资源管理器中显示指定文件
+ * @param {string} filePath - 文件路径
+ */
+function openFolder(filePath) {
+  if (filePath) {
+    shell.showItemInFolder(filePath);
+  }
+}
 
 /**
  * 检查是否以管理员身份运行
@@ -104,6 +137,44 @@ function closeFrontWindow() {
   }
 }
 
+/**
+ * 保存编辑后的图片并更新剪贴板
+ * @param {string} filePath - 文件路径
+ * @param {string} base64Data - 图片的 base64 数据
+ */
+function saveEditedImage(filePath, base64Data) {
+  if (filePath && base64Data) {
+    const base64Image = base64Data.split(';base64,').pop();
+    fs.writeFileSync(filePath, base64Image, { encoding: 'base64' });
+    
+    // 同时更新剪贴板
+    const image = nativeImage.createFromPath(filePath);
+    clipboard.writeImage(image);
+  }
+}
+
+/**
+ * 检查指定进程是否正在运行
+ * @param {string} processName 进程镜像名 (例如 "InkCanvasForClass.exe")
+ * @returns {boolean} 是否正在运行
+ */
+function isProcessRunning(processName) {
+  if (process.platform !== 'win32') return false;
+  try {
+    // 移除 .exe 后缀进行比较，因为 Get-Process 返回的 ProcessName 通常不带后缀
+    const nameWithoutExe = processName.toLowerCase().endsWith('.exe') 
+      ? processName.slice(0, -4) 
+      : processName;
+    
+    // 使用 PowerShell 检查进程，这样比解析 tasklist 文本更可靠
+    const command = `powershell -Command "if (Get-Process -Name '${nameWithoutExe}' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"`;
+    execSync(command, { stdio: 'ignore' });
+    return true; // exit 0 表示找到进程
+  } catch (e) {
+    return false; // exit 1 表示未找到
+  }
+}
+
 module.exports = {
   getIsAdmin,
   resolveWindowsEnv,
@@ -112,5 +183,10 @@ module.exports = {
   executeCommand,
   showDesktop,
   taskView,
-  closeFrontWindow
+  closeFrontWindow,
+  openFile,
+  openFolder,
+  copyImageToClipboard,
+  saveEditedImage,
+  isProcessRunning
 };

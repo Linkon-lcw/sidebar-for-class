@@ -93,6 +93,8 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
             newWidget.layout = 'vertical';
         } else if (type === 'toolbar') {
             newWidget.tools = ['screenshot', 'show_desktop', 'taskview'];
+        } else if (type === 'iccce_control') {
+            newWidget.functions = ['randone', 'rand', 'timer', 'whiteboard', 'show'];
         }
 
         return newWidget;
@@ -133,7 +135,8 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
         VolumeWidgetPreview,
         FilesWidgetPreview,
         DragToLaunchWidgetPreview,
-        ToolbarWidgetPreview
+        ToolbarWidgetPreview,
+        ICCCeControlPreview
     } = useWidgetPreviews();
 
     // 获取当前选中的组件
@@ -310,6 +313,7 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
                         FilesWidgetPreview={FilesWidgetPreview}
                         DragToLaunchWidgetPreview={DragToLaunchWidgetPreview}
                         ToolbarWidgetPreview={ToolbarWidgetPreview}
+                        ICCCeControlPreview={ICCCeControlPreview}
                     />
                 </div>
 
@@ -327,6 +331,8 @@ const ComponentSettings = ({ config, updateConfig, styles, loadIcon, preloadWidg
                 {/* 右侧属性面板 */}
                 <div className={styles.rightPanel} style={{ width: `calc(${100 - leftWidth}% - 12px)`, transition: isDragging ? 'none' : 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                     <PropertiesPanel
+                        config={config}
+                        updateConfig={updateConfig}
                         styles={styles}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}

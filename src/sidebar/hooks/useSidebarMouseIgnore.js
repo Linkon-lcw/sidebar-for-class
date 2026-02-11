@@ -18,9 +18,10 @@ const useSidebarMouseIgnore = (isExpanded, sidebarRef, wrapperRef, draggingState
                     }
                 }
             } else {
-                if (wrapperRef.current) {
-                    const rect = wrapperRef.current.getBoundingClientRect();
-                    if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                if (sidebarRef.current) {
+                    const rect = sidebarRef.current.getBoundingClientRect();
+                    // 允许左右各有 6px 的额外触发区域
+                    if (e.clientX >= rect.left - 6 && e.clientX <= rect.right + 6 && e.clientY >= rect.top && e.clientY <= rect.bottom) {
                         shouldIgnore = false;
                     }
                 }

@@ -4,12 +4,12 @@
         "height": 64,
         "posy": 472,
         "animation_speed": 1,
-        "size": 140,
+        "size": 130,
         "auto_hide": true,
         "panel": {
             "opacity": 0.9,
             "height": 450,
-            "width": 380
+            "width": 300
         }
     },
     "widgets": [
@@ -67,12 +67,53 @@
         {
             "type": "toolbar",
             "tools": [
+                "timer",
                 "screenshot",
+                "touch_keyboard"
+            ]
+        },
+        {
+            "type": "toolbar",
+            "tools": [
                 "show_desktop",
                 "taskview",
-                "close_front_window",
-                "timer"
+                "close_front_window"
             ]
+        },
+        {
+            "type": "iccce_control",
+            "functions": [
+                "randone",
+                "rand",
+                "timer",
+                "whiteboard",
+                "show"
+            ],
+            "show_only_when_running": true
         }
-    ]
+    ],
+    "automatic": [
+        {
+            "name": "测试一下",
+            "on": [
+                "startup"
+            ],
+            "script": "testps.ps1"
+        },
+        {
+            "name": "114514",
+            "on": [
+                "shutdown"
+            ],
+            "script": "helloworld.bat"
+        }
+    ],
+    "helper_tools": {
+        "auto_kill_similar": true,
+        "auto_kill_timer": true,
+        "icc_compatibility": true
+    },
+    "timer": {
+        "auto_hide_seconds": 5
+    }
 }

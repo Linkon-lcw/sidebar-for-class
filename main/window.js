@@ -239,8 +239,8 @@ function createTimerWindow() {
   timerWindow = new BrowserWindow({
     width: 600,
     height: 400,
-    minWidth: 600,
-    minHeight: 400,
+    minWidth: 300,
+    minHeight: 150,
     title: '计时器',
     frame: true,
     transparent: false,
@@ -248,6 +248,9 @@ function createTimerWindow() {
     skipTaskbar: false,
     resizable: true,
     autoHideMenuBar: true,
+    transparent: true,
+    frame: false,
+    backgroundMaterial: 'acrylic',
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,

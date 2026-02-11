@@ -5,7 +5,6 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { Notification } = require('electron');
 const screenshot = require('screenshot-desktop');
 const sharp = require('sharp');
 
@@ -37,6 +36,8 @@ async function takeScreenshot() {
       throw new Error('No screenshots captured');
     }
 
+    const previews = [];
+
     // 如果只有一个显示器，直接保存
     if (images.length === 1) {
       fs.writeFileSync(filepath, images[0]);
@@ -57,17 +58,41 @@ async function takeScreenshot() {
       const stats = fs.statSync(filepath);
       console.log('Screenshot saved to:', filepath, 'Size:', stats.size, 'bytes');
 
-      // 显示 Windows 系统通知
-      showNotification('截图成功', `已保存到: ${filename}`);
+      // 1. 处理合并后的全屏预览
+      const totalPreviewBuffer = await sharp(filepath)
+        .sharpen({ sigma: 1, m1: 2, m2: 20 })
+        .webp({ quality: 90 })
+        .toBuffer();
+      
+      previews.push({
+        label: '全部显示器',
+        preview: `data:image/webp;base64,${totalPreviewBuffer.toString('base64')}`
+      });
 
-      return filepath;
+      // 2. 如果有多个显示器，处理每个显示器的预览
+      if (images.length > 1) {
+        for (let i = 0; i < images.length; i++) {
+          const displayPreviewBuffer = await sharp(images[i])
+            .sharpen({ sigma: 1, m1: 2, m2: 20 })
+            .webp({ quality: 90 })
+            .toBuffer();
+          
+          previews.push({
+            label: `显示器 ${i + 1}`,
+            preview: `data:image/webp;base64,${displayPreviewBuffer.toString('base64')}`
+          });
+        }
+      }
+
+      return {
+        path: filepath,
+        previews: previews
+      };
     } else {
       throw new Error('Screenshot file not created');
     }
   } catch (err) {
     console.error('Screenshot error:', err);
-    // 截图失败时也显示通知
-    showNotification('截图失败', err.message || '截图过程中发生错误');
     throw err;
   }
 }
@@ -124,30 +149,13 @@ async function mergeScreenshots(images, displays, bounds, totalWidth, totalHeigh
     create: {
       width: totalWidth,
       height: totalHeight,
-      channels: 3,
-      background: { r: 0, g: 0, b: 0 }
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 1 }
     }
   })
     .composite(compositeOperations)
     .png()
     .toFile(filepath);
-}
-
-/**
- * 显示系统通知
- * @param {string} title - 通知标题
- * @param {string} message - 通知内容
- */
-function showNotification(title, message) {
-  if (Notification.isSupported()) {
-    new Notification({
-      title,
-      body: message,
-      silent: false
-    }).show();
-  } else {
-    console.log(`Notification: [${title}] ${message}`);
-  }
 }
 
 module.exports = {

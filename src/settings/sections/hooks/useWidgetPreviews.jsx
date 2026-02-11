@@ -13,6 +13,7 @@ import VolumeWidget from '../../../sidebar/components/VolumeWidget';
 import FilesWidget from '../../../sidebar/components/FilesWidget';
 import DragToLaunchWidget from '../../../sidebar/components/DragToLaunchWidget';
 import Toolbar from '../../../sidebar/components/Toolbar';
+import ICCCeControl from '../../../sidebar/components/ICCCeControl';
 
 // 启动器项预览：使用实际组件并设置 isPreview 为 true
 const LauncherItemPreview = React.memo(({ name, target, widgetIndex, targetIndex }) => {
@@ -69,13 +70,24 @@ const ToolbarWidgetPreview = React.memo(({ tools = [] }) => {
     );
 });
 
+// ICC-CE 控制预览：使用实际组件并设置 isPreview 为 true
+const ICCCeControlPreview = React.memo(({ functions = [] }) => {
+    return (
+        <ICCCeControl
+            functions={functions}
+            isPreview={true}
+        />
+    );
+});
+
 const useWidgetPreviews = () => {
     return {
         LauncherItemPreview,
         VolumeWidgetPreview,
         FilesWidgetPreview,
         DragToLaunchWidgetPreview,
-        ToolbarWidgetPreview
+        ToolbarWidgetPreview,
+        ICCCeControlPreview
     };
 };
 
