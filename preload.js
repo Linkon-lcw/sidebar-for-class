@@ -84,6 +84,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 关闭当前窗口
     closeWindow: () => ipcRenderer.send('close-window'),
 
+    // 全屏控制
+    setFullScreen: (flag) => ipcRenderer.send('set-fullscreen', flag),
+    isFullScreen: () => ipcRenderer.invoke('is-fullscreen'),
+    onFullScreenChanged: (callback) => {
+        const subscription = (event, isFullScreen) => callback(isFullScreen);
+        ipcRenderer.on('fullscreen-changed', subscription);
+        return () => ipcRenderer.removeListener('fullscreen-changed', subscription);
+    },
+
     // 关闭窗口
     closeFrontWindow: () => ipcRenderer.send('close-front-window'),
     
