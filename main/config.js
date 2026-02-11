@@ -56,9 +56,12 @@ function updateConfig(newConfig, dependencies = {}) {
       : screen.getPrimaryDisplay();
     const configWithBounds = { ...newConfig, displayBounds: targetDisplay.bounds };
 
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('config-updated', configWithBounds);
-    }
+    const { BrowserWindow } = require('electron');
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) {
+        win.webContents.send('config-updated', configWithBounds);
+      }
+    });
 
     return configWithBounds;
   } catch (e) {
@@ -106,12 +109,14 @@ function previewConfig(newConfig, dependencies = {}) {
     : screen.getPrimaryDisplay();
   const configWithBounds = { ...mergedConfig, displayBounds: targetDisplay.bounds };
 
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('config-updated', configWithBounds);
-  }
-
-  return configWithBounds;
-}
+      const { BrowserWindow } = require('electron');
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (!win.isDestroyed()) {
+          win.webContents.send('config-updated', configWithBounds);
+        }
+      });
+  
+      return configWithBounds;}
 
 /**
  * 获取数据目录路径

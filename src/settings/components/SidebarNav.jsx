@@ -16,11 +16,12 @@ import {
     Bot24Regular,
     Database24Regular,
     Wrench24Regular,
+    Timer24Regular,
 } from "@fluentui/react-icons";
 
 const SidebarNav = ({ selectedTab, onTabSelect, styles }) => {
     // 标签页列表
-    const tabs = ['basic', 'window', 'style', 'components', 'automation', 'data', 'tools'];
+    const tabs = ['basic', 'window', 'style', 'components', 'automation', 'data', 'timer', 'tools'];
     // 当前选中标签页的索引，用于计算活动指示器的位置
     const selectedIndex = tabs.indexOf(selectedTab);
 
@@ -87,6 +88,14 @@ const SidebarNav = ({ selectedTab, onTabSelect, styles }) => {
                     indicator={null}
                 >
                     数据
+                </Tab>
+                <Tab
+                    value="timer"
+                    className={mergeClasses(styles.tab, selectedTab === 'timer' && styles.tabSelected)}
+                    icon={<Timer24Regular className={styles.tabIcon} />}
+                    indicator={null}
+                >
+                    计时器
                 </Tab>
                 <Tab
                     value="tools"

@@ -22,6 +22,7 @@ import StyleSettings from './sections/StyleSettings';
 import AutomationSettings from './sections/AutomationSettings';
 import DataSettings from './sections/DataSettings';
 import HelperSettings from './sections/HelperSettings';
+import TimerSettings from './sections/TimerSettings';
 
 // 导入图标缓存
 import { iconCache } from '../sidebar/components/LauncherItem';
@@ -252,6 +253,14 @@ const App = () => {
 
                     {selectedTab === 'data' && (
                         <DataSettings
+                            config={config}
+                            updateConfig={updateConfig}
+                            styles={styles}
+                        />
+                    )}
+
+                    {selectedTab === 'timer' && (
+                        <TimerSettings
                             config={config}
                             updateConfig={updateConfig}
                             styles={styles}

@@ -69,6 +69,7 @@ const Timer = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState('countdown');
   const [isMiniMode, setIsMiniMode] = useState(false);
+  const [autoHideSeconds, setAutoHideSeconds] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -92,6 +93,28 @@ const Timer = () => {
       }
     };
     checkOS();
+
+    const loadConfig = async () => {
+      if (window.electronAPI && window.electronAPI.getConfig) {
+        try {
+          const config = await window.electronAPI.getConfig();
+          if (config.timer && config.timer.auto_hide_seconds !== undefined) {
+            setAutoHideSeconds(config.timer.auto_hide_seconds);
+          }
+        } catch (error) {
+          console.error('Failed to load config:', error);
+        }
+      }
+    };
+    loadConfig();
+
+    if (window.electronAPI && window.electronAPI.onConfigUpdated) {
+      window.electronAPI.onConfigUpdated((newConfig) => {
+        if (newConfig.timer && newConfig.timer.auto_hide_seconds !== undefined) {
+          setAutoHideSeconds(newConfig.timer.auto_hide_seconds);
+        }
+      });
+    }
   }, []);
 
   const toggleMiniMode = () => {
@@ -107,6 +130,38 @@ const Timer = () => {
       window.electronAPI.resizeWindow(600, targetHeight);
     }
   };
+
+  useEffect(() => {
+    let autoHideTimeout;
+    
+    const resetTimeout = () => {
+      if (autoHideTimeout) clearTimeout(autoHideTimeout);
+      if (isRunning && !isMiniMode && autoHideSeconds > 0) {
+        autoHideTimeout = setTimeout(() => {
+          toggleMiniMode();
+        }, autoHideSeconds * 1000);
+      }
+    };
+
+    // 初始化计时
+    resetTimeout();
+
+    // 监听用户操作
+    const handleActivity = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('mousedown', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    
+    return () => {
+      if (autoHideTimeout) clearTimeout(autoHideTimeout);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('mousedown', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, [isRunning, isMiniMode, autoHideSeconds]);
 
   useEffect(() => {
     if (isRunning) {
@@ -240,14 +295,22 @@ const Timer = () => {
   };
 
   return (
-    <>
-      <button className="close-window-button" onClick={handleClose}>
+    <div
+      className={`timer-container ${isMiniMode ? 'mini-mode-container' : ''}`}
+    >
+      <button className="close-window-button" onClick={(e) => {
+        e.stopPropagation(); // 防止触发父级的点击恢复逻辑
+        handleClose();
+      }}>
         <i className="fa-solid fa-xmark"></i>
       </button>
-      {isRunning && (
+      {(isRunning || isMiniMode) && (
         <button 
           className="mini-mode-button" 
-          onClick={toggleMiniMode}
+          onClick={(e) => {
+            e.stopPropagation(); // 防止重复触发
+            toggleMiniMode();
+          }}
           title={isMiniMode ? "退出迷你模式" : "进入迷你模式"}
         >
           <i className={`fa-solid ${isMiniMode ? 'fa-expand' : 'fa-compress'}`}></i>
@@ -289,7 +352,7 @@ const Timer = () => {
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

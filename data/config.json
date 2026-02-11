@@ -112,5 +112,8 @@
         "auto_kill_similar": true,
         "auto_kill_timer": true,
         "icc_compatibility": true
+    },
+    "timer": {
+        "auto_hide_seconds": 5
     }
 }
