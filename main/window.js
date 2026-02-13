@@ -12,6 +12,8 @@ let mainWindow = null;
 let settingsWindow = null;
 let shouldAlwaysOnTop = true;
 let topInterval = null;
+let timerWindow = null;
+
 
 /**
  * 创建主窗口
@@ -121,6 +123,15 @@ function getSettingsWindow() {
 }
 
 /**
+ * 获取计时器窗口实例
+ * @returns {BrowserWindow|null} 计时器窗口实例
+ */
+function getTimerWindow() {
+  return timerWindow;
+}
+
+
+/**
  * 设置窗口是否保持置顶
  * @param {boolean} flag - 是否置顶
  */
@@ -216,6 +227,82 @@ function createSettingsWindow() {
 }
 
 /**
+ * 创建计时器窗口
+ */
+function createTimerWindow() {
+  // 如果计时器窗口已经存在，则聚焦它
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.focus();
+    return;
+  }
+
+  timerWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    minWidth: 300,
+    minHeight: 150,
+    title: '计时器',
+    frame: true,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: false,
+    resizable: true,
+    autoHideMenuBar: true,
+    transparent: true,
+    frame: false,
+    backgroundMaterial: 'acrylic',
+    webPreferences: {
+      preload: path.join(__dirname, '..', 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    }
+  });
+  timerWindow.setAlwaysOnTop(true, 'screen-saver');
+
+  // 加载计时器页面
+  if (isDev) {
+    timerWindow.loadURL('http://localhost:3000/timer.html');
+  } else {
+    timerWindow.loadFile(path.join(__dirname, '../dist/timer.html'));
+  }
+
+  // 监听全屏状态变化事件，通知渲染进程
+  timerWindow.on('enter-full-screen', () => {
+    if (timerWindow && !timerWindow.isDestroyed()) {
+      timerWindow.webContents.send('fullscreen-changed', true);
+    }
+  });
+
+  timerWindow.on('leave-full-screen', () => {
+    if (timerWindow && !timerWindow.isDestroyed()) {
+      timerWindow.webContents.send('fullscreen-changed', false);
+
+      // 如果不是程序控制的全屏操作（比如用户按 ESC），需要恢复窗口
+      if (!timerWindow._programmaticFullScreen && timerWindow._originalBounds) {
+        const originalBounds = timerWindow._originalBounds;
+        timerWindow._originalBounds = null;
+
+        // 延迟恢复窗口大小
+        setTimeout(() => {
+          if (timerWindow && !timerWindow.isDestroyed()) {
+            timerWindow.setMinimumSize(0, 0);
+            timerWindow.setMaximumSize(10000, 10000);
+            timerWindow.setBounds(originalBounds);
+            timerWindow.setMinimumSize(300, 150);
+          }
+        }, 50);
+      }
+    }
+  });
+
+  // 窗口关闭时清理引用
+  timerWindow.on('closed', () => {
+    timerWindow = null;
+  });
+}
+
+
+/**
  * 通知所有窗口显示器已更新
  * @param {Array} displays - 显示器列表
  */
@@ -226,7 +313,11 @@ function notifyDisplaysUpdated(displays) {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.webContents.send('displays-updated', displays);
   }
+  if (timerWindow && !timerWindow.isDestroyed()) {
+    timerWindow.webContents.send('displays-updated', displays);
+  }
 }
+
 
 /**
  * 使主窗口失去焦点
@@ -240,11 +331,15 @@ function blurMainWindow() {
 module.exports = {
   createWindow,
   createSettingsWindow,
+  createTimerWindow,
   getMainWindow,
   getSettingsWindow,
+  getTimerWindow,
   setAlwaysOnTopFlag,
+
   resizeMainWindow,
   setIgnoreMouseEvents,
   notifyDisplaysUpdated,
   blurMainWindow
 };
+

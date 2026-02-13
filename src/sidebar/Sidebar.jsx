@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import LauncherItem from './components/LauncherItem';
 import VolumeWidget from './components/VolumeWidget';
 import FilesWidget from './components/FilesWidget';
 import DragToLaunchWidget from './components/DragToLaunchWidget';
 import Toolbar from './components/Toolbar';
-import QuickLaunchWidget from './components/QuickLaunchWidget';
+import ICCCeControl from './components/ICCCeControl';
+import ScreenshotOverlay from './components/ScreenshotOverlay';
 import useSidebarRefs from './hooks/useSidebarRefs';
 import useSidebarConfig from './hooks/useSidebarConfig';
 import useSidebarAnimation from './hooks/useSidebarAnimation';
@@ -14,49 +15,88 @@ import useExternalDrag from './hooks/useExternalDrag';
 import useGlobalEvents from './hooks/useGlobalEvents';
 
 const Sidebar = () => {
+    // 1. 基础 Refs 和配置
     const { sidebarRef, wrapperRef, animationIdRef, draggingState, constants } = useSidebarRefs();
     const { config, scale, startH, panelWidth, panelHeight } = useSidebarConfig();
+    
+    // 2. 所有的 useState 定义
+    const [screenshotPath, setScreenshotPath] = useState(null);
+    const [isIccRunning, setIsIccRunning] = useState(true);
+
+    // 检查 ICC-CE 是否运行
+    useEffect(() => {
+        if (!window.electronAPI) return;
+        const checkIccProcess = async () => {
+            const running = await window.electronAPI.isProcessRunning('InkCanvasForClass.exe');
+            setIsIccRunning(running);
+        };
+        
+        checkIccProcess();
+        // 缩短轮询间隔至 3 秒
+        const interval = setInterval(checkIccProcess, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // 4. 钩子函数调用 (获取控制状态)
     const { isExpanded, expand, collapse, updateSidebarStyles, stopAnimation, setIgnoreMouse, setWindowToLarge } = useSidebarAnimation(config, scale, startH, panelWidth, panelHeight, sidebarRef, wrapperRef, animationIdRef, draggingState, constants);
-    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge);
+    const { handleStart, handleMove, handleEnd } = useSidebarDrag(isExpanded, updateSidebarStyles, expand, collapse, stopAnimation, setIgnoreMouse, sidebarRef, wrapperRef, animationIdRef, draggingState, constants, panelWidth, setWindowToLarge, screenshotPath);
+
+    // 5. 其他辅助钩子
     useSidebarMouseIgnore(isExpanded, sidebarRef, wrapperRef, draggingState, animationIdRef, setIgnoreMouse);
     useExternalDrag(isExpanded, expand, collapse, draggingState, setIgnoreMouse, sidebarRef, config);
     useGlobalEvents(handleMove, handleEnd, draggingState);
 
+    // 6. useEffect 逻辑
+
+    // 当侧边栏展开时，立即重新检查一次进程状态，确保组件显隐实时准确
     useEffect(() => {
-        if (!window.electronAPI) {
-            console.log('Not in Electron environment, auto-hide functionality disabled');
-            return;
+        if (isExpanded && window.electronAPI) {
+            window.electronAPI.isProcessRunning('InkCanvasForClass.exe').then(setIsIccRunning);
         }
+    }, [isExpanded]);
 
+    // 当侧边栏收起时，自动清除截图状态
+    useEffect(() => {
+        if (!isExpanded) {
+            setScreenshotPath(null);
+        }
+    }, [isExpanded]);
+
+    useEffect(() => {
+        if (!window.electronAPI) return;
         const handleWindowBlur = () => {
-            console.log('Auto-hide debug:', {
-                autoHideEnabled: config?.transforms?.auto_hide,
-                isExpanded: isExpanded,
-                event: 'window-blur'
-            });
-
             if (config?.transforms?.auto_hide && isExpanded) {
-                console.log('Collapsing sidebar due to window focus loss');
                 collapse();
             }
         };
-
-        console.log('Adding window blur listener');
         const unsubscribe = window.electronAPI.onWindowBlur(handleWindowBlur);
-
-        return () => {
-            console.log('Removing window blur listener');
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        };
+        return () => { if (unsubscribe) unsubscribe(); };
     }, [config, isExpanded, collapse]);
+
+    // 7. 事件处理函数
 
     const handleSettingsClick = (e) => {
         e.stopPropagation();
         window.electronAPI.openSettings();
     };
 
+    const handleScreenshot = async () => {
+        try {
+            if (isExpanded) {
+                collapse();
+                await new Promise(resolve => setTimeout(resolve, 400));
+            }
+            const result = await window.electronAPI.screenshot();
+            if (result) {
+                setScreenshotPath(result);
+                expand();
+            }
+        } catch (error) {
+            console.error('Screenshot failed:', error);
+        }
+    };
+
+    // 8. 渲染
     return (
         <div id="sidebar-wrapper"
             ref={wrapperRef}
@@ -79,26 +119,48 @@ const Sidebar = () => {
                                         ))}
                                     </div>
                                 );
-                            }
+                            } 
                             else if (widget.type === 'volume_slider') {
                                 return <VolumeWidget key={index} />;
-                            }
+                            } 
                             else if (widget.type === 'files') {
                                 return <FilesWidget key={index} {...widget} />;
-                            }
+                            } 
                             else if (widget.type === 'drag_to_launch') {
                                 return <DragToLaunchWidget key={index} {...widget} />;
                             }
                             else if (widget.type === 'toolbar') {
-                                return <Toolbar key={index} {...widget} isExpanded={isExpanded} collapse={collapse} />;
+                                return <Toolbar 
+                                    key={index} 
+                                    {...widget} 
+                                    isExpanded={isExpanded} 
+                                    collapse={collapse} 
+                                    onScreenshot={handleScreenshot}
+                                />;
                             }
-                            else if (widget.type === 'quick_launch') {
-                                return <QuickLaunchWidget key={index} {...widget} />;
+                            else if (widget.type === 'iccce_control') {
+                                // 检查是否开启了“仅在运行显示”且当前未运行
+                                if (widget.show_only_when_running !== false && !isIccRunning) {
+                                    return null;
+                                }
+                                return <ICCCeControl 
+                                    key={index} 
+                                    {...widget} 
+                                    isExpanded={isExpanded}
+                                    collapse={collapse}
+                                />;
                             }
                             return null;
                         })}
                     </div>
                 </div>
+
+                {screenshotPath && (
+                    <ScreenshotOverlay 
+                        screenshotPath={screenshotPath} 
+                        setScreenshotPath={setScreenshotPath} 
+                    />
+                )}
             </div>
         </div>
     );

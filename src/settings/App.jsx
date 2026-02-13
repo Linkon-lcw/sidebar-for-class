@@ -19,6 +19,10 @@ import BasicSettings from './sections/BasicSettings';
 import ComponentSettings from './sections/ComponentSettings';
 import WindowSettings from './sections/WindowSettings';
 import StyleSettings from './sections/StyleSettings';
+import AutomationSettings from './sections/AutomationSettings';
+import DataSettings from './sections/DataSettings';
+import HelperSettings from './sections/HelperSettings';
+import TimerSettings from './sections/TimerSettings';
 
 // 导入图标缓存
 import { iconCache } from '../sidebar/components/LauncherItem';
@@ -235,6 +239,38 @@ const App = () => {
                         <StyleSettings
                             config={config}
                             handleTransformChange={handleTransformChange}
+                            styles={styles}
+                        />
+                    )}
+
+                    {selectedTab === 'automation' && (
+                        <AutomationSettings
+                            config={config}
+                            updateConfig={updateConfig}
+                            styles={styles}
+                        />
+                    )}
+
+                    {selectedTab === 'data' && (
+                        <DataSettings
+                            config={config}
+                            updateConfig={updateConfig}
+                            styles={styles}
+                        />
+                    )}
+
+                    {selectedTab === 'timer' && (
+                        <TimerSettings
+                            config={config}
+                            updateConfig={updateConfig}
+                            styles={styles}
+                        />
+                    )}
+
+                    {selectedTab === 'tools' && (
+                        <HelperSettings
+                            config={config}
+                            updateConfig={updateConfig}
                             styles={styles}
                         />
                     )}

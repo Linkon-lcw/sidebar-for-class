@@ -41,6 +41,11 @@ Thumbs.db
 # vibe时生成的文档
 codebuddy/
 
+.gemini-clipboard/
+
 # electron-builder生成的文件
 release/
-data/config.json
+
+
+// log文件
+*.log

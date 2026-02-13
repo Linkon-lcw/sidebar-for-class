@@ -173,8 +173,13 @@ const useSidebarAnimation = (config, scale, startH, panelWidth, panelHeight, sid
     };
 
     useEffect(() => {
-        updateSidebarStyles(isExpanded ? 1 : 0);
-    }, [isExpanded, scale, startH, panelWidth, panelHeight, updateSidebarStyles]);
+        if (config) {
+            updateSidebarStyles(isExpanded ? 1 : 0);
+            if (!isExpanded) {
+                setWindowToSmall();
+            }
+        }
+    }, [isExpanded, scale, startH, panelWidth, panelHeight, updateSidebarStyles, config, setWindowToSmall]);
 
     return {
         isExpanded,

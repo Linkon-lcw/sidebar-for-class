@@ -52,7 +52,7 @@ const PreviewPanel = ({
     FilesWidgetPreview,
     DragToLaunchWidgetPreview,
     ToolbarWidgetPreview,
-    QuickLaunchWidgetPreview
+    ICCCeControlPreview
 }) => {
     // 组件类型名称映射
     const WIDGET_TYPE_NAMES = {
@@ -61,7 +61,7 @@ const PreviewPanel = ({
         files: '文件列表',
         drag_to_launch: '拖放速启',
         toolbar: '快捷工具栏',
-        quick_launch: '快速启动'
+        iccce_control: 'ICC-CE 控制'
     };
 
     // 包装指针抬起处理函数
@@ -131,7 +131,7 @@ const PreviewPanel = ({
                                 </div>
                             )}
                             {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
-                            {widget.type === 'quick_launch' && <QuickLaunchWidgetPreview {...widget} />}
+                            {widget.type === 'iccce_control' && <ICCCeControlPreview {...widget} />}
                         </div>
 
                         {/* 选中时显示组件信息 */}
@@ -148,7 +148,12 @@ const PreviewPanel = ({
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <div className={styles.widgetInfo}>
-                                        {widget.name || (widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : widget.type === 'toolbar' ? `${widget.tools?.length || 0} 个工具` : (WIDGET_TYPE_NAMES[widget.type] || widget.type))}
+                                        {widget.name || (
+                                            widget.type === 'launcher' ? `${widget.targets?.length || 0} 个目标` : 
+                                            widget.type === 'toolbar' ? `${widget.tools?.length || 0} 个工具` : 
+                                            widget.type === 'iccce_control' ? `${widget.functions?.length || 0} 个功能` :
+                                            (WIDGET_TYPE_NAMES[widget.type] || widget.type)
+                                        )}
                                     </div>
                                     <Button
                                         icon={<DeleteRegular />}
@@ -224,7 +229,7 @@ const PreviewPanel = ({
                                     <DragToLaunchWidgetPreview {...widget} widgetIndex={draggingIndex} />
                                 )}
                                 {widget.type === 'toolbar' && <ToolbarWidgetPreview {...widget} />}
-                                {widget.type === 'quick_launch' && <QuickLaunchWidgetPreview {...widget} />}
+                                {widget.type === 'iccce_control' && <ICCCeControlPreview {...widget} />}
                             </div>
                         );
                     })()}

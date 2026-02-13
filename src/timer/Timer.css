@@ -1,0 +1,451 @@
+/* src/timer/Timer.css */
+
+:root {
+    --bg-color-light: #ffffff;
+    --bg-color-app: #f8f9fa;
+    --text-color-dark: #2d2d2d;
+    --text-color-muted: #6c757d;
+    --button-bg: #f0f0f0;
+    --button-hover: #e2e2e2;
+    --accent-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: transparent; /* 改为透明 */
+    color: var(--text-color-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5vh;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    /* 让整个窗口可拖拽 */
+    -webkit-app-region: drag;
+    /* 窗口边框与圆角 */
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    box-sizing: border-box;
+    overflow: hidden; /* 确保内容不会超出圆角边界 */
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+.timer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* 计时进度条 */
+.timer-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.1);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background-color: var(--accent-color);
+    transition: width 1s linear;
+}
+
+.close-window-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    z-index: 210;
+    -webkit-app-region: no-drag;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.mini-mode-button {
+    position: absolute;
+    top: 15px;
+    right: 55px; /* 在关闭按钮左侧 */
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    z-index: 210;
+    -webkit-app-region: no-drag;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.fullscreen-button {
+    position: absolute;
+    top: 15px;
+    right: 95px; /* 在迷你模式按钮左侧 */
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    z-index: 210;
+    -webkit-app-region: no-drag;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+@media (hover: hover) {
+    .close-window-button:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--text-color-dark);
+    }
+
+    .mini-mode-button:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+        color: var(--accent-color);
+    }
+
+    .fullscreen-button:hover {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: var(--success-color);
+    }
+
+    .tab-button:hover {
+        color: var(--text-color-dark);
+        background-color: var(--button-bg);
+    }
+
+    .adjustment-button-top:hover,
+    .adjustment-button-bottom:hover {
+        background-color: var(--button-hover);
+        color: var(--text-color-dark);
+    }
+}
+
+.mini-mode-button:active {
+    transform: scale(0.9);
+}
+
+.fullscreen-button:active {
+    transform: scale(0.9);
+}
+
+/* 所有可交互区域都不可拖拽 */
+.timer-tabs,
+.control-buttons,
+.close-window-button,
+.mini-mode-button,
+.fullscreen-button,
+.adjustment-button-top,
+.adjustment-button-bottom,
+.tab-button {
+    -webkit-app-region: no-drag !important;
+}
+
+/* 迷你模式样式 */
+#root.mini-mode {
+    gap: 0;
+}
+
+#root.mini-mode .time-display {
+    font-size: min(22vw, 60vh);
+    margin-top: 10px;
+}
+
+/* Removed: body.timer-running #root { gap: 2vh; } */
+
+/* 禁用过渡辅助类，用于窗口调整大小时 */
+.no-transition * {
+    transition: none !important;
+}
+
+.timer-tabs {
+    position: absolute;
+    top: 8vh;
+    display: flex;
+    gap: 20px;
+    z-index: 100;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timer-tabs.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px);
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    color: var(--text-color-muted);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 20px;
+    border-radius: 20px;
+}
+
+.tab-button.active {
+    color: var(--accent-color);
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    /* 使用等宽字体以获得更好的垂直和水平平衡 */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: min(22vw, 25vh);
+    font-weight: 700;
+    color: var(--text-color-dark);
+    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    user-select: none;
+    flex: 1; /* 占据剩余空间 */
+    will-change: font-size;
+    /* time-display 内的 time-part 包含按钮，所以不在此设置 drag */
+}
+
+body.timer-running .time-display {
+    font-size: min(22vw, 75vh);
+}
+
+.digit-container {
+    height: 1.1em;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 0.6em;
+    overflow: hidden;
+}
+
+.digit-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.digit-inner.animating {
+    transform: translateY(-1.1em);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.digit-item {
+    height: 1.1em;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
+    text-align: center;
+    min-width: 100%;
+    line-height: 1;
+    position: relative;
+    pointer-events: none;
+    transform: translateY(0.02em); 
+}
+
+.time-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* Removed transition all to avoid conflict with inherited font-size transition */
+}
+
+.time-separator {
+    margin: 0 0.2vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.8em;
+    opacity: 0.8;
+    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.timer-running .time-separator {
+    font-size: 0.6em;
+}
+
+.adjustment-button-top,
+.adjustment-button-bottom {
+    background-color: var(--button-bg);
+    border: none;
+    color: var(--text-color-muted);
+    font-size: min(2.5vw, 3.5vh);
+    width: min(7vw, 9vh);
+    height: min(7vw, 9vh);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transform: scale(1);
+    margin: 1vh 0;
+    transition: opacity 0.5s, transform 0.5s, height 0.5s, width 0.5s, margin 0.5s, background-color 0.2s;
+    overflow: hidden;
+}
+
+.time-part.hide-controls .adjustment-button-top,
+.time-part.hide-controls .adjustment-button-bottom {
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+    margin: 0;
+    height: 0;
+    width: 0;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 6vmin;
+    position: absolute;
+    bottom: 5vh; /* 移到更靠下的位置 */
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.timer-running .control-buttons {
+    opacity: 1;
+}
+
+
+
+.control-buttons button {
+
+    width: min(12vw, 14vh); /* 稍微缩小尺寸以留出更多空间 */
+
+    height: min(12vw, 14vh);
+
+    font-size: min(4vw, 5vh);
+
+    border: none;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+    transition: transform 0.1s ease; /* Faster transition for press effect */
+
+}
+
+
+
+.control-buttons button.start {
+
+    background-color: var(--success-color);
+
+    color: white;
+
+}
+
+
+
+.control-buttons button.pause {
+
+    background-color: var(--warning-color);
+
+    color: white;
+
+}
+
+
+
+.control-buttons button.reset {
+
+
+
+    background-color: var(--danger-color);
+
+
+
+    color: white;
+
+
+
+}
+
+
+
+
+
+
+
+.control-buttons button:active {
+
+
+
+
+
+    transform: scale(0.92); /* 按下时缩小一点点 */
+
+}

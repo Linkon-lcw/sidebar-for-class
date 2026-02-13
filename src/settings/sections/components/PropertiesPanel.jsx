@@ -36,10 +36,13 @@ import {
     FolderRegular,
     WrenchRegular,
     LineHorizontal3Regular,
-    AppsListRegular
+    DesignIdeasRegular,
+    InfoRegular
 } from "@fluentui/react-icons";
 
 const PropertiesPanel = ({
+    config,
+    updateConfig,
     styles,
     activeTab,
     setActiveTab,
@@ -181,6 +184,68 @@ const PropertiesPanel = ({
         updateWidgetProperty('tools', newTools);
         setDraggingToolIndex(null);
         setDragOverToolIndex(null);
+    };
+
+    // --- ICCCE 控制组件处理函数 ---
+
+    // 添加功能项
+    const handleAddFunction = () => {
+        const currentFunctions = selectedWidget.functions || [];
+        updateWidgetProperty('functions', [...currentFunctions, 'randone']);
+    };
+
+    // 删除功能项
+    const handleDeleteFunction = (index) => {
+        const currentFunctions = selectedWidget.functions || [];
+        const newFunctions = currentFunctions.filter((_, i) => i !== index);
+        updateWidgetProperty('functions', newFunctions);
+    };
+
+    // 更新功能项
+    const handleUpdateFunction = (index, newValue) => {
+        const currentFunctions = selectedWidget.functions || [];
+        const newFunctions = [...currentFunctions];
+        newFunctions[index] = newValue;
+        updateWidgetProperty('functions', newFunctions);
+    };
+
+    // 功能项拖拽开始
+    const [draggingFuncIndex, setDraggingFuncIndex] = useState(null);
+    const [dragOverFuncIndex, setDragOverFuncIndex] = useState(null);
+
+    const handleFuncDragStart = (e, index) => {
+        setDraggingFuncIndex(index);
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    };
+
+    // 功能项拖拽悬停
+    const handleFuncDragOver = (e, index) => {
+        e.preventDefault();
+        if (draggingFuncIndex === null || draggingFuncIndex === index) return;
+        setDragOverFuncIndex(index);
+    };
+
+    // 功能项放置
+    const handleFuncDrop = (e, targetIndex) => {
+        e.preventDefault();
+        if (draggingFuncIndex === null || draggingFuncIndex === targetIndex) {
+            setDraggingFuncIndex(null);
+            setDragOverFuncIndex(null);
+            return;
+        }
+
+        const currentFunctions = selectedWidget.functions || [];
+        const newFunctions = [...currentFunctions];
+        const draggedFunc = newFunctions[draggingFuncIndex];
+
+        newFunctions.splice(draggingFuncIndex, 1);
+        newFunctions.splice(targetIndex, 0, draggedFunc);
+
+        updateWidgetProperty('functions', newFunctions);
+        setDraggingFuncIndex(null);
+        setDragOverFuncIndex(null);
     };
 
     // 处理库组件拖拽开始
@@ -430,6 +495,8 @@ const PropertiesPanel = ({
                                             { id: 'show_desktop', label: '显示桌面' },
                                             { id: 'taskview', label: '任务视图' },
                                             { id: 'close_front_window', label: '关闭窗口' },
+                                            { id: 'timer', label: '计时器' },
+                                            { id: 'touch_keyboard', label: '触摸键盘' },
                                         ];
                                         const currentTool = toolOptions.find(t => t.id === toolId) || { id: toolId, label: toolId };
 
@@ -505,29 +572,155 @@ const PropertiesPanel = ({
                             </div>
                         </div>
                     )}
-                    {/* 快速启动组件的属性 */}
-                    {selectedWidget.type === 'quick_launch' && (
+                    {/* ICCCE 控制组件的属性 */}
+                    {selectedWidget.type === 'iccce_control' && (
                         <div className={styles.propertySection}>
-                            <Field label="图标大小">
-                                <Slider
-                                    min={32}
-                                    max={64}
-                                    step={4}
-                                    value={selectedWidget.icon_size || 48}
-                                    onChange={(_, data) => updateWidgetProperty('icon_size', data.value)}
-                                />
-                                <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '-8px', marginBottom: '16px' }}>
-                                    当前大小: {selectedWidget.icon_size || 48}px
+                            <div className={styles.propertyGroup}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <Title2 as="h3" className={styles.sectionTitle}>显示的功能</Title2>
+                                    <Button
+                                        appearance="primary"
+                                        icon={<AddRegular />}
+                                        onClick={handleAddFunction}
+                                    >
+                                        添加功能
+                                    </Button>
                                 </div>
-                            </Field>
-                            <Field label="显示最近使用">
-                                <Switch
-                                    checked={selectedWidget.show_recent !== false}
-                                    onChange={(_, data) => updateWidgetProperty('show_recent', data.checked)}
-                                />
-                            </Field>
-                            <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '-8px', marginBottom: '16px' }}>
-                                开启后，将显示最近使用的应用
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {(selectedWidget.functions || []).map((funcId, index) => {
+                                        const funcOptions = [
+                                            { id: 'randone', label: '单次抽' },
+                                            { id: 'rand', label: '随机抽' },
+                                            { id: 'timer', label: '计时器' },
+                                            { id: 'whiteboard', label: '白板' },
+                                            { id: 'toggle', label: '切换显隐' },
+                                        ];
+                                        const currentFunc = funcOptions.find(f => f.id === funcId || (f.id === 'toggle' && funcId === 'show')) || { id: funcId, label: funcId };
+
+                                        return (
+                                            <div
+                                                key={`${index}-${funcId}`}
+                                                draggable
+                                                onDragStart={(e) => handleFuncDragStart(e, index)}
+                                                onDragOver={(e) => handleFuncDragOver(e, index)}
+                                                onDrop={(e) => handleFuncDrop(e, index)}
+                                                onDragEnd={() => {
+                                                    setDraggingFuncIndex(null);
+                                                    setDragOverFuncIndex(null);
+                                                }}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '8px',
+                                                    backgroundColor: draggingFuncIndex === index 
+                                                        ? 'var(--colorNeutralBackground3)' 
+                                                        : dragOverFuncIndex === index 
+                                                            ? 'var(--colorNeutralBackground2)' 
+                                                            : 'var(--colorNeutralBackground1)',
+                                                    border: '1px solid var(--colorNeutralStroke1)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'default',
+                                                    opacity: draggingFuncIndex === index ? 0.5 : 1,
+                                                    transition: 'all 0.1s ease'
+                                                }}
+                                            >
+                                                <div style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: 'var(--colorNeutralForeground3)' }}>
+                                                    <LineHorizontal3Regular />
+                                                </div>
+                                                
+                                                <div style={{ flex: 1 }}>
+                                                    <Dropdown
+                                                        style={{ minWidth: 'auto', width: '100%' }}
+                                                        value={currentFunc.label}
+                                                        selectedOptions={[funcId]}
+                                                        onOptionSelect={(_, data) => handleUpdateFunction(index, data.optionValue)}
+                                                    >
+                                                        {funcOptions.map(option => (
+                                                            <Option key={option.id} value={option.id}>
+                                                                {option.label}
+                                                            </Option>
+                                                        ))}
+                                                    </Dropdown>
+                                                </div>
+
+                                                <Button
+                                                    appearance="subtle"
+                                                    icon={<DeleteRegular />}
+                                                    onClick={() => handleDeleteFunction(index)}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+
+                                    {(selectedWidget.functions || []).length === 0 && (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: '12px',
+                                            color: 'var(--colorNeutralForeground3)',
+                                            fontSize: '12px',
+                                            border: '1px dashed var(--colorNeutralStroke1)',
+                                            borderRadius: '4px'
+                                        }}>
+                                            暂无功能，点击上方按钮添加
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Divider style={{ margin: '20px 0' }} />
+
+                            <div className={styles.propertyGroup}>
+                                <div className={styles.switchRow}>
+                                    <span style={{ fontSize: '14px' }}>仅在 ICC-CE 运行时显示该组件</span>
+                                    <Switch
+                                        checked={selectedWidget.show_only_when_running !== false}
+                                        onChange={(_, data) => updateWidgetProperty('show_only_when_running', data.checked)}
+                                    />
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--colorNeutralForeground3)', marginTop: '4px' }}>
+                                    开启后，若未检测到 InkCanvasForClass.exe 进程，此组件将自动隐藏。
+                                </div>
+                            </div>
+
+                            <Divider style={{ margin: '20px 0' }} />
+                            
+                            <div style={{ 
+                                backgroundColor: 'var(--colorNeutralBackground2)', 
+                                padding: '12px', 
+                                borderRadius: '8px',
+                                border: '1px solid var(--colorNeutralStroke2)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: 'var(--colorBrandForeground1)' }}>
+                                    <InfoRegular />
+                                    <span style={{ fontWeight: '600', fontSize: '13px' }}>使用建议</span>
+                                </div>
+                                <Caption1 style={{ display: 'block', marginBottom: '12px', color: 'var(--colorNeutralForeground2)' }}>
+                                    建议前往“辅助工具”设置打开“ICC-CE 兼容”模式，以获得最佳的交互体验。
+                                </Caption1>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: '500' }}>ICC-CE 兼容模式</span>
+                                    <Switch
+                                        checked={config?.helper_tools?.icc_compatibility || false}
+                                        onChange={(_, data) => {
+                                            updateConfig({
+                                                ...config,
+                                                helper_tools: {
+                                                    ...config.helper_tools,
+                                                    icc_compatibility: data.checked
+                                                }
+                                            });
+                                            // 实时生效逻辑
+                                            const uri = data.checked ? 'icc://thoroughHideOn' : 'icc://thoroughHideOff';
+                                            if (window.electronAPI && window.electronAPI.launchApp) {
+                                                window.electronAPI.launchApp(uri);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--colorNeutralForeground3)', marginTop: '4px' }}>
+                                    开启后，本软件启动时将自动隐藏 ICC-CE 侧边栏，以避免界面上的交互冲突。
+                                </div>
                             </div>
                         </div>
                     )}
@@ -629,21 +822,21 @@ const PropertiesPanel = ({
                             </div>
                         </div>
 
-                        {/* 快速启动组件 */}
+                        {/* ICCCE 控制组件 */}
                         <div
                             className={styles.libraryItem}
-                            onClick={() => onAddComponent('quick_launch')}
+                            onClick={() => onAddComponent('iccce_control')}
                             draggable
-                            onDragStart={(e) => handleLibraryDragStart(e, 'quick_launch')}
+                            onDragStart={(e) => handleLibraryDragStart(e, 'iccce_control')}
                             onDragEnd={onDragEnd}
                             style={{ cursor: 'grab' }}
                         >
                             <div className={styles.libraryItemIcon}>
-                                <AppsListRegular />
+                                <DesignIdeasRegular />
                             </div>
                             <div className={styles.libraryItemContent}>
-                                <span className={styles.libraryItemTitle}>快速启动</span>
-                                <span className={styles.libraryItemDesc}>从开始菜单快速启动应用</span>
+                                <span className={styles.libraryItemTitle}>ICC-CE 控制</span>
+                                <span className={styles.libraryItemDesc}>集成 ICC-CE 随机抽选、白板等功能</span>
                             </div>
                         </div>
                     </div>

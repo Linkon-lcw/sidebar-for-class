@@ -6,6 +6,33 @@ const { spawn } = require('child_process');
 const { shell } = require('electron');
 const path = require('path');
 const { getExePathFromProtocol } = require('../main-utils');
+const { getDataDir } = require('./config');
+
+/**
+ * 封装 spawn 调用以捕获日志
+ */
+function spawnWithLogging(cmd, args, label) {
+  const child = spawn(cmd, args, { 
+    detached: true, 
+    stdio: ['ignore', 'pipe', 'pipe'], 
+    shell: true, 
+    windowsHide: true 
+  });
+
+  child.stdout.on('data', (data) => {
+    console.log(`[Launcher][${label}][stdout]: ${data.toString().trim()}`);
+  });
+
+  child.stderr.on('data', (data) => {
+    console.error(`[Launcher][${label}][stderr]: ${data.toString().trim()}`);
+  });
+
+  child.on('error', (err) => {
+    console.error(`[Launcher][${label}] Error:`, err);
+  });
+
+  child.unref();
+}
 
 /**
  * 启动应用或URL
@@ -23,16 +50,33 @@ async function launchApp(target, args = []) {
     return;
   }
 
+  // 处理相对路径
+  let resolvedTarget = target;
+  if (!path.isAbsolute(target)) {
+    resolvedTarget = path.join(getDataDir(), target);
+  }
+
+  const label = path.basename(resolvedTarget);
+
+  // 针对脚本进行特殊处理
+  if (resolvedTarget.toLowerCase().endsWith('.ps1')) {
+    spawnWithLogging('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-File', resolvedTarget, ...args], label);
+    return;
+  } else if (resolvedTarget.toLowerCase().endsWith('.js')) {
+    spawnWithLogging('node.exe', [resolvedTarget, ...args], label);
+    return;
+  }
+
   // 如果没有参数，优先尝试用默认关联程序打开
   if (!args || args.length === 0) {
-    const error = await shell.openPath(target);
+    const error = await shell.openPath(resolvedTarget);
     if (error) {
       console.error('shell.openPath 失败, 尝试 spawn:', error);
       // 如果 openPath 失败，回退到 spawn 尝试
-      spawn(target, [], { detached: true, stdio: 'ignore' }).unref();
+      spawnWithLogging(resolvedTarget, [], label);
     }
   } else {
-    spawn(target, args, { detached: true, stdio: 'ignore' }).unref();
+    spawnWithLogging(resolvedTarget, args, label);
   }
 }
 

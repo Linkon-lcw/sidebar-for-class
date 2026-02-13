@@ -1,43 +1,21 @@
-const koffi = require('koffi');
-const path = require('path');
+const { exec } = require('child_process');
+const windowMonitor = require('./window-monitor');
 
 const WINDOW_HISTORY_MAX_LENGTH = 50;
-const WM_CLOSE = 0x0010;
-const PROCESS_QUERY_INFORMATION = 0x0400;
-const PROCESS_VM_READ = 0x0010;
-const MAX_PATH = 260;
 
 let windowHistory = [];
-
 let isMonitoring = false;
 let monitorInterval = null;
 let lastForegroundWindow = null;
+let lastLogTime = 0;
+const LOG_INTERVAL = 5000;
 
 const DEFAULT_BLACKLIST = [
-  // 'sidebar-for-class',
   '侧边栏工具',
   'InkCanvasforClass',
-  // 'explorer',
-  // 'progman',
-  // 'shell_traywnd',
-  // 'taskmgr',
-  // 'start'
 ];
 
 let blacklist = [...DEFAULT_BLACKLIST];
-
-const user32 = koffi.load('user32.dll');
-const psapi = koffi.load('psapi.dll');
-const kernel32 = koffi.load('kernel32.dll');
-
-const GetForegroundWindow = user32.func('GetForegroundWindow', 'uint64', []);
-const GetWindowTextLengthW = user32.func('GetWindowTextLengthW', 'int32', ['uint64']);
-const GetWindowTextW = user32.func('GetWindowTextW', 'int32', ['uint64', 'char*', 'int32']);
-const GetWindowThreadProcessId = user32.func('GetWindowThreadProcessId', 'uint32', ['uint64', 'uint32*']);
-const PostMessageW = user32.func('PostMessageW', 'int32', ['uint64', 'uint32', 'uint64', 'int64']);
-const OpenProcess = kernel32.func('OpenProcess', 'void*', ['uint32', 'uint32', 'uint32']);
-const CloseHandle = kernel32.func('CloseHandle', 'int32', ['void*']);
-const GetModuleFileNameExW = psapi.func('GetModuleFileNameExW', 'uint32', ['void*', 'void*', 'char*', 'uint32']);
 
 function parseWindowInfo(output) {
   if (!output || typeof output !== 'string') return null;
@@ -62,142 +40,151 @@ function isWindowValid(windowInfo) {
   });
 }
 
-function getProcessName(pid) {
+function getCurrentForegroundWindow(silent = false) {
   return new Promise((resolve) => {
-    if (!pid || pid <= 0) {
-      resolve('');
-      return;
-    }
-    try {
-      const processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
-      if (!processHandle) {
-        resolve('');
-        return;
-      }
-      
-      const buffer = Buffer.alloc(MAX_PATH * 2);
-      const length = GetModuleFileNameExW(processHandle, 0, buffer, MAX_PATH);
-      
-      CloseHandle(processHandle);
-      
-      if (length > 0) {
-        const exePath = buffer.toString('ucs2', 0, length * 2).replace(/\0/g, '');
-        const processName = path.basename(exePath, '.exe').toLowerCase();
-        resolve(processName);
-      } else {
-        resolve('');
-      }
-    } catch (error) {
-      console.error('[Window History] 获取进程名失败:', error);
-      resolve('');
-    }
-  });
+    const rawPowershellScript = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$code = @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public class UserWindows {
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+    [DllImport("user32.dll")]
+    public static extern int GetWindowTextLength(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 }
+'@
+Add-Type -TypeDefinition $code -Language CSharp
 
-function getCurrentForegroundWindow() {
-  return new Promise((resolve) => {
+$hwnd = [UserWindows]::GetForegroundWindow()
+if ($hwnd -ne 0) {
+    $len = [UserWindows]::GetWindowTextLength($hwnd)
+    $sb = New-Object System.Text.StringBuilder ($len + 1)
+    [UserWindows]::GetWindowText($hwnd, $sb, $sb.Capacity) | Out-Null
+    $title = $sb.ToString()
+    
+    $pidOut = 0
+    [UserWindows]::GetWindowThreadProcessId($hwnd, [ref]$pidOut) | Out-Null
+    
+    $procName = ""
     try {
-      const hwnd = GetForegroundWindow();
-      if (hwnd === 0) {
-        console.log('[Window History] 未找到前台窗口');
+        $p = Get-Process -Id $pidOut -ErrorAction SilentlyContinue
+        if ($p) { $procName = $p.ProcessName }
+    } catch {}
+    
+    Write-Host "$hwnd|$title|$procName"
+}
+`;
+
+    const encodedCommand = Buffer.from(rawPowershellScript, 'utf16le').toString('base64');
+    const command = `powershell -EncodedCommand ${encodedCommand}`;
+    exec(command, { encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        console.error('[Window History] 获取前台窗口失败:', error);
         resolve(null);
         return;
       }
-
-      const length = GetWindowTextLengthW(hwnd);
-      
-      let title = '';
-      if (length > 0) {
-        const buffer = Buffer.alloc((length + 1) * 2);
-        GetWindowTextW(hwnd, buffer, length + 1);
-        title = buffer.toString('ucs2', 0, length * 2).replace(/\0/g, '');
-      }
-
-      const pidPtr = Buffer.alloc(4);
-      GetWindowThreadProcessId(hwnd, pidPtr);
-      const processId = pidPtr.readUInt32LE(0);
-
-      getProcessName(processId).then(processName => {
-        const windowInfo = {
-          hwnd: hwnd.toString(),
-          title: title || '',
-          processName: processName || ''
-        };
-
-        if (windowInfo.title || windowInfo.processName) {
-          console.log('[Window History] 前台窗口:', windowInfo.title, '(', windowInfo.processName, ')');
-          resolve(windowInfo);
-        } else {
-          console.log('[Window History] 未获取到有效的窗口信息');
-          resolve(null);
-        }
-      });
-    } catch (error) {
-      console.error('[Window History] 获取前台窗口失败:', error);
-      resolve(null);
-    }
+      const windowInfo = parseWindowInfo(stdout);
+      resolve(windowInfo);
+    });
   });
 }
 
 function closeWindowByHwnd(hwnd) {
   return new Promise((resolve) => {
-    try {
-      const hwndValue = parseInt(hwnd);
-      if (!hwndValue || hwndValue <= 0) {
-        console.log('[Window History] 窗口句柄无效');
-        resolve(false);
-        return;
+    const script = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WindowUtils {
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool IsWindow(IntPtr hWnd);
+    public const uint WM_CLOSE = 0x0010;
+}
+"@
+try {
+    $hWnd = [IntPtr]::new(${hwnd})
+    if ([WindowUtils]::IsWindow($hWnd)) {
+        $result = [WindowUtils]::PostMessage($hWnd, [WindowUtils]::WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
+        Write-Host "RESULT:$result"
+    } else {
+        Write-Host "INVALID_WINDOW"
+    }
+} catch {
+    Write-Host "ERROR:$($_.Exception.Message)"
+}
+`;
+    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
+    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        console.log('[Window History] 关闭窗口执行错误:', error.message);
       }
+      const output = stdout.trim();
+      if (output.startsWith('RESULT:')) {
+        resolve(output === 'RESULT:True');
+      } else {
+        resolve(false);
+      }
+    });
+  });
+}
 
-      const result = PostMessageW(hwndValue, WM_CLOSE, 0, 0);
-      const success = result !== 0;
+function updateHistory(windowInfo) {
+  const existingIndex = windowHistory.findIndex(w => w.hwnd === windowInfo.hwnd);
+  if (existingIndex !== -1) {
+    windowHistory.splice(existingIndex, 1);
+  }
+  windowHistory.unshift(windowInfo);
+  if (windowHistory.length > WINDOW_HISTORY_MAX_LENGTH) {
+    windowHistory.pop();
+  }
+  lastForegroundWindow = windowInfo.hwnd;
+}
+
+function startMonitoring() {
+  if (isMonitoring) return;
+  isMonitoring = true;
+  console.log('[Window History] 开始监控窗口活动 (通过事件监听)');
+
+  // 记录当前窗口作为初始值
+  getCurrentForegroundWindow(true).then(windowInfo => {
+    if (windowInfo && isWindowValid(windowInfo)) {
+      updateHistory(windowInfo);
+    }
+  });
+
+  // 监听窗口切换事件
+  windowMonitor.on('window-event', (event) => {
+    // 0x0003 is EVENT_SYSTEM_FOREGROUND
+    if (event.type === 0x0003) {
+      const windowInfo = {
+        hwnd: event.hwnd,
+        title: event.title,
+        processName: event.processName || 'Unknown'
+      };
       
-      console.log('[Window History] 关闭窗口结果:', success);
-      resolve(success);
-    } catch (error) {
-      console.log('[Window History] 关闭窗口执行错误:', error.message);
-      resolve(false);
+      const now = Date.now();
+      const silent = now - lastLogTime < LOG_INTERVAL;
+      
+      if (isWindowValid(windowInfo)) {
+        if (!silent) {
+          console.log('[Window History] 检测到前台窗口切换:', windowInfo.title, '(', windowInfo.processName, ')');
+          lastLogTime = now;
+        }
+        updateHistory(windowInfo);
+      }
     }
   });
 }
 
-async function recordCurrentForegroundWindow() {
-  const windowInfo = await getCurrentForegroundWindow();
-  if (windowInfo && isWindowValid(windowInfo)) {
-    console.log('[Window History] 检测到前台窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
-    const existingIndex = windowHistory.findIndex(w => w.hwnd === windowInfo.hwnd);
-    if (existingIndex !== -1) {
-      windowHistory.splice(existingIndex, 1);
-    }
-    windowHistory.unshift(windowInfo);
-    if (windowHistory.length > WINDOW_HISTORY_MAX_LENGTH) {
-      windowHistory.pop();
-    }
-    lastForegroundWindow = windowInfo.hwnd;
-    console.log('[Window History] 已添加到历史记录，历史长度:', windowHistory.length);
-  } else {
-    console.log('[Window History] 未检测到前台窗口或窗口无效');
-  }
-}
-
-function startMonitoring(intervalMs = 500) {
-  if (isMonitoring) return;
-  isMonitoring = true;
-  console.log('[Window History] 开始监控窗口活动');
-  recordCurrentForegroundWindow();
-  monitorInterval = setInterval(async () => {
-    await recordCurrentForegroundWindow();
-    if (windowHistory.length > 0) {
-      console.log('[Window History] 最近窗口:', windowHistory[0].title, '(', windowHistory[0].processName, ')');
-    }
-  }, intervalMs);
-}
-
 function stopMonitoring() {
-  if (monitorInterval) {
-    clearInterval(monitorInterval);
-    monitorInterval = null;
-  }
   isMonitoring = false;
   console.log('[Window History] 停止监控窗口活动');
 }
@@ -215,40 +202,29 @@ function clearHistory() {
 function addToBlacklist(processNames) {
   if (Array.isArray(processNames)) {
     blacklist.push(...processNames);
-    console.log('[Window History] 添加到黑名单:', processNames);
   }
 }
 
 function removeFromBlacklist(processNames) {
   if (Array.isArray(processNames)) {
     blacklist = blacklist.filter(name => !processNames.includes(name));
-    console.log('[Window History] 从黑名单移除:', processNames);
   }
 }
 
 function setBlacklist(names) {
   blacklist = [...DEFAULT_BLACKLIST, ...names];
-  console.log('[Window History] 设置黑名单:', blacklist);
 }
 
 async function closeLastActiveWindow() {
-  console.log('[Window History] 尝试关闭最近活动窗口，历史记录长度:', windowHistory.length);
-  if (windowHistory.length === 0) {
-    console.log('[Window History] 窗口历史记录为空');
-    return { success: false, message: '窗口历史记录为空' };
-  }
+  if (windowHistory.length === 0) return { success: false, message: '窗口历史记录为空' };
   const windowInfo = windowHistory[0];
-  console.log('[Window History] 检查窗口:', windowInfo.title, '(', windowInfo.processName, ')', '有效:', isWindowValid(windowInfo));
   if (isWindowValid(windowInfo)) {
-    console.log('[Window History] 尝试关闭窗口:', windowInfo.title, '句柄:', windowInfo.hwnd);
     const closed = await closeWindowByHwnd(windowInfo.hwnd);
     if (closed) {
       windowHistory = windowHistory.filter(w => w.hwnd !== windowInfo.hwnd);
-      console.log('[Window History] 成功关闭窗口:', windowInfo.title);
       return { success: true, window: windowInfo };
     }
   }
-  console.log('[Window History] 最近的窗口无效或无法关闭');
   return { success: false, message: '最近的窗口无效或无法关闭' };
 }
 
@@ -265,6 +241,131 @@ async function closeCurrentWindow() {
   return { success: false, message: '关闭窗口失败' };
 }
 
+function findWindowsByTitleKeywords(keywords, exactMatch = false) {
+  return new Promise((resolve) => {
+    const keywordsJson = JSON.stringify(keywords);
+    const script = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$code = @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+public class WindowFinder {
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    public static List<string> FindMatchingWindows(string[] keywords, uint ownPid, bool exact) {
+        List<string> results = new List<string>();
+        EnumWindows((hWnd, lParam) => {
+            uint pid;
+            GetWindowThreadProcessId(hWnd, out pid);
+            if (pid == ownPid) return true;
+
+            StringBuilder sb = new StringBuilder(256);
+            GetWindowText(hWnd, sb, 256);
+            string title = sb.ToString();
+
+            if (!string.IsNullOrEmpty(title)) {
+                foreach (string keyword in keywords) {
+                    bool isMatch = exact ? 
+                        string.Equals(title, keyword, StringComparison.OrdinalIgnoreCase) :
+                        title.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (isMatch) {
+                        RECT rect;
+                        int width = 0;
+                        int height = 0;
+                        if (GetWindowRect(hWnd, out rect)) {
+                            width = rect.Right - rect.Left;
+                            height = rect.Bottom - rect.Top;
+                        }
+                        results.Add(hWnd.ToString() + ":" + pid.ToString() + ":" + width.ToString() + ":" + height.ToString());
+                        break;
+                    }
+                }
+            }
+            return true;
+        }, IntPtr.Zero);
+        return results;
+    }
+}
+'@
+Add-Type -TypeDefinition $code -Language CSharp
+$keywords = '${keywordsJson}' | ConvertFrom-Json
+$ownPid = ${process.pid}
+$exact = ${exactMatch ? '$true' : '$false'}
+$res = [WindowFinder]::FindMatchingWindows($keywords, $ownPid, $exact)
+if ($res) { 
+    $joined = $res -join ","
+    Write-Host "RESULT:$joined"
+}
+`;
+    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
+    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
+      if (error) { resolve([]); return; }
+      const lines = stdout.trim().split(/\r?\n/);
+      let foundItems = [];
+      lines.forEach(line => {
+        if (line.startsWith('RESULT:')) {
+          foundItems = line.substring(7).split(',');
+        }
+      });
+      resolve(foundItems);
+    });
+  });
+}
+
+function killProcessByPid(pid) {
+  return new Promise((resolve) => {
+    exec(`taskkill /F /PID ${pid}`, (error) => {
+      resolve(!error);
+    });
+  });
+}
+
+function findProcessesByImageNames(imageNames) {
+  return new Promise((resolve) => {
+    const namesJson = JSON.stringify(imageNames);
+    const script = `
+$names = '${namesJson}' | ConvertFrom-Json
+$procs = Get-Process | Where-Object { $names -contains $_.ProcessName -or $names -contains ($_.ProcessName + ".exe") }
+if ($procs) {
+    $pids = $procs | Select-Object -ExpandProperty Id
+    $joined = $pids -join ","
+    Write-Host "RESULT:$joined"
+}
+`;
+    const encodedCommand = Buffer.from(script, 'utf16le').toString('base64');
+    exec(`powershell -EncodedCommand ${encodedCommand}`, { encoding: 'utf8' }, (error, stdout) => {
+      if (error) { resolve([]); return; }
+      const lines = stdout.trim().split(/\r?\n/);
+      let foundPids = [];
+      lines.forEach(line => {
+        if (line.startsWith('RESULT:')) {
+          foundPids = line.substring(7).split(',').map(pid => parseInt(pid.trim()));
+        }
+      });
+      resolve(foundPids);
+    });
+  });
+}
+
 module.exports = {
   startMonitoring,
   stopMonitoring,
@@ -276,5 +377,9 @@ module.exports = {
   closeLastActiveWindow,
   closeCurrentWindow,
   getCurrentForegroundWindow,
+  closeWindowByHwnd,
+  findWindowsByTitleKeywords,
+  findProcessesByImageNames,
+  killProcessByPid,
   isMonitoring: () => isMonitoring
 };
