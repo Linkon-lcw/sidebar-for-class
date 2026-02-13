@@ -18,6 +18,7 @@
 @import "./css/widgets/volume.css";
 @import "./css/widgets/drag.css";
 @import "./css/widgets/toolbar.css";
+@import "./css/widgets/quicklaunch.css";
 
 /* 6. 动画定义 */
 @import "./css/animations.css";

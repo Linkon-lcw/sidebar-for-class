@@ -69,8 +69,15 @@ const Timer = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState('countdown');
   const [isMiniMode, setIsMiniMode] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [autoHideSeconds, setAutoHideSeconds] = useState(0);
   const timerRef = useRef(null);
+  const isFullScreenRef = useRef(isFullScreen);
+
+  // 保持 ref 始终是最新值，避免闭包问题
+  useEffect(() => {
+    isFullScreenRef.current = isFullScreen;
+  }, [isFullScreen]);
 
   useEffect(() => {
     const checkOS = async () => {
@@ -120,23 +127,79 @@ const Timer = () => {
   const toggleMiniMode = () => {
     const nextMiniMode = !isMiniMode;
     setIsMiniMode(nextMiniMode);
-    
+
     if (window.electronAPI && window.electronAPI.resizeWindow) {
       // 获取当前窗口高度，计算新的 Y 坐标以保持视觉平衡
       const targetHeight = nextMiniMode ? 200 : 400;
-      
+
       // 简单地让窗口在高度变化时，Y 坐标偏移一半的差值，
       // 这样窗口看起来是往中心缩小的，而不是往下长或者往上缩
       window.electronAPI.resizeWindow(600, targetHeight);
     }
   };
 
+  const toggleFullScreen = async () => {
+    const nextFullScreen = !isFullScreenRef.current;
+    if (window.electronAPI && window.electronAPI.setFullScreen) {
+      await window.electronAPI.setFullScreen(nextFullScreen);
+    }
+    // 状态更新由 onFullScreenChanged 事件处理，不要在这里手动设置
+  };
+
+  const exitFullScreen = async () => {
+    if (window.electronAPI && window.electronAPI.setFullScreen) {
+      await window.electronAPI.setFullScreen(false);
+    }
+    // 状态更新由 onFullScreenChanged 事件处理
+  };
+
+  // 监听全屏状态变化（当用户按 ESC 退出全屏时同步状态）
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onFullScreenChanged) {
+      const unsubscribe = window.electronAPI.onFullScreenChanged((isFullScreenState) => {
+        setIsFullScreen(isFullScreenState);
+      });
+      return unsubscribe;
+    }
+  }, []);
+
+  // 窗口调整大小时禁用过渡动画，避免视觉上的“追赶”效果
+  useEffect(() => {
+    let resizeTimer;
+    const handleResize = () => {
+      const root = document.getElementById('root');
+      if (root) {
+        root.classList.add('no-transition');
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          root.classList.remove('no-transition');
+        }, 100);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
+  }, []);
+
+  // 手动监听 ESC 键，确保在任何情况下都能退出全屏
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullScreenRef.current) {
+        exitFullScreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     let autoHideTimeout;
-    
+
     const resetTimeout = () => {
       if (autoHideTimeout) clearTimeout(autoHideTimeout);
-      if (isRunning && !isMiniMode && autoHideSeconds > 0) {
+      if (isRunning && !isMiniMode && !isFullScreen && autoHideSeconds > 0) {
         autoHideTimeout = setTimeout(() => {
           toggleMiniMode();
         }, autoHideSeconds * 1000);
@@ -161,7 +224,7 @@ const Timer = () => {
       window.removeEventListener('mousedown', handleActivity);
       window.removeEventListener('keydown', handleActivity);
     };
-  }, [isRunning, isMiniMode, autoHideSeconds]);
+  }, [isRunning, isMiniMode, isFullScreen, autoHideSeconds]);
 
   useEffect(() => {
     if (isRunning) {
@@ -171,6 +234,8 @@ const Timer = () => {
         if (isMiniMode) {
           toggleMiniMode();
         }
+        // 倒计时结束，如果处于全屏模式则自动退出全屏
+        exitFullScreen();
         return;
       }
 
@@ -186,7 +251,7 @@ const Timer = () => {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isRunning, mode, timeInSeconds, isMiniMode]);
+  }, [isRunning, mode, timeInSeconds, isMiniMode, isFullScreen]);
 
   useEffect(() => {
     if (isRunning) {
@@ -224,13 +289,20 @@ const Timer = () => {
   };
 
   const handleStartPause = () => {
-    setIsRunning((prevIsRunning) => !prevIsRunning);
+    const nextIsRunning = !isRunning;
+    setIsRunning(nextIsRunning);
+    // 暂停时退出全屏
+    if (!nextIsRunning) {
+      exitFullScreen();
+    }
   };
 
   const handleReset = () => {
     clearInterval(timerRef.current);
     setIsRunning(false);
     setTimeInSeconds(mode === 'countdown' ? initialTime : 0);
+    // 重置时退出全屏
+    exitFullScreen();
   };
 
   const handleModeChange = (newMode) => {
@@ -294,26 +366,58 @@ const Timer = () => {
     }
   };
 
+  // 计算进度条百分比
+  const calculateProgress = () => {
+    if (mode === 'countdown') {
+      if (initialTime === 0) return 0;
+      return ((initialTime - timeInSeconds) / initialTime) * 100;
+    } else {
+      // 正计时模式：以60分钟为满进度，超过则保持100%
+      const maxTime = 60 * 60; // 60分钟
+      return Math.min((timeInSeconds / maxTime) * 100, 100);
+    }
+  };
+
   return (
     <div
       className={`timer-container ${isMiniMode ? 'mini-mode-container' : ''}`}
     >
+      {isRunning && (
+        <div className="timer-progress-bar">
+          <div
+            className="timer-progress-fill"
+            style={{ width: `${calculateProgress()}%` }}
+          />
+        </div>
+      )}
       <button className="close-window-button" onClick={(e) => {
         e.stopPropagation(); // 防止触发父级的点击恢复逻辑
         handleClose();
       }}>
         <i className="fa-solid fa-xmark"></i>
       </button>
+      {isRunning && (
+        <button
+          className="fullscreen-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFullScreen();
+          }}
+          title={isFullScreen ? "退出全屏" : "全屏显示"}
+        >
+          <i className={`fa-solid ${isFullScreen ? 'fa-compress' : 'fa-maximize'}`}></i>
+        </button>
+      )}
       {(isRunning || isMiniMode) && (
-        <button 
-          className="mini-mode-button" 
+        <button
+          className="mini-mode-button"
           onClick={(e) => {
             e.stopPropagation(); // 防止重复触发
             toggleMiniMode();
           }}
           title={isMiniMode ? "退出迷你模式" : "进入迷你模式"}
         >
-          <i className={`fa-solid ${isMiniMode ? 'fa-expand' : 'fa-compress'}`}></i>
+          <i className={`fa-solid ${isMiniMode ? 'fa-up-right-and-down-left-from-center' : 'fa-down-left-and-up-right-to-center'}`}></i>
         </button>
       )}
       {!isMiniMode && (

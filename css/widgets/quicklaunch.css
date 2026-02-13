@@ -1,0 +1,78 @@
+.quick-launch-widget {
+    background: var(--bg-transparent);
+    opacity: 0.95;
+    border-radius: var(--widget-border-radius);
+    border: var(--widget-border);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s ease;
+    box-shadow: var(--widget-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.quick-launch-widget:hover {
+    background: var(--bg-transparent-hover);
+}
+
+.quick-launch-widget input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: 6px;
+    background: var(--colorNeutralBackground1);
+    color: var(--colorNeutralForeground1);
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-launch-widget input[type="text"]:focus {
+    border-color: var(--colorBrandStroke1);
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.quick-launch-widget input[type="text"]::placeholder {
+    color: var(--colorNeutralForeground3);
+}
+
+.quick-launch-widget .quick-launch-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.quick-launch-widget .quick-launch-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.quick-launch-widget .quick-launch-item.selected {
+    background: var(--colorBrandBackground2);
+}
+
+.quick-launch-widget .quick-launch-item .launcher-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.quick-launch-widget .quick-launch-item .launcher-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.quick-launch-widget .quick-launch-item .launcher-icon-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--colorNeutralStroke1);
+    border-radius: 4px;
+}

@@ -10,6 +10,7 @@ const { getVolume, setVolume, executeCommand, showDesktop, taskView, closeFrontW
 const { launchApp, getFileIcon } = require('./launcher');
 const { getFilesInFolder, readFileContent, writeFileContent, deleteFile, renameFile } = require('./fileSystem');
 const { takeScreenshot } = require('./screenshot');
+const { getStartMenuShortcuts } = require('./startMenu');
 
 /**
  * 注册所有 IPC 处理器
@@ -206,6 +207,156 @@ function registerIPCHandlers() {
     if (win) win.close();
   });
 
+  // 全屏控制（带插值动画）
+  ipcMain.on('set-fullscreen', (event, flag) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) return;
+
+    // 如果已经是目标状态且没有需要恢复的原始边界，直接发送事件并返回
+    if (win.isFullScreen() === flag && (flag || !win._originalBounds)) {
+      win.webContents.send('fullscreen-changed', flag);
+      return;
+    }
+
+    // 防止动画期间重复触发
+    if (win._isFullScreenAnimating) return;
+
+    const { screen } = require('electron');
+    const currentDisplay = screen.getDisplayNearestPoint(win.getBounds());
+    const workArea = currentDisplay.workArea;
+
+    // 保存原始窗口状态（用于退出全屏时恢复）
+    if (flag && !win._originalBounds && !win.isFullScreen()) {
+      win._originalBounds = win.getBounds();
+    }
+
+    // 标记为程序控制，避免 window.js 中的 leave-full-screen 事件重复处理恢复逻辑
+    win._programmaticFullScreen = true;
+
+    if (flag) {
+      // ===== 进入全屏 =====
+      win._isFullScreenAnimating = true;
+
+      const startBounds = win.getBounds();
+      const targetBounds = {
+        x: workArea.x,
+        y: workArea.y,
+        width: workArea.width,
+        height: workArea.height
+      };
+
+      const duration = 400;
+      const startTime = Date.now();
+
+      win.setMinimumSize(0, 0);
+      win.setMaximumSize(10000, 10000);
+
+      const animate = () => {
+        if (win.isDestroyed()) return;
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+
+        const currentBounds = {
+          x: Math.floor(startBounds.x + (targetBounds.x - startBounds.x) * ease),
+          y: Math.floor(startBounds.y + (targetBounds.y - startBounds.y) * ease),
+          width: Math.floor(startBounds.width + (targetBounds.width - startBounds.width) * ease),
+          height: Math.floor(startBounds.height + (targetBounds.height - startBounds.height) * ease)
+        };
+
+        win.setBounds(currentBounds);
+
+        if (progress < 1) {
+          setTimeout(animate, 16);
+        } else {
+          win.setFullScreen(true);
+          win._isFullScreenAnimating = false;
+          // 延迟重置，确保原生事件处理后再重置
+          setTimeout(() => {
+            if (!win.isDestroyed()) win._programmaticFullScreen = false;
+          }, 100);
+        }
+      };
+
+      animate();
+    } else {
+      // ===== 退出全屏 =====
+      const originalBounds = win._originalBounds;
+
+      if (win.isFullScreen()) {
+        win.setFullScreen(false);
+      } else {
+        // 如果已经不是全屏（比如通过其它方式退出），也要通知渲染进程同步状态
+        win.webContents.send('fullscreen-changed', false);
+      }
+
+      if (!originalBounds) {
+        win._originalBounds = null;
+        win.setMinimumSize(300, 150);
+        win._programmaticFullScreen = false;
+        return;
+      }
+
+      win._isFullScreenAnimating = true;
+      win._originalBounds = null;
+
+      setTimeout(() => {
+        if (win.isDestroyed()) return;
+
+        const startBounds = win.getBounds();
+        const targetBounds = originalBounds;
+
+        if (startBounds.width < targetBounds.width * 1.1 && startBounds.height < targetBounds.height * 1.1) {
+          win.setBounds(targetBounds);
+          win.setMinimumSize(300, 150);
+          win._isFullScreenAnimating = false;
+          win._programmaticFullScreen = false;
+          return;
+        }
+
+        const duration = 400;
+        const startTime = Date.now();
+
+        win.setMinimumSize(0, 0);
+        win.setMaximumSize(10000, 10000);
+
+        const animate = () => {
+          if (win.isDestroyed()) return;
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const ease = 1 - Math.pow(1 - progress, 3);
+
+          const currentBounds = {
+            x: Math.floor(startBounds.x + (targetBounds.x - startBounds.x) * ease),
+            y: Math.floor(startBounds.y + (targetBounds.y - startBounds.y) * ease),
+            width: Math.floor(startBounds.width + (targetBounds.width - startBounds.width) * ease),
+            height: Math.floor(startBounds.height + (targetBounds.height - startBounds.height) * ease)
+          };
+
+          win.setBounds(currentBounds);
+
+          if (progress < 1) {
+            setTimeout(animate, 16);
+          } else {
+            win.setMinimumSize(300, 150);
+            win._isFullScreenAnimating = false;
+            win._programmaticFullScreen = false;
+          }
+        };
+
+        animate();
+      }, 50);
+    }
+  });
+
+  ipcMain.handle('is-fullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      return win.isFullScreen();
+    }
+    return false;
+  });
+
   ipcMain.on('close-front-window', () => {
     closeFrontWindow();
   });
@@ -267,6 +418,12 @@ function registerIPCHandlers() {
 
   ipcMain.handle('screenshot', async () => {
     return await takeScreenshot();
+  });
+
+  // ===== 开始菜单快捷方式 =====
+
+  ipcMain.handle('get-start-menu-shortcuts', async () => {
+    return await getStartMenuShortcuts();
   });
 }
 
